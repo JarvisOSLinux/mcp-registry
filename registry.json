@@ -1,0 +1,105 @@
+{
+  "version": "1.0",
+  "updated": "2026-02-10T00:00:00Z",
+  "servers": [
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-ts",
+      "name": "Calculator (TypeScript)",
+      "summary": "Simple arithmetic calculator MCP server written in TypeScript",
+      "description": "Provides basic arithmetic operations (add, subtract, multiply, divide) via MCP tools.\nBuilt with the official @modelcontextprotocol/sdk TypeScript SDK.",
+      "version": "1.0.0",
+      "type": "stdio",
+      "transport": {
+        "command": "mcp-calculator-ts",
+        "args": []
+      },
+      "source": {
+        "type": "npm",
+        "package": "@mcp-registry/calculator-ts"
+      },
+      "author": "YakupAtahanov",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "bugUrl": "https://github.com/YakupAtahanov/mcp-registry/issues",
+      "icon": "accessories-calculator",
+      "categories": ["mcp", "mcp-development"],
+      "capabilities": ["arithmetic"],
+      "tools": [
+        { "name": "add", "description": "Add two numbers together" },
+        { "name": "subtract", "description": "Subtract the second number from the first" },
+        { "name": "multiply", "description": "Multiply two numbers together" },
+        { "name": "divide", "description": "Divide the first number by the second" }
+      ],
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+      },
+      "releaseDate": "2026-02-10"
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-py",
+      "name": "Calculator (Python)",
+      "summary": "Simple arithmetic calculator MCP server written in Python",
+      "description": "Provides basic arithmetic operations (add, subtract, multiply, divide) via MCP tools.\nBuilt with the official mcp Python SDK using FastMCP.",
+      "version": "1.0.0",
+      "type": "stdio",
+      "transport": {
+        "command": "mcp-calculator-py",
+        "args": []
+      },
+      "source": {
+        "type": "pip",
+        "package": "mcp-calculator"
+      },
+      "author": "YakupAtahanov",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "bugUrl": "https://github.com/YakupAtahanov/mcp-registry/issues",
+      "icon": "accessories-calculator",
+      "categories": ["mcp", "mcp-development"],
+      "capabilities": ["arithmetic"],
+      "tools": [
+        { "name": "add", "description": "Add two numbers together" },
+        { "name": "subtract", "description": "Subtract the second number from the first" },
+        { "name": "multiply", "description": "Multiply two numbers together" },
+        { "name": "divide", "description": "Divide the first number by the second" }
+      ],
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+      },
+      "releaseDate": "2026-02-10"
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-rust",
+      "name": "Calculator (Rust)",
+      "summary": "Simple arithmetic calculator MCP server written in Rust",
+      "description": "Provides basic arithmetic operations (add, subtract, multiply, divide) via MCP tools.\nBuilt with the official rmcp Rust SDK. Distributed as a precompiled binary.",
+      "version": "1.0.0",
+      "type": "stdio",
+      "transport": {
+        "command": "mcp-calculator-rust",
+        "args": []
+      },
+      "source": {
+        "type": "binary",
+        "url": "https://github.com/YakupAtahanov/mcp-registry/releases/download/v1.0.0/mcp-calculator-rust"
+      },
+      "author": "YakupAtahanov",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "bugUrl": "https://github.com/YakupAtahanov/mcp-registry/issues",
+      "icon": "accessories-calculator",
+      "categories": ["mcp", "mcp-development"],
+      "capabilities": ["arithmetic"],
+      "tools": [
+        { "name": "add", "description": "Add two numbers together" },
+        { "name": "subtract", "description": "Subtract the second number from the first" },
+        { "name": "multiply", "description": "Multiply two numbers together" },
+        { "name": "divide", "description": "Divide the first number by the second" }
+      ],
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+      },
+      "releaseDate": "2026-02-10"
+    }
+  ]
+}

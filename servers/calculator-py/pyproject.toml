@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-calculator"
+version = "1.0.0"
+description = "Simple arithmetic calculator MCP server (Python)"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "calculator", "model-context-protocol"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-calculator-py = "mcp_calculator.server:main"

@@ -1,0 +1,17 @@
+[package]
+name = "mcp-calculator-rust"
+version = "1.0.0"
+edition = "2021"
+description = "Simple arithmetic calculator MCP server (Rust)"
+license = "MIT"
+keywords = ["mcp", "calculator", "model-context-protocol"]
+
+[[bin]]
+name = "mcp-calculator-rust"
+path = "src/main.rs"
+
+[dependencies]
+rmcp = { version = "0.14", features = ["server", "transport-io"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+schemars = "1.0"
