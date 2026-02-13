@@ -57,139 +57,183 @@ Each object in the `servers` array describes one MCP server.
 }
 ```
 
-| Field        | Type   | Description                                              |
-|--------------|--------|----------------------------------------------------------|
-| `id`         | string | Unique identifier. Use reverse-domain notation.          |
-| `name`       | string | Display name in the catalogue.                           |
-| `summary`    | string | Short description shown in listings.                     |
-| `version`    | string | Semantic version of the server.                          |
-| `transports` | array  | One or more transport configs (see Transport Configuration). |
-| `source`     | object | How to install the server (see below).                   |
+| Field       | Type   | Description                                              |
+|-------------|--------|----------------------------------------------------------|
+| `id`        | string | Unique identifier. Use reverse-domain notation.          |
+| `name`      | string | Display name in the catalogue.                           |
+| `summary`   | string | Short description shown in listings.                     |
+| `version`   | string | Semantic version of the server.                          |
+| `transports`| array  | Array of entrypoints (stdio, SSE, or WebSocket).         |
+| `source`    | object | Git source for local servers; omit or use empty for remote. |
 
 ### Optional Fields
 
-| Field                    | Type   | Description                                                     |
-|--------------------------|--------|-----------------------------------------------------------------|
-| `description`            | string | Long description. Supports `\n` for line breaks.                |
-| `author`                 | string | Author name.                                                    |
-| `homepage`               | string | URL to the project homepage.                                    |
-| `bugUrl`                 | string | URL to the issue tracker.                                       |
-| `donationUrl`            | string | URL for donations.                                              |
-| `icon`                   | string | Freedesktop icon name (e.g. `"folder"`, `"network-server"`).   |
-| `categories`             | array  | Category strings for filtering (see Categories below).          |
-| `capabilities`            | array  | What the server can do (freeform strings for display).          |
-| `permissions`            | array  | Permissions the server requires (freeform strings for display). |
-| `tools`                  | array  | Tools provided (strings or `{"name": ..., "description": ...}`).|
-| `configurableProperties` | array  | Parameters the user may need to set (see below).                |
-| `license`                | object | `{"name": "MIT", "url": "https://..."}`.                       |
-| `releaseDate`            | string | ISO 8601 date string (`"2025-01-15"`).                          |
-| `size`                   | number | Approximate size in bytes (for display).                        |
-| `screenshots`            | array  | Screenshot URLs or `{"thumbnail": ..., "url": ...}` objects.   |
-| `changelog`              | string | Changelog text.                                                 |
+| Field                | Type   | Description                                                     |
+|----------------------|--------|-----------------------------------------------------------------|
+| `description`        | string | Long description. Supports `\n` for line breaks.                |
+| `author`             | string | Author name.                                                    |
+| `homepage`           | string | URL to the project homepage.                                    |
+| `bugUrl`             | string | URL to the issue tracker.                                       |
+| `donationUrl`        | string | URL for donations.                                              |
+| `icon`               | string | Freedesktop icon name (e.g. `"folder"`, `"network-server"`).   |
+| `categories`         | array  | Category strings for filtering (see Categories below).          |
+| `capabilities`       | array  | What the server can do (freeform strings for display).          |
+| `permissions`        | array  | Permissions the server requires (freeform strings for display). |
+| `tools`              | array  | Tools provided (strings or `{"name": ..., "description": ...}`).|
+| `configurableProperties` | array | Configuration properties (required and optional, see below). |
+| `license`            | object | `{"name": "MIT", "url": "https://..."}`.                       |
+| `releaseDate`        | string | ISO 8601 date string (`"2025-01-15"`).                          |
+| `size`               | number | Approximate size in bytes (for display).                        |
+| `screenshots`        | array  | Screenshot URLs or `{"thumbnail": ..., "url": ...}` objects.   |
+| `changelog`          | string | Changelog text.                                                 |
+| `scope`              | string | `"user"` (default) or `"system"`. See Scope below.              |
 
-## Transport Configuration
+## Transports (Entrypoints)
 
-Each server has a `transports` array. Each item has a `type` and type-specific fields.
+The `transports` array lists one or more entrypoints. Each entrypoint can be stdio (local process), SSE, or WebSocket.
 
 ### stdio (Local Process)
 
-The server runs as a local process. Discover launches it via the specified command.
+Runs as a local process. The `command` and `args` are executed from the project root (install dir).
 
 ```json
-"transports": [
-  {
-    "type": "stdio",
-    "command": "mcp-server-filesystem",
-    "args": ["--root", "/home"],
-    "description": "Main interface"
-  }
-]
+{
+  "type": "stdio",
+  "command": "python3",
+  "args": ["server.py"],
+  "description": "Main calculator interface"
+}
 ```
 
-| Field         | Type   | Description                          |
-|---------------|--------|--------------------------------------|
-| `command`     | string | Executable name or path.             |
-| `args`        | array  | Command-line arguments (optional).  |
-| `description` | string | Short label for this transport (optional). |
+| Field         | Type   | Description                                    |
+|---------------|--------|------------------------------------------------|
+| `command`     | string | Executable (e.g. `python3`, `node`).          |
+| `args`        | array  | Arguments, relative to project root.          |
+| `description` | string | Optional description of this entrypoint.       |
 
 ### sse (Server-Sent Events)
 
-The server is remote. No local executable is installed -- Discover just records the URL.
+Remote endpoint. No local installation.
 
 ```json
-"transports": [
-  {
-    "type": "sse",
-    "url": "https://api.example.com/mcp/sse"
-  }
-]
+{
+  "type": "sse",
+  "url": "https://api.example.com/mcp/sse",
+  "description": "Cloud API endpoint"
+}
 ```
-
-| Field | Type   | Description               |
-|-------|--------|---------------------------|
-| `url` | string | SSE endpoint URL.         |
 
 ### websocket
 
 ```json
-"transports": [
-  {
-    "type": "websocket",
-    "wsUrl": "wss://api.example.com/mcp/ws"
+{
+  "type": "websocket",
+  "wsUrl": "wss://api.example.com/mcp/ws"
+}
+```
+
+### Legacy Format
+
+For backward compatibility, a single transport can be specified with top-level `type` and `transport`:
+
+```json
+{
+  "type": "stdio",
+  "transport": {
+    "command": "python3",
+    "args": ["server.py"]
   }
-]
+}
+```
+
+## Scope
+
+The `scope` field controls where the server is installed:
+
+| Scope    | Base path                         | Privileges        |
+|----------|-----------------------------------|--------------------|
+| `user`   | `~/.local/share/mcp/installed/`   | None (user-local) |
+| `system` | `/usr/share/mcp/installed/`       | pkexec (root)     |
+
+Default is `"user"`. System-scope installs are visible to all users on the machine and require password authentication via polkit.
+
+SSE/WebSocket servers also support scope. A system-scope SSE entry puts its manifest in `/usr/share/mcp/installed/<id>/manifest.json` so all users see the configured endpoint.
+
+```json
+{
+  "id": "com.example.shared-tool",
+  "scope": "system",
+  ...
+}
 ```
 
 ## Source Configuration
 
-The `source` object tells Discover how to install a server.
+For **local servers** (stdio), the `source` object specifies a Git repository to clone:
 
 ```json
 "source": {
-  "type": "npm",
-  "package": "@yourorg/mcp-server"
+  "type": "git",
+  "url": "https://github.com/yourorg/mcp-registry.git",
+  "path": "servers/calculator-py"
 }
 ```
 
-| Source Type  | Fields                          | What Discover Does                                          |
-|--------------|---------------------------------|-------------------------------------------------------------|
-| `npm`        | `package` (npm package name)    | `npm install --prefix /usr/share/mcp/installed/{id} <pkg>`  |
-| `pip`        | `package` (PyPI package name)   | `pip install --prefix /usr/share/mcp/installed/{id} <pkg>`  |
-| `binary`     | `url` (download URL)            | Downloads binary to `installed/{id}/`                       |
-| `container`  | `package` (image name)          | `pkexec podman pull <image>`                                |
-| `git`        | `url`, `path` (repo URL and path) | Clones repo to `installed/{id}/` (optional `path` for subdir) |
+| Field  | Type   | Description                                                      |
+|--------|--------|------------------------------------------------------------------|
+| `url`  | string | Git repository URL.                                              |
+| `path` | string | Project root within the repo (optional). Empty = repo root.      |
 
-For SSE servers that have no local installation, omit `source` or use an empty/minimal source as required by the client.
+Discover clones the repo, extracts the project root (`path` or repo root), and runs the transport's `command` + `args` from that directory. The registry author specifies the exact launcher (e.g. `python3 server.py`, `node index.js`) — any language works.
 
-## Configuration Parameters
+For **remote servers** (SSE/WebSocket), omit `source` or use an empty object. Discover validates the endpoint and stores the connection details. Shows "Connect" / "Disconnect" instead of "Install" / "Remove".
 
-Use **`configurableProperties`** for parameters the user must or may set (e.g. API keys, endpoints). Each property can be marked `"required": true`. Discover shows a configuration dialog when required properties are missing.
+## Configuration Properties
 
-### Example
+Servers can declare configurable properties in a single `configurableProperties` array. Each property has a `required` flag to indicate whether it must be filled before installation.
+
+Discover shows a configuration dialog before installation if any required properties are empty. Optional properties are pre-filled with their `default` value and can be edited post-install.
 
 ```json
 "configurableProperties": [
   {
     "key": "api_key",
     "label": "API Key",
-    "description": "Get your key at https://yourorg.com/settings",
+    "description": "Your API key from https://example.com/settings",
     "sensitive": true,
     "required": true
+  },
+  {
+    "key": "timeout",
+    "label": "Timeout (seconds)",
+    "description": "Request timeout in seconds",
+    "default": "30",
+    "sensitive": false,
+    "required": false
+  },
+  {
+    "key": "endpoint",
+    "label": "Endpoint URL",
+    "description": "API endpoint (defaults to production)",
+    "default": "https://api.example.com/v1",
+    "sensitive": false,
+    "required": false
   }
 ]
 ```
 
-### Parameter Fields
+### Property Fields
 
 | Field         | Type    | Description                                                |
 |---------------|---------|------------------------------------------------------------|
 | `key`         | string  | Internal identifier. Used as the key in config storage.    |
-| `label`       | string  | Label shown in the configuration dialog.                  |
+| `label`       | string  | Label shown in the configuration dialog.                   |
 | `description` | string  | Help text shown below the input field.                     |
-| `sensitive`   | boolean | If `true`, field is shown as a password input.            |
-| `required`    | boolean | If `true`, user must set this before install.             |
+| `default`     | string  | Default value. Pre-filled in the UI (mainly for optional). |
+| `sensitive`   | boolean | If `true`, field is shown as a password input.             |
+| `required`    | boolean | If `true`, must be filled before installation.             |
 
-User-provided values are stored in `~/.config/mcp/config.json` (never in the system manifest), keeping sensitive data separate from the system catalogue.
+User-provided values are stored in the installed manifest at `<installDir>/manifest.json` in the `config` object. Optional property defaults are applied automatically if the user doesn't override them.
 
 ## Categories
 
@@ -308,46 +352,33 @@ Here is a complete minimal registry with one local server (Git) and one remote S
 
 When a user clicks Install on your server:
 
-1. If `requiredParameters` exist and any are unconfigured, a configuration dialog is shown.
-2. The user authenticates via polkit (system password prompt).
-3. The appropriate install command runs with elevated privileges into an isolated directory:
-   - npm: `pkexec sh -c "mkdir -p /usr/share/mcp/installed/{id} && npm install --prefix /usr/share/mcp/installed/{id} <package>"`
-   - pip: `pkexec sh -c "mkdir -p /usr/share/mcp/installed/{id} && pip install --prefix /usr/share/mcp/installed/{id} <package>"`
-   - container: `pkexec podman pull <image>` (stored in podman's own storage)
-4. A per-server manifest is written to `/usr/share/mcp/installed/{id}/manifest.json`.
-   The manifest includes an `installedCommand` field in the `transport` section that
-   resolves to the full path of the binary (e.g. `/usr/share/mcp/installed/{id}/node_modules/.bin/mcp-server-filesystem`).
-5. The system index at `/usr/share/mcp/mcp.json` is also updated (kept in sync).
-6. User-provided configuration values are saved to `~/.config/mcp/config.json`.
+1. If `configurableProperties` exist and any required ones are unconfigured, a configuration dialog is shown.
+2. If `scope` is `"system"`, the user authenticates via polkit (password prompt for pkexec).
+3. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
+4. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
+5. For **remote servers** (SSE/WebSocket): The endpoint is validated via HTTP HEAD, then the manifest is written. No local clone.
+6. A manifest is written to `<installDir>/manifest.json` with all metadata, config values, and install date.
+7. For user-scope, `<base>` is `~/.local/share`. For system-scope, `<base>` is `/usr/share`.
 
 ### Directory Layout After Install
 
+**User-scope** (`~/.local/share/mcp/installed/`):
+
 ```
-/usr/share/mcp/
-├── mcp.json                                        (system index)
-└── installed/
-    ├── org.anthropic.mcp.filesystem/               (npm server)
-    │   ├── manifest.json                           (server metadata)
-    │   ├── node_modules/                           (npm package contents)
-    │   │   ├── .bin/
-    │   │   │   └── mcp-server-filesystem           (binary symlink)
-    │   │   └── @anthropic/
-    │   │       └── mcp-server-filesystem/
-    │   └── package-lock.json
-    ├── io.postgres.mcp/                            (pip server)
-    │   ├── manifest.json
-    │   ├── bin/
-    │   │   └── mcp-postgres                        (script)
-    │   └── lib/
-    │       └── python3.x/
-    │           └── site-packages/
-    └── com.example.remote-api/                     (SSE server — no local files)
-        └── manifest.json
+~/.local/share/mcp/installed/
+├── com.example.calculator/                     (local server — Git clone)
+│   ├── manifest.json                           (server metadata + config)
+│   ├── server.py                               (project root contents)
+│   └── ...                                     (other project files)
+└── com.example.remote-api/                     (SSE server — no local files)
+    └── manifest.json
 ```
+
+**System-scope** (`/usr/share/mcp/installed/`) has the same structure but is owned by root and managed via pkexec.
 
 ### Uninstall
 
-Removal is a simple `rm -rf /usr/share/mcp/installed/{id}/`. No package-manager-specific uninstall is needed since all files are contained within the server's own directory.
+Removal is a simple `rm -rf <installDir>`. All files are self-contained. For system-scope, `pkexec rm -rf` is used.
 
 ## Tips
 

@@ -10,14 +10,15 @@
       "transports": [
         {
           "type": "stdio",
-          "command": "mcp-calculator-ts",
-          "args": [],
+          "command": "node",
+          "args": ["build/index.js"],
           "description": "Main interface"
         }
       ],
       "source": {
-        "type": "npm",
-        "package": "@mcp-registry/calculator-ts"
+        "type": "git",
+        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+        "path": "servers/calculator-ts"
       },
       "categories": ["mcp", "mcp-development"]
     },
@@ -29,14 +30,15 @@
       "transports": [
         {
           "type": "stdio",
-          "command": "mcp-calculator-py",
-          "args": [],
+          "command": "python3",
+          "args": ["src/mcp_calculator/server.py"],
           "description": "Main interface"
         }
       ],
       "source": {
-        "type": "pip",
-        "package": "mcp-calculator"
+        "type": "git",
+        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+        "path": "servers/calculator-py"
       },
       "categories": ["mcp", "mcp-development"]
     },
@@ -48,14 +50,15 @@
       "transports": [
         {
           "type": "stdio",
-          "command": "mcp-calculator-rust",
-          "args": [],
+          "command": "cargo",
+          "args": ["run", "--release"],
           "description": "Main interface"
         }
       ],
       "source": {
-        "type": "binary",
-        "url": "https://github.com/YakupAtahanov/mcp-registry/releases/download/v1.0.0/mcp-calculator-rust"
+        "type": "git",
+        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+        "path": "servers/calculator-rust"
       },
       "categories": ["mcp", "mcp-development"]
     }
