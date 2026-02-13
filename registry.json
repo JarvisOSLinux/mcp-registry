@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "updated": "2026-02-13T00:00:00Z",
+  "servers": [
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-ts",
+      "name": "Calculator (TypeScript)",
+      "summary": "Simple arithmetic calculator MCP server written in TypeScript",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "stdio",
+          "command": "mcp-calculator-ts",
+          "args": [],
+          "description": "Main interface"
+        }
+      ],
+      "source": {
+        "type": "npm",
+        "package": "@mcp-registry/calculator-ts"
+      },
+      "categories": ["mcp", "mcp-development"]
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-py",
+      "name": "Calculator (Python)",
+      "summary": "Simple arithmetic calculator MCP server written in Python",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "stdio",
+          "command": "mcp-calculator-py",
+          "args": [],
+          "description": "Main interface"
+        }
+      ],
+      "source": {
+        "type": "pip",
+        "package": "mcp-calculator"
+      },
+      "categories": ["mcp", "mcp-development"]
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.calculator-rust",
+      "name": "Calculator (Rust)",
+      "summary": "Simple arithmetic calculator MCP server written in Rust",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "stdio",
+          "command": "mcp-calculator-rust",
+          "args": [],
+          "description": "Main interface"
+        }
+      ],
+      "source": {
+        "type": "binary",
+        "url": "https://github.com/YakupAtahanov/mcp-registry/releases/download/v1.0.0/mcp-calculator-rust"
+      },
+      "categories": ["mcp", "mcp-development"]
+    }
+  ]
+}

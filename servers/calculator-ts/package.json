@@ -1,0 +1,30 @@
+{
+  "name": "@mcp-registry/calculator-ts",
+  "version": "1.0.0",
+  "description": "Simple arithmetic calculator MCP server (TypeScript)",
+  "type": "module",
+  "bin": {
+    "mcp-calculator-ts": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "keywords": [
+    "mcp",
+    "calculator",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
