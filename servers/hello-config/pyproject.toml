@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-hello-config"
+version = "1.0.0"
+description = "Minimal MCP server for testing configurableProperties and scope"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "test", "config"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-hello-config = "hello_config.server:main"

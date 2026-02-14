@@ -61,6 +61,52 @@
         "path": "servers/calculator-rust"
       },
       "categories": ["mcp", "mcp-development"]
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.hello-config",
+      "name": "Hello Config",
+      "summary": "Minimal MCP server for testing configurableProperties (required + optional) and scope",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "stdio",
+          "command": "python3",
+          "args": ["src/hello_config/server.py"],
+          "description": "Main interface"
+        }
+      ],
+      "source": {
+        "type": "git",
+        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+        "path": "servers/hello-config"
+      },
+      "categories": ["mcp", "mcp-development"],
+      "scope": "system",
+      "configurableProperties": [
+        {
+          "key": "api_key",
+          "label": "API Key",
+          "description": "Required test key (e.g. use 'test-key' for testing)",
+          "sensitive": true,
+          "required": true
+        },
+        {
+          "key": "timeout",
+          "label": "Timeout (seconds)",
+          "description": "Request timeout in seconds",
+          "default": "30",
+          "sensitive": false,
+          "required": false
+        },
+        {
+          "key": "endpoint",
+          "label": "Endpoint URL",
+          "description": "Optional endpoint (defaults to production)",
+          "default": "https://example.com/v1",
+          "sensitive": false,
+          "required": false
+        }
+      ]
     }
   ]
 }
