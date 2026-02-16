@@ -1,0 +1,10 @@
+[project]
+name = "mcp-hello-ws"
+version = "1.0.0"
+description = "Minimal WebSocket MCP server (hello world)"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0",
+    "starlette",
+    "uvicorn[standard]",
+]

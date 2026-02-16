@@ -11,7 +11,9 @@
         {
           "type": "stdio",
           "command": "node",
-          "args": ["build/index.js"],
+          "args": [
+            "build/index.js"
+          ],
           "description": "Main interface"
         }
       ],
@@ -20,7 +22,10 @@
         "url": "https://github.com/YakupAtahanov/mcp-registry.git",
         "path": "servers/calculator-ts"
       },
-      "categories": ["mcp", "mcp-development"]
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ]
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-py",
@@ -31,7 +36,9 @@
         {
           "type": "stdio",
           "command": "python3",
-          "args": ["src/mcp_calculator/server.py"],
+          "args": [
+            "src/mcp_calculator/server.py"
+          ],
           "description": "Main interface"
         }
       ],
@@ -40,7 +47,10 @@
         "url": "https://github.com/YakupAtahanov/mcp-registry.git",
         "path": "servers/calculator-py"
       },
-      "categories": ["mcp", "mcp-development"]
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ]
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-rust",
@@ -51,7 +61,10 @@
         {
           "type": "stdio",
           "command": "cargo",
-          "args": ["run", "--release"],
+          "args": [
+            "run",
+            "--release"
+          ],
           "description": "Main interface"
         }
       ],
@@ -60,7 +73,10 @@
         "url": "https://github.com/YakupAtahanov/mcp-registry.git",
         "path": "servers/calculator-rust"
       },
-      "categories": ["mcp", "mcp-development"]
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ]
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-config",
@@ -71,7 +87,9 @@
         {
           "type": "stdio",
           "command": "python3",
-          "args": ["src/hello_config/server.py"],
+          "args": [
+            "src/hello_config/server.py"
+          ],
           "description": "Main interface"
         }
       ],
@@ -80,7 +98,10 @@
         "url": "https://github.com/YakupAtahanov/mcp-registry.git",
         "path": "servers/hello-config"
       },
-      "categories": ["mcp", "mcp-development"],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "scope": "system",
       "configurableProperties": [
         {
@@ -106,6 +127,42 @@
           "sensitive": false,
           "required": false
         }
+      ]
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.hello-sse",
+      "name": "Hello World (SSE)",
+      "summary": "Minimal remote SSE MCP server for testing metadata-only storage; no local install",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "sse",
+          "url": "http://127.0.0.1:8000/sse",
+          "description": "Local test endpoint"
+        }
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-web"
+      ]
+    },
+    {
+      "id": "com.github.yakupatahanov.mcp.hello-ws",
+      "name": "Hello World (WebSocket)",
+      "summary": "Minimal remote WebSocket MCP server for testing metadata-only storage; no local install",
+      "version": "1.0.0",
+      "transports": [
+        {
+          "type": "websocket",
+          "wsUrl": "ws://127.0.0.1:8001/ws",
+          "description": "Local test endpoint"
+        }
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-web"
       ]
     }
   ]

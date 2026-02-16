@@ -1,0 +1,11 @@
+[project]
+name = "mcp-hello-sse"
+version = "1.0.0"
+description = "Minimal SSE MCP server (hello world)"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.2.0",
+    "starlette",
+    "uvicorn[standard]",
+    "sse-starlette",
+]
