@@ -14,10 +14,13 @@ Your GitHub repo                     User's machine
   (hosted via raw URL)              fetches & caches
                                     shows servers in UI
                                     user clicks Install
-                                    pkexec installs into /usr/share/mcp/installed/{id}/
                                     manifest.json written to installed/{id}/
-                                    mcp.json index updated
+                                    index.json updated (id -> manifest location)
 ```
+
+Registry sources are read from (in priority order):
+- `~/.config/mcp/sources.list` (user)
+- `/etc/mcp/sources.list` (system)
 
 ## Registry File Format
 
@@ -75,7 +78,7 @@ Each object in the `servers` array describes one MCP server.
 | `homepage`           | string | URL to the project homepage.                                    |
 | `bugUrl`             | string | URL to the issue tracker.                                       |
 | `donationUrl`        | string | URL for donations.                                              |
-| `icon`               | string | Freedesktop icon name (e.g. `"folder"`, `"network-server"`).   |
+| `icon`               | string | Icon for display: Freedesktop icon name or URL to an image (see Icons below). |
 | `categories`         | array  | Category strings for filtering (see Categories below).          |
 | `capabilities`       | array  | What the server can do (freeform strings for display).          |
 | `permissions`        | array  | Permissions the server requires (freeform strings for display). |
@@ -87,6 +90,22 @@ Each object in the `servers` array describes one MCP server.
 | `screenshots`        | array  | Screenshot URLs or `{"thumbnail": ..., "url": ...}` objects.   |
 | `changelog`          | string | Changelog text.                                                 |
 | `scope`              | string | `"user"` (default) or `"system"`. See Scope below.              |
+
+### Icons
+
+Registry owners define each server's icon in the `icon` field. Two formats are supported:
+
+1. **Freedesktop icon name** – Use a standard icon from the user's icon theme (e.g. Breeze, Adwaita):
+   - `"network-server"` – good for remote SSE/WebSocket servers
+   - `"utilities-terminal"` – for CLI/dev tools
+   - `"accessories-calculator"` – for calculator-style tools
+   - `"applications-development"` – generic development
+
+2. **URL to an image** – Use a custom logo hosted anywhere:
+   - GitHub raw URL: `"https://raw.githubusercontent.com/yourorg/mcp-registry/main/logos/my-server.png"`
+   - Any public image URL (PNG, SVG, etc.)
+
+If omitted, Discover falls back to `"application-x-executable"`. Prefer Freedesktop names when a suitable one exists; use URLs for custom branding.
 
 ## Transports (Entrypoints)
 
@@ -233,7 +252,7 @@ Discover shows a configuration dialog before installation if any required proper
 | `sensitive`   | boolean | If `true`, field is shown as a password input.             |
 | `required`    | boolean | If `true`, must be filled before installation.             |
 
-User-provided values are stored in the installed manifest at `<installDir>/manifest.json` in the `config` object. Optional property defaults are applied automatically if the user doesn't override them.
+User-provided values are stored in the per-server manifest at `<installDir>/manifest.json` in the `config` object. MCP servers read their configuration from this manifest file. Optional property defaults are applied automatically if the user doesn't override them.
 
 ## Categories
 
@@ -357,8 +376,9 @@ When a user clicks Install on your server:
 3. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
 4. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
 5. For **remote servers** (SSE/WebSocket): The endpoint is validated via HTTP HEAD, then the manifest is written. No local clone.
-6. A manifest is written to `<installDir>/manifest.json` with all metadata, config values, and install date.
-7. For user-scope, `<base>` is `~/.local/share`. For system-scope, `<base>` is `/usr/share`.
+6. A manifest is written to `<installDir>/manifest.json` with full metadata and config. MCP servers read their configuration from this file.
+7. The index at `<base>/mcp/installed/index.json` is updated with `{ "<id>": { "location": "<path>/manifest.json" } }`. The index only stores pointers; full metadata lives in each manifest.
+8. For user-scope, `<base>` is `~/.local/share`. For system-scope, `<base>` is `/usr/share`.
 
 ### Directory Layout After Install
 
@@ -366,12 +386,13 @@ When a user clicks Install on your server:
 
 ```
 ~/.local/share/mcp/installed/
+├── index.json                                 (id -> manifest location only)
 ├── com.example.calculator/                     (local server — Git clone)
-│   ├── manifest.json                           (server metadata + config)
+│   ├── manifest.json                           (full metadata + config; MCP servers read this)
 │   ├── server.py                               (project root contents)
 │   └── ...                                     (other project files)
-└── com.example.remote-api/                     (SSE server — no local files)
-    └── manifest.json
+└── com.example.remote-api/                     (SSE server)
+    └── manifest.json                           (full metadata + config)
 ```
 
 **System-scope** (`/usr/share/mcp/installed/`) has the same structure but is owned by root and managed via pkexec.

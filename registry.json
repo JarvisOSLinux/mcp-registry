@@ -25,7 +25,8 @@
       "categories": [
         "mcp",
         "mcp-development"
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-py",
@@ -50,7 +51,8 @@
       "categories": [
         "mcp",
         "mcp-development"
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-rust",
@@ -76,7 +78,8 @@
       "categories": [
         "mcp",
         "mcp-development"
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-config",
@@ -127,7 +130,8 @@
           "sensitive": false,
           "required": false
         }
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-sse",
@@ -145,7 +149,8 @@
         "mcp",
         "mcp-development",
         "mcp-web"
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
@@ -163,7 +168,8 @@
         "mcp",
         "mcp-development",
         "mcp-web"
-      ]
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/logo.png"
     }
   ]
 }
