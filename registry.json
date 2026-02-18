@@ -26,6 +26,7 @@
         "mcp",
         "mcp-development"
       ],
+      "keywords": ["calculator", "math", "arithmetic", "typescript"],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
     },
     {
@@ -52,6 +53,7 @@
         "mcp",
         "mcp-development"
       ],
+      "keywords": ["calculator", "math", "arithmetic", "python"],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
     },
     {
@@ -79,6 +81,7 @@
         "mcp",
         "mcp-development"
       ],
+      "keywords": ["calculator", "math", "arithmetic", "rust"],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
     },
     {
@@ -106,6 +109,7 @@
         "mcp-development"
       ],
       "scope": "system",
+      "keywords": ["config", "test", "hello"],
       "configurableProperties": [
         {
           "key": "api_key",
@@ -150,6 +154,7 @@
         "mcp-development",
         "mcp-web"
       ],
+      "keywords": ["sse", "remote", "hello", "test"],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
     },
     {
@@ -169,6 +174,7 @@
         "mcp-development",
         "mcp-web"
       ],
+      "keywords": ["websocket", "remote", "hello", "test"],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
     }
   ]
