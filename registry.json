@@ -26,8 +26,14 @@
         "mcp",
         "mcp-development"
       ],
-      "keywords": ["calculator", "math", "arithmetic", "typescript"],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "typescript"
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-ts.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-py",
@@ -53,8 +59,14 @@
         "mcp",
         "mcp-development"
       ],
-      "keywords": ["calculator", "math", "arithmetic", "python"],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "python"
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-py.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-rust",
@@ -81,8 +93,14 @@
         "mcp",
         "mcp-development"
       ],
-      "keywords": ["calculator", "math", "arithmetic", "rust"],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "rust"
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-rust.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-config",
@@ -109,7 +127,11 @@
         "mcp-development"
       ],
       "scope": "system",
-      "keywords": ["config", "test", "hello"],
+      "keywords": [
+        "config",
+        "test",
+        "hello"
+      ],
       "configurableProperties": [
         {
           "key": "api_key",
@@ -135,7 +157,8 @@
           "required": false
         }
       ],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-hello-config.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-sse",
@@ -154,8 +177,14 @@
         "mcp-development",
         "mcp-web"
       ],
-      "keywords": ["sse", "remote", "hello", "test"],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "keywords": [
+        "sse",
+        "remote",
+        "hello",
+        "test"
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-remote.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
@@ -174,8 +203,14 @@
         "mcp-development",
         "mcp-web"
       ],
-      "keywords": ["websocket", "remote", "hello", "test"],
-      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png"
+      "keywords": [
+        "websocket",
+        "remote",
+        "hello",
+        "test"
+      ],
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-remote.sh"
     }
   ]
 }
