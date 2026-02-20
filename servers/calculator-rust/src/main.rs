@@ -33,40 +33,32 @@ impl Calculator {
     }
 
     #[tool(description = "Add two numbers together")]
-    async fn add(
-        &self,
-        #[tool(params)] TwoNumbers { a, b }: TwoNumbers,
-    ) -> Result<CallToolResult, McpError> {
+    async fn add(&self, params: Parameters<TwoNumbers>) -> Result<CallToolResult, McpError> {
+        let TwoNumbers { a, b } = params.0;
         Ok(CallToolResult::success(vec![Content::text(
             (a + b).to_string(),
         )]))
     }
 
     #[tool(description = "Subtract the second number from the first")]
-    async fn subtract(
-        &self,
-        #[tool(params)] TwoNumbers { a, b }: TwoNumbers,
-    ) -> Result<CallToolResult, McpError> {
+    async fn subtract(&self, params: Parameters<TwoNumbers>) -> Result<CallToolResult, McpError> {
+        let TwoNumbers { a, b } = params.0;
         Ok(CallToolResult::success(vec![Content::text(
             (a - b).to_string(),
         )]))
     }
 
     #[tool(description = "Multiply two numbers together")]
-    async fn multiply(
-        &self,
-        #[tool(params)] TwoNumbers { a, b }: TwoNumbers,
-    ) -> Result<CallToolResult, McpError> {
+    async fn multiply(&self, params: Parameters<TwoNumbers>) -> Result<CallToolResult, McpError> {
+        let TwoNumbers { a, b } = params.0;
         Ok(CallToolResult::success(vec![Content::text(
             (a * b).to_string(),
         )]))
     }
 
     #[tool(description = "Divide the first number by the second")]
-    async fn divide(
-        &self,
-        #[tool(params)] TwoNumbers { a, b }: TwoNumbers,
-    ) -> Result<CallToolResult, McpError> {
+    async fn divide(&self, params: Parameters<TwoNumbers>) -> Result<CallToolResult, McpError> {
+        let TwoNumbers { a, b } = params.0;
         if b == 0.0 {
             return Ok(CallToolResult::error(vec![Content::text(
                 "Error: Division by zero",
