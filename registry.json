@@ -43,7 +43,7 @@
       "transports": [
         {
           "type": "stdio",
-          "command": "python3",
+          "command": ".venv/bin/python3",
           "args": [
             "src/mcp_calculator/server.py"
           ],
@@ -110,7 +110,7 @@
       "transports": [
         {
           "type": "stdio",
-          "command": "python3",
+          "command": ".venv/bin/python3",
           "args": [
             "src/hello_config/server.py"
           ],

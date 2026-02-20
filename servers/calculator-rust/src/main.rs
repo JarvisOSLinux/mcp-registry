@@ -1,5 +1,6 @@
 use rmcp::{
     handler::server::tool::ToolRouter,
+    handler::server::wrapper::Parameters,
     model::*,
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
