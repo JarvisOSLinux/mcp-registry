@@ -3,6 +3,7 @@
 # Reads user config from manifest.json and writes client-env.sh so the local client
 # can use it when connecting to the remote server.
 set -e
+command -v python3 >/dev/null 2>&1 || { echo "python3 not found. Install Python 3 (e.g. pacman -S python, apt install python3) before running setup." >&2; exit 1; }
 MANIFEST="${1:-./manifest.json}"
 if [[ ! -f "$MANIFEST" ]]; then
   echo "No manifest at $MANIFEST" >&2
