@@ -39,7 +39,7 @@
       "id": "com.github.yakupatahanov.mcp.calculator-py",
       "name": "Calculator (Python)",
       "summary": "Simple arithmetic calculator MCP server written in Python",
-      "version": "1.0.1",
+      "version": "1.0.0",
       "transports": [
         {
           "type": "stdio",
