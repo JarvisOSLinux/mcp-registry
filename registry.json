@@ -33,7 +33,7 @@
         "typescript"
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-ts.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-ts/setup.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-py",
@@ -66,7 +66,7 @@
         "python"
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-py.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-py/setup.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.calculator-rust",
@@ -100,7 +100,7 @@
         "rust"
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-calculator-rust.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-rust/setup.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-config",
@@ -158,7 +158,7 @@
         }
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-hello-config.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-config/setup.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-sse",
@@ -184,7 +184,7 @@
         "test"
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-remote.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/setup.sh"
     },
     {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
@@ -210,7 +210,7 @@
         "test"
       ],
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/scripts/setup-remote.sh"
+      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/setup.sh"
     }
   ]
 }

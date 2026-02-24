@@ -121,7 +121,7 @@ Example:
 ```json
 {
   "id": "com.example.mcp.my-server",
-  "setupScript": "https://raw.githubusercontent.com/example/mcp-registry/main/scripts/setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/example/mcp-registry/main/servers/my-server/setup.sh",
   "source": { "type": "git", "url": "...", "path": "servers/my-server" },
   "transports": [{ "type": "stdio", "command": "python3", "args": ["server.py"] }]
 }
