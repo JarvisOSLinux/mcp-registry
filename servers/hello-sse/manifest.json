@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "sse",
+      "url": "http://127.0.0.1:8000/sse",
+      "description": "Local test endpoint"
+    }
+  ],
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/setup.sh",
+  "tools": [
+    { "name": "hello", "description": "Say hello world" }
+  ],
+  "configurableProperties": []
+}

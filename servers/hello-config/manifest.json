@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "scope": "system",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["src/hello_config/server.py"],
+      "description": "Main interface"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/hello-config"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "hello", "description": "Say hello. Optional name (default: world)." }
+  ],
+  "configurableProperties": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "description": "Your API key from https://example.com/settings",
+      "sensitive": true,
+      "required": true
+    },
+    {
+      "key": "timeout",
+      "label": "Timeout (seconds)",
+      "description": "Request timeout in seconds",
+      "default": "30",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "endpoint",
+      "label": "Endpoint URL",
+      "description": "Optional endpoint (defaults to production)",
+      "default": "https://example.com/v1",
+      "sensitive": false,
+      "required": false
+    }
+  ]
+}

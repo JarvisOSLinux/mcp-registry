@@ -1,216 +1,78 @@
 {
-  "version": "1.0.2",
+  "version": "1.0",
   "updated": "2026-02-13T00:00:00Z",
-  "servers": [
-    {
+  "servers": {
+    "com.github.yakupatahanov.mcp.calculator-ts": {
       "id": "com.github.yakupatahanov.mcp.calculator-ts",
       "name": "Calculator (TypeScript)",
       "summary": "Simple arithmetic calculator MCP server written in TypeScript",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "stdio",
-          "command": "node",
-          "args": [
-            "build/index.js"
-          ],
-          "description": "Main interface"
-        }
-      ],
-      "source": {
-        "type": "git",
-        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
-        "path": "servers/calculator-ts"
-      },
-      "categories": [
-        "mcp",
-        "mcp-development"
-      ],
-      "keywords": [
-        "calculator",
-        "math",
-        "arithmetic",
-        "typescript"
-      ],
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-ts/setup.sh"
+      "keywords": ["calculator", "math", "arithmetic", "typescript"],
+      "categories": ["mcp", "mcp-development"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-ts/manifest.json"
     },
-    {
+    "com.github.yakupatahanov.mcp.calculator-py": {
       "id": "com.github.yakupatahanov.mcp.calculator-py",
       "name": "Calculator (Python)",
       "summary": "Simple arithmetic calculator MCP server written in Python",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "stdio",
-          "command": ".venv/bin/python3",
-          "args": [
-            "src/mcp_calculator/server.py"
-          ],
-          "description": "Main interface"
-        }
-      ],
-      "source": {
-        "type": "git",
-        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
-        "path": "servers/calculator-py"
-      },
-      "categories": [
-        "mcp",
-        "mcp-development"
-      ],
-      "keywords": [
-        "calculator",
-        "math",
-        "arithmetic",
-        "python"
-      ],
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-py/setup.sh"
+      "keywords": ["calculator", "math", "arithmetic", "python"],
+      "categories": ["mcp", "mcp-development"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-py/manifest.json"
     },
-    {
+    "com.github.yakupatahanov.mcp.calculator-rust": {
       "id": "com.github.yakupatahanov.mcp.calculator-rust",
       "name": "Calculator (Rust)",
       "summary": "Simple arithmetic calculator MCP server written in Rust",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "stdio",
-          "command": "cargo",
-          "args": [
-            "run",
-            "--release"
-          ],
-          "description": "Main interface"
-        }
-      ],
-      "source": {
-        "type": "git",
-        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
-        "path": "servers/calculator-rust"
-      },
-      "categories": [
-        "mcp",
-        "mcp-development"
-      ],
-      "keywords": [
-        "calculator",
-        "math",
-        "arithmetic",
-        "rust"
-      ],
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-rust/setup.sh"
+      "keywords": ["calculator", "math", "arithmetic", "rust"],
+      "categories": ["mcp", "mcp-development"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-rust/manifest.json"
     },
-    {
+    "com.github.yakupatahanov.mcp.hello-config": {
       "id": "com.github.yakupatahanov.mcp.hello-config",
       "name": "Hello Config",
       "summary": "Minimal MCP server for testing configurableProperties (required + optional) and scope",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "stdio",
-          "command": ".venv/bin/python3",
-          "args": [
-            "src/hello_config/server.py"
-          ],
-          "description": "Main interface"
-        }
-      ],
-      "source": {
-        "type": "git",
-        "url": "https://github.com/YakupAtahanov/mcp-registry.git",
-        "path": "servers/hello-config"
-      },
-      "categories": [
-        "mcp",
-        "mcp-development"
-      ],
       "scope": "system",
-      "keywords": [
-        "config",
-        "test",
-        "hello"
-      ],
-      "configurableProperties": [
-        {
-          "key": "api_key",
-          "label": "API Key",
-          "description": "Required test key (e.g. use 'test-key' for testing)",
-          "sensitive": true,
-          "required": true
-        },
-        {
-          "key": "timeout",
-          "label": "Timeout (seconds)",
-          "description": "Request timeout in seconds",
-          "default": "30",
-          "sensitive": false,
-          "required": false
-        },
-        {
-          "key": "endpoint",
-          "label": "Endpoint URL",
-          "description": "Optional endpoint (defaults to production)",
-          "default": "https://example.com/v1",
-          "sensitive": false,
-          "required": false
-        }
-      ],
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-config/setup.sh"
+      "keywords": ["config", "test", "hello"],
+      "categories": ["mcp", "mcp-development"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-config/manifest.json"
     },
-    {
+    "com.github.yakupatahanov.mcp.hello-sse": {
       "id": "com.github.yakupatahanov.mcp.hello-sse",
       "name": "Hello World (SSE)",
       "summary": "Minimal remote SSE MCP server for testing metadata-only storage; no local install",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "sse",
-          "url": "http://127.0.0.1:8000/sse",
-          "description": "Local test endpoint"
-        }
-      ],
-      "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-web"
-      ],
-      "keywords": [
-        "sse",
-        "remote",
-        "hello",
-        "test"
-      ],
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/setup.sh"
+      "keywords": ["sse", "remote", "hello", "test"],
+      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/manifest.json"
     },
-    {
+    "com.github.yakupatahanov.mcp.hello-ws": {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
       "name": "Hello World (WebSocket)",
       "summary": "Minimal remote WebSocket MCP server for testing metadata-only storage; no local install",
       "version": "1.0.0",
-      "transports": [
-        {
-          "type": "websocket",
-          "wsUrl": "ws://127.0.0.1:8001/ws",
-          "description": "Local test endpoint"
-        }
-      ],
-      "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-web"
-      ],
-      "keywords": [
-        "websocket",
-        "remote",
-        "hello",
-        "test"
-      ],
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/setup.sh"
+      "keywords": ["websocket", "remote", "hello", "test"],
+      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/manifest.json"
     }
-  ]
+  }
 }

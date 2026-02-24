@@ -11,7 +11,8 @@ The flow looks like this:
 ```
 Your GitHub repo                     User's machine
   registry.json         -->        KDE Discover
-  (hosted via raw URL)              fetches & caches
+  (index: id -> manifest URL)       fetches index & caches
+  servers/*/manifest.json  -->     fetches manifests as needed
                                     shows servers in UI
                                     user clicks Install
                                     manifest.json written to installed/{id}/
@@ -36,73 +37,101 @@ Discover creates most files automatically; only the system sources list needs ma
 
 ## Registry File Format
 
-A registry is a single JSON file with this structure:
+A registry has two parts:
+
+1. **Index** (`registry.json`) – Display metadata (name, summary, icon, keywords, categories) and a pointer to each manifest. The server ID is the key.
+2. **Manifests** – Per-server JSON files (`servers/<name>/manifest.json`) with install/run metadata only (transports, source, setupScript, tools).
+
+### Index Format
+
+The index is a single JSON file with this structure:
 
 ```json
 {
   "version": "1.0",
   "updated": "2025-02-03T00:00:00Z",
-  "servers": [
-    { ... },
-    { ... }
-  ]
-}
-```
-
-| Field       | Type   | Description                              |
-|-------------|--------|------------------------------------------|
-| `version`   | string | Registry format version (use `"1.0"`)    |
-| `updated`   | string | ISO 8601 timestamp of last update        |
-| `servers`   | array  | Array of server entry objects (see below) |
-
-## Server Entry Schema
-
-Each object in the `servers` array describes one MCP server.
-
-### Required Fields
-
-```json
-{
-  "id": "com.yourorg.mcp.servername",
-  "name": "My MCP Server",
-  "summary": "One-line description shown in the listing",
-  "version": "1.0.0",
-  "transports": [ ... ],
-  "source": { ... }
+  "servers": {
+    "com.example.mcp.my-server": {
+      "id": "com.example.mcp.my-server",
+      "name": "My MCP Server",
+      "summary": "One-line description shown in the listing",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/example/mcp-registry",
+      "icon": "https://...",
+      "keywords": ["keyword1", "keyword2"],
+      "categories": ["mcp", "mcp-development"],
+      "manifest": "https://raw.githubusercontent.com/example/mcp-registry/main/servers/my-server/manifest.json"
+    }
+  }
 }
 ```
 
 | Field       | Type   | Description                                              |
 |-------------|--------|----------------------------------------------------------|
-| `id`        | string | Unique identifier. Use reverse-domain notation.          |
+| `version`   | string | Registry format version (use `"1.0"`)                    |
+| `updated`   | string | ISO 8601 timestamp of last update                        |
+| `servers`   | object | Map of server ID to index entry (see below)              |
+
+**Index entry fields** (per server in `servers`): The server ID is the object key. Include `id` explicitly in each entry (same value as the key).
+
+| Field       | Type   | Description                                              |
+|-------------|--------|----------------------------------------------------------|
+| `id`        | string | **Required.** Unique identifier (same as the servers object key). |
 | `name`      | string | Display name in the catalogue.                           |
 | `summary`   | string | Short description shown in listings.                     |
+| `version`   | string | Semantic version (for upgrade detection).                 |
+| `scope`     | string | **Required.** `"user"` or `"system"`. See Scope below.   |
+| `homepage`  | string | Optional. URL to the project homepage.                   |
+| `icon`      | string | Icon for display (Freedesktop name or URL).              |
+| `keywords`  | array  | Search keywords for discovery.                           |
+| `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
+| `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
+
+Discover loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
+
+### Manifest Format (Server Entry Schema)
+
+Each server folder contains a `manifest.json` with **install and run metadata only**. Display metadata (name, summary, keywords, icon, categories) lives in the index. The manifest has no `id`—the ID is the key in the index.
+
+**Required fields:**
+
+```json
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "transports": [ ... ],
+  "source": { ... },
+  "tools": [ ... ]
+}
+```
+
+| Field       | Type   | Description                                              |
+|-------------|--------|----------------------------------------------------------|
 | `version`   | string | Semantic version of the server.                          |
+| `scope`     | string | **Required.** `"user"` or `"system"`. See Scope below.   |
 | `transports`| array  | Array of entrypoints (stdio, SSE, or WebSocket).         |
-| `source`    | object | Git source for local servers; omit or use empty for remote. |
+| `source`    | object | Git source for local servers; omit for remote (SSE/WebSocket). |
+| `tools`     | array  | Tools the server provides. See Tools below.              |
 
-### Optional Fields
+### Optional Fields (manifest)
 
-| Field                | Type   | Description                                                     |
-|----------------------|--------|-----------------------------------------------------------------|
-| `description`        | string | Long description. Supports `\n` for line breaks.                |
-| `author`             | string | Author name.                                                    |
-| `homepage`           | string | URL to the project homepage.                                    |
-| `bugUrl`             | string | URL to the issue tracker.                                       |
-| `donationUrl`        | string | URL for donations.                                              |
-| `icon`               | string | Icon for display: Freedesktop icon name or URL to an image (see Icons below). |
-| `keywords`           | array  | Search keywords (e.g. `["calculator", "math"]`) for easier discovery. |
-| `capabilities`       | array  | What the server can do (freeform strings for display).          |
-| `permissions`        | array  | Permissions the server requires (freeform strings for display). |
-| `tools`              | array  | Tools provided (strings or `{"name": ..., "description": ...}`).|
-| `configurableProperties` | array | Configuration properties (required and optional, see below). |
-| `license`            | object | `{"name": "MIT", "url": "https://..."}`.                       |
-| `releaseDate`        | string | ISO 8601 date string (`"2025-01-15"`).                          |
-| `size`               | number | Approximate size in bytes (for display).                        |
-| `screenshots`        | array  | Screenshot URLs or `{"thumbnail": ..., "url": ...}` objects.   |
-| `changelog`          | string | Changelog text.                                                 |
-| `scope`              | string | `"user"` (default) or `"system"`. See Scope below.              |
-| `setupScript`        | string | URL to a bash script run after install to set up dependencies (local servers only). See Setup Script below. |
+| Field                   | Type   | Description                                                     |
+|-------------------------|--------|-----------------------------------------------------------------|
+| `setupScript`           | string | For local: filename (e.g. `"setup.sh"`). For remote: URL. See Setup Script below. |
+| `homepage`              | string | URL to the project homepage.                                    |
+| `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
+
+### Tools
+
+Define each tool the MCP server provides. Required for tooling and validation.
+
+```json
+"tools": [
+  { "name": "add", "description": "Add two numbers together" },
+  { "name": "subtract", "description": "Subtract the second number from the first" }
+]
+```
 
 ### Setup Script
 
@@ -114,16 +143,19 @@ Developers point to a `setupScript` URL in the registry. Discover **downloads** 
 - **User opt-in**: Users must explicitly enable "Run setup script" during install (checkbox off by default).
 - **Re-run**: Installed servers can run the setup script from the Configure dialog (e.g. "Repair" or after upgrading dependencies).
 - **Execution**: The script runs with `bash` in the install directory. For system scope, it runs with elevated privileges.
-- **Storage**: The URL and last run timestamp (`setupScriptRunAt`) are stored in the manifest for installed servers.
+- **Storage**: The installed manifest stores `setupScript`, `setupScriptPath`, `setupScriptVersion`, and `setupScriptRunAt`.
 
-Example:
+Example (local server):
 
 ```json
 {
-  "id": "com.example.mcp.my-server",
-  "setupScript": "https://raw.githubusercontent.com/example/mcp-registry/main/servers/my-server/setup.sh",
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/example/mcp-registry",
+  "setupScript": "setup.sh",
   "source": { "type": "git", "url": "...", "path": "servers/my-server" },
-  "transports": [{ "type": "stdio", "command": "python3", "args": ["server.py"] }]
+  "transports": [{ "type": "stdio", "command": "python3", "args": ["server.py"] }],
+  "tools": [{ "name": "add", "description": "Add two numbers" }]
 }
 ```
 

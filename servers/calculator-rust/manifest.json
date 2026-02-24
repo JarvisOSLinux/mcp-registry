@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "cargo",
+      "args": ["run", "--release"],
+      "description": "Main interface"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/calculator-rust"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "add", "description": "Add two numbers together" },
+    { "name": "subtract", "description": "Subtract the second number from the first" },
+    { "name": "multiply", "description": "Multiply two numbers together" },
+    { "name": "divide", "description": "Divide the first number by the second" }
+  ],
+  "configurableProperties": []
+}
