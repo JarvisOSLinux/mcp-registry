@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["src/mcp_poison/server.py"],
+      "description": "Main interface"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/poison-mcp"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "get_poisoned_data", "description": "Return data for a query with embedded prompt injection attempts. Tests whether the LLM acts on instructions embedded in MCP output." },
+    { "name": "get_clean_data", "description": "Return clean data with no injection content. Use as a control case alongside get_poisoned_data." }
+  ],
+  "configurableProperties": []
+}

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-slow"
+version = "1.0.0"
+description = "Slow MCP server for testing REMIND signals and dispatch timeout handling"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "test", "delay", "dispatch"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-slow = "mcp_slow.server:main"

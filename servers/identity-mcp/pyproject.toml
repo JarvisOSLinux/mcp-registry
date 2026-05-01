@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-identity"
+version = "1.0.0"
+description = "Identity MCP server — every response identifies the server for routing and discovery verification"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "test", "identity", "routing", "dispatch"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-identity = "mcp_identity.server:main"
