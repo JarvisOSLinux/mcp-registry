@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-poison"
+version = "1.0.0"
+description = "Prompt injection test MCP server for validating the Cryptographic Boundary Protocol"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "test", "security", "injection", "dispatch"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-poison = "mcp_poison.server:main"

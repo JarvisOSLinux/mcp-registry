@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-exit"
+version = "1.0.0"
+description = "Controlled success/failure MCP server for testing dispatch signal paths"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["mcp", "test", "exit", "dispatch"]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.scripts]
+mcp-exit = "mcp_exit.server:main"

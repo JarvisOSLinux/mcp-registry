@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["src/mcp_slow/server.py"],
+      "description": "Main interface"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/slow-mcp"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "slow_echo", "description": "Wait for a configurable number of seconds, then return the message. Triggers REMIND signals when delay exceeds remind_after." },
+    { "name": "ping", "description": "Instant response. Use as a baseline alongside slow_echo to test parallel task completion." }
+  ],
+  "configurableProperties": []
+}

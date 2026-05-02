@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["src/mcp_identity/server.py"],
+      "description": "Main interface"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/identity-mcp"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "whoami", "description": "Return server ID, version, and current timestamp. Confirms which server the LLM is talking to." },
+    { "name": "echo", "description": "Echo a message back with the server identity prefix. Confirms parameter passing and routing." },
+    { "name": "ping", "description": "Instant liveness check. Returns server identity and timestamp." }
+  ],
+  "configurableProperties": []
+}

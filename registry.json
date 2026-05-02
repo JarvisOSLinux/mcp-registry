@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-02-13T00:00:00Z",
+  "updated": "2026-05-01T00:00:00Z",
   "servers": {
     "com.github.yakupatahanov.mcp.calculator-ts": {
       "id": "com.github.yakupatahanov.mcp.calculator-ts",
@@ -73,6 +73,54 @@
       "keywords": ["websocket", "remote", "hello", "test"],
       "categories": ["mcp", "mcp-development", "mcp-web"],
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.slow-mcp": {
+      "id": "com.github.yakupatahanov.mcp.slow-mcp",
+      "name": "Slow MCP",
+      "summary": "Introduces configurable response delays to test REMIND signals and timeout handling in dispatch",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["test", "delay", "remind", "timeout", "dispatch", "slow"],
+      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/slow-mcp/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.exit-mcp": {
+      "id": "com.github.yakupatahanov.mcp.exit-mcp",
+      "name": "Exit MCP",
+      "summary": "Produces controlled success (200) and failure (500) exits for testing dispatch signal paths",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["test", "exit", "success", "failure", "signal", "dispatch"],
+      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/exit-mcp/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.poison-mcp": {
+      "id": "com.github.yakupatahanov.mcp.poison-mcp",
+      "name": "Poison MCP",
+      "summary": "Returns outputs containing prompt injection attempts to test the Cryptographic Boundary Protocol",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["test", "security", "injection", "poison", "boundary", "dispatch"],
+      "categories": ["mcp", "mcp-development", "mcp-testing", "mcp-security"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/poison-mcp/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.identity-mcp": {
+      "id": "com.github.yakupatahanov.mcp.identity-mcp",
+      "name": "Identity MCP",
+      "summary": "Every response clearly identifies which server responded — confirms server discovery, routing, and LLM awareness",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["test", "identity", "echo", "routing", "dispatch"],
+      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/identity-mcp/manifest.json"
     }
   }
 }
