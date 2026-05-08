@@ -14,8 +14,10 @@ This document sketches a practical automation plan for a community-vetted, clien
   - **`trustStatus`** per server entry for fast filtering.
   - **`integrity`** per server entry (`manifestSha256`, `setupScriptSha256`) to bind trust decisions to exact content.
   - Reserved top-level **`signing`** fields (keyring + signatures).
+  - **`embedding_spec`** (optional) — declares the model used to generate pre-computed vectors stored in manifests. See [EMBEDDING-SPEC.md](EMBEDDING-SPEC.md).
 - `servers/*/manifest.json`:
   - **`trust`** object (details only; no status) for review references, checks performed, notes.
+  - **`embeddings`** (optional) — pre-computed vectors keyed by model name. See [EMBEDDING-SPEC.md](EMBEDDING-SPEC.md).
 
 ## Upstream sourcing policy (no submodules by default)
 
@@ -56,16 +58,24 @@ Two safe modes:
 - **Check-only** (fails CI if mismatched).
 - **Auto-fix** (opens a PR with regenerated values).
 
-### 3) Optional: embeddings generation (manual dispatch or on merge)
+### 3) Embeddings generation (manual dispatch or on merge)
 
-If you want vector search (server discovery, semantic matching), generate embeddings from canonical text:
-- `name`, `summary`, `keywords`
-- `tools[].name`, `tools[].description`
-- (optional) `categories`
+Pre-compute embedding vectors for semantic server discovery. See **[EMBEDDING-SPEC.md](EMBEDDING-SPEC.md)** for the full schema, canonical text construction recipe, and the reference Python script.
 
-Recommendation:
-- Store output in a separate artifact file, e.g. `embeddings.json` keyed by server ID.
-- Keep it optional so consumers who don’t need embeddings can ignore it.
+Summary of what this workflow does:
+- Reads each `servers/*/manifest.json`.
+- Builds canonical text from `name`, `summary`, `keywords`, and `tools` (first 20).
+- Calls the configured embedding model (default: `nomic-embed-text` via Ollama).
+- Writes the vector into `manifest.embeddings["<model-name>"]`.
+- Updates `registry.json` → `embedding_spec` to declare the model and dimensions used.
+- Opens a PR with the updated manifests (never pushes directly to `main`).
+
+This workflow is **optional** — consumers that don’t need semantic search ignore `embeddings` entirely and fall back to keyword filtering.
+
+When to run:
+- A new server is added.
+- An existing server’s `name`, `summary`, `keywords`, or `tools` change.
+- The embedding model version is upgraded (requires a full re-run for all servers).
 
 ## Signing & keyrings (recommended staged rollout)
 
@@ -104,4 +114,3 @@ This repo can reserve fields now and decide the scheme later without breaking co
 - Keep `trustStatus` lightweight and reviewable; put detailed review notes in `manifest.json` `trust`.
 - Prefer “fail CI if derived fields are wrong” over “silently mutate in CI”.
 - If auto-fixing, do it by **opening a PR** rather than pushing directly to main.
-
