@@ -1,0 +1,35 @@
+{
+  "version": "1.4.0",
+  "scope": "user",
+  "homepage": "https://github.com/Erodenn/fetch-guard",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/fetch-guard",
+      "args": [],
+      "description": "Fetch Guard MCP server (stdio)."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/Erodenn/fetch-guard.git"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "fetch", "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense." }
+  ],
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/Erodenn/fetch-guard"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/Erodenn/fetch-guard.git",
+      "install: python -m venv .venv && pip install ."
+    ],
+    "notes": "Added for demo/testing as a vetted entry. Consider pinning to a specific upstream tag/commit for reproducibility.",
+    "securityNotes": "Network fetcher with prompt-injection defenses. Still treat fetched content as untrusted input; use least-privilege network and review policy."
+  }
+}
+

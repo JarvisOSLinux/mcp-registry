@@ -260,6 +260,23 @@
         "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/manifest.json"
+    },
+    "io.github.erodenn.fetch-guard": {
+      "id": "io.github.erodenn.fetch-guard",
+      "name": "Fetch Guard",
+      "summary": "Fetch URLs into clean, LLM-ready markdown with prompt-injection defenses",
+      "version": "1.4.0",
+      "scope": "user",
+      "homepage": "https://github.com/Erodenn/fetch-guard",
+      "icon": "internet-web-browser",
+      "keywords": ["fetch", "http", "web", "scrape", "markdown", "security", "prompt-injection"],
+      "categories": ["mcp", "mcp-web", "mcp-security"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "3b62245ecfb8155116a0c7618629336a8fd80eda9075442efe0c1668d99f95e6",
+        "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json"
     }
   }
 }
