@@ -209,6 +209,23 @@
         "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/manifest.json"
+    },
+    "io.github.missionsquad.mcp-github": {
+      "id": "io.github.missionsquad.mcp-github",
+      "name": "GitHub MCP (MissionSquad)",
+      "summary": "GitHub API server: repo/file ops, issues/PRs, search, and more",
+      "version": "0.11.0",
+      "scope": "user",
+      "homepage": "https://github.com/MissionSquad/mcp-github",
+      "icon": "vcs-git",
+      "keywords": ["github", "git", "repo", "issues", "pull-requests", "search"],
+      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "1602855579b550be821e79be31aeb2e2aa91d3a1babdea9ae5e323eb827b6d01",
+        "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json"
     }
   }
 }
