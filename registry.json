@@ -188,8 +188,8 @@
       "categories": ["mcp", "mcp-utilities", "mcp-development"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "c7c69bfae0a9b78b5f9f3e3b542c0c10565d1e410b0dc133a7aa837893113cd7",
-        "setupScriptSha256": "aef878e6b75200d546349837995e54f9fda895b9c5a62b1e5bfc16be8a2cd7c0"
+        "manifestSha256": "f6ee363eee8826e4d8c359e207256104d7b09fc20695a25a7d470a110c0a8b10",
+        "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json"
     }

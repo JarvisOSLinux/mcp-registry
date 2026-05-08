@@ -19,5 +19,10 @@ if [ "${node_major:-0}" -lt 24 ]; then
 fi
 
 echo "OK: Node.js $(node -v) and npm $(npm -v) detected."
-echo "This server runs via npx at runtime; no build step is performed here."
+
+echo "Installing dependencies (npm ci) and building (npm run build)."
+npm ci
+npm run build
+
+echo "OK: built dist/index.js"
 

@@ -5,11 +5,15 @@
   "transports": [
     {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@j0hanz/filesystem-mcp@latest", "--allow-cwd"],
-      "description": "Stdio entrypoint (allows current working directory)."
+      "command": "node",
+      "args": ["dist/index.js", "--allow-cwd"],
+      "description": "Stdio entrypoint (built from upstream source)."
     }
   ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/j0hanz/filesystem-mcp.git"
+  },
   "setupScript": "setup.sh",
   "tools": [
     { "name": "roots", "description": "List allowed workspace roots." },
@@ -38,7 +42,8 @@
     ],
     "checks": [
       "license: MIT (upstream)",
-      "transport: stdio via npx @j0hanz/filesystem-mcp",
+      "source: git clone https://github.com/j0hanz/filesystem-mcp.git",
+      "build: npm ci && npm run build (dist/index.js)",
       "surface: 18 filesystem tools (roots/ls/find/tree/read/.../search_and_replace)"
     ],
     "notes": "Added for demo as a community-vetted entry. For stronger guarantees, pin to a specific upstream tag/commit and/or verify signatures.",
