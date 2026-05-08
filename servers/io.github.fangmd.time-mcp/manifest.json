@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/fangmd/time-mcp.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.fangmd.time-mcp/setup.sh",
   "tools": [
     { "name": "getCurrentTime", "description": "Return current UTC time in ISO 8601 format plus Unix timestamp." }
   ],

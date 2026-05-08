@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/j0hanz/filesystem-mcp.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/setup.sh",
   "tools": [
     { "name": "roots", "description": "List allowed workspace roots." },
     { "name": "ls", "description": "List directory contents." },

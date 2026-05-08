@@ -188,7 +188,7 @@
       "categories": ["mcp", "mcp-utilities", "mcp-development"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "f6ee363eee8826e4d8c359e207256104d7b09fc20695a25a7d470a110c0a8b10",
+        "manifestSha256": "9f71104c068070a8685129f3bc40447eaaba21827441c180c1e55e42f69b7dde",
         "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json"
@@ -205,7 +205,7 @@
       "categories": ["mcp", "mcp-web", "mcp-development"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "a9da3028850ba88993764c28a7ac1f47fd28b5722c7b8f63a78a161d92256869",
+        "manifestSha256": "7d59ec30f56f5aee24ee83af6daa2472f3ea8cf10bd7ca908f29246b04a8dfad",
         "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/manifest.json"
@@ -222,7 +222,7 @@
       "categories": ["mcp", "mcp-development", "mcp-web"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "1602855579b550be821e79be31aeb2e2aa91d3a1babdea9ae5e323eb827b6d01",
+        "manifestSha256": "8ec84c64dc5d44a6908ae187b7d7884258eaec86986593703d6355cb7ae0816f",
         "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json"
@@ -239,7 +239,7 @@
       "categories": ["mcp", "mcp-utilities"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "ca3d62e18c87466d78d1ac81942137878c7f94fa7a8618766dc91f4faded149f",
+        "manifestSha256": "858abbe32c4aaa1c84a4358d55f47a6ea0b33b072f0cfea5b0f005c937460dea",
         "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json"
@@ -256,7 +256,7 @@
       "categories": ["mcp", "mcp-development", "mcp-utilities"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "cacae5f4bf09f899051b0c0c967536bfd07c5d340b28123bf291d07948fdf6b4",
+        "manifestSha256": "3a99f42b0c0f745fa01315bc230d7379e090b3d90ea0df096fb7a0e6ab234cc6",
         "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/manifest.json"
@@ -273,7 +273,7 @@
       "categories": ["mcp", "mcp-web", "mcp-security"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "3b62245ecfb8155116a0c7618629336a8fd80eda9075442efe0c1668d99f95e6",
+        "manifestSha256": "89d6549a7e6618ad30be7117092cd93ce025a91484656e2062dbae30a58eafc8",
         "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json"
@@ -290,7 +290,7 @@
       "categories": ["mcp", "mcp-development"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "b35cb75106a2e25a76e9d1826131e7d5377225ee434c1ec07d57b6c65877196f",
+        "manifestSha256": "0bcbbb8f38eabe4914ad350edcf0cdc045df2d1f75f23c7b7ed6b692498c20cf",
         "setupScriptSha256": "adf44dcca167ae9de02baee6c4f713912eda40d9f7443043a871725752b7caf6"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/manifest.json"

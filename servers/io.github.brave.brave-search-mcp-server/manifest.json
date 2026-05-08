@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/brave/brave-search-mcp-server.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/setup.sh",
   "tools": [
     { "name": "brave_web_search", "description": "Web search with rich results and filtering." },
     { "name": "brave_local_search", "description": "Local business/place search (falls back to web search if limited plan)." },

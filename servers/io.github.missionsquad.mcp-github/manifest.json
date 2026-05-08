@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/MissionSquad/mcp-github.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/setup.sh",
   "tools": [
     { "name": "create_or_update_file", "description": "Create or update a file in a repository." },
     { "name": "push_files", "description": "Push multiple files in a single commit." },

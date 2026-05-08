@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/uneco/mcp-git-polite.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/setup.sh",
   "tools": [
     { "name": "list_changes", "description": "List unstaged changes (including untracked files) as numbered lines with pagination." },
     { "name": "diff", "description": "View complete numbered diff for a single file (no truncation)." },

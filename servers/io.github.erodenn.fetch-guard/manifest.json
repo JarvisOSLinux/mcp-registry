@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/Erodenn/fetch-guard.git"
   },
-  "setupScript": "setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/setup.sh",
   "tools": [
     { "name": "fetch", "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense." }
   ],
