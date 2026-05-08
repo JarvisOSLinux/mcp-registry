@@ -5,16 +5,18 @@
   "transports": [
     {
       "type": "stdio",
-      "command": ".venv/bin/fetch-guard",
-      "args": [],
-      "description": "Fetch Guard MCP server (stdio)."
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; if [ ! -x .venv/bin/fetch-guard ]; then python3 -m venv .venv; .venv/bin/python -m pip install --upgrade pip; .venv/bin/pip install .; fi; exec .venv/bin/fetch-guard"
+      ],
+      "description": "Fetch Guard MCP server (stdio). Bootstraps a local .venv if missing."
     }
   ],
   "source": {
     "type": "git",
     "url": "https://github.com/Erodenn/fetch-guard.git"
   },
-  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/setup.sh",
   "tools": [
     { "name": "fetch", "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense." }
   ],

@@ -273,7 +273,7 @@
       "categories": ["mcp", "mcp-web", "mcp-security"],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "89d6549a7e6618ad30be7117092cd93ce025a91484656e2062dbae30a58eafc8",
+        "manifestSha256": "00b74510008f7ea38bf5cad4e69ac9559d04b82618173e8ac76c1d4c2836ebb7",
         "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json"
