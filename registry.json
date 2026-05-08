@@ -175,6 +175,22 @@
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/identity-mcp/manifest.json"
+    },
+    "org.modelcontextprotocol.server-filesystem": {
+      "id": "org.modelcontextprotocol.server-filesystem",
+      "name": "Filesystem MCP",
+      "summary": "Secure local filesystem server: read, write, search, diff, patch, and manage files",
+      "version": "1.19.1",
+      "scope": "user",
+      "homepage": "https://github.com/j0hanz/filesystem-mcp",
+      "icon": "utilities-terminal",
+      "keywords": ["filesystem", "files", "read", "write", "diff", "patch", "search", "grep"],
+      "categories": ["mcp", "mcp-utilities", "mcp-development"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "d5fa12b34be58d88689f068207419d0e2779efe11091fbf53676294266e66e7b"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json"
     }
   }
 }

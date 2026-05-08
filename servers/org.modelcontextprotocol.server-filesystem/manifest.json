@@ -1,0 +1,47 @@
+{
+  "version": "1.19.1",
+  "scope": "user",
+  "homepage": "https://github.com/j0hanz/filesystem-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@j0hanz/filesystem-mcp@latest", "--allow-cwd"],
+      "description": "Stdio entrypoint (allows current working directory)."
+    }
+  ],
+  "tools": [
+    { "name": "roots", "description": "List allowed workspace roots." },
+    { "name": "ls", "description": "List directory contents." },
+    { "name": "find", "description": "Find files by glob pattern." },
+    { "name": "tree", "description": "Render directory tree." },
+    { "name": "read", "description": "Read text file contents (supports head/tail/line ranges)." },
+    { "name": "read_many", "description": "Read multiple text files in one request." },
+    { "name": "stat", "description": "Get file/directory metadata." },
+    { "name": "stat_many", "description": "Get metadata for multiple files/directories." },
+    { "name": "grep", "description": "Search file contents (grep-like; optional regex)." },
+    { "name": "mkdir", "description": "Create directories (recursive, idempotent)." },
+    { "name": "write", "description": "Write file contents (overwrites existing content)." },
+    { "name": "edit", "description": "Apply literal string replacements (supports dry-run preview)." },
+    { "name": "mv", "description": "Move/rename a file or directory." },
+    { "name": "rm", "description": "Delete a file or directory (irreversible)." },
+    { "name": "calculate_hash", "description": "Calculate SHA-256 hash of a file or directory." },
+    { "name": "diff_files", "description": "Generate a unified diff between two files." },
+    { "name": "apply_patch", "description": "Apply a unified diff patch (supports dry-run validation)." },
+    { "name": "search_and_replace", "description": "Bulk search-and-replace across files matching a glob." }
+  ],
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/j0hanz/filesystem-mcp"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "transport: stdio via npx @j0hanz/filesystem-mcp",
+      "surface: 18 filesystem tools (roots/ls/find/tree/read/.../search_and_replace)"
+    ],
+    "notes": "Added for demo as a community-vetted entry. For stronger guarantees, pin to a specific upstream tag/commit and/or verify signatures.",
+    "securityNotes": "This server provides destructive filesystem operations. Recommended: run with least-privilege roots; avoid --allow-cwd in production; consider --no-setup policies and additional review for setup scripts."
+  }
+}
+
