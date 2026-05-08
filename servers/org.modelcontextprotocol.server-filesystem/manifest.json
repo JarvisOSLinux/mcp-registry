@@ -10,6 +10,7 @@
       "description": "Stdio entrypoint (allows current working directory)."
     }
   ],
+  "setupScript": "setup.sh",
   "tools": [
     { "name": "roots", "description": "List allowed workspace roots." },
     { "name": "ls", "description": "List directory contents." },
