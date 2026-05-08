@@ -17,6 +17,15 @@ This document sketches a practical automation plan for a community-vetted, clien
 - `servers/*/manifest.json`:
   - **`trust`** object (details only; no status) for review references, checks performed, notes.
 
+## Upstream sourcing policy (no submodules by default)
+
+This registry should not mirror upstream code by default. Instead, each server entry should reference upstream projects and pin them over time.
+
+- **Default**: reference upstream via `manifest.json` → `source.url` (and later a pinned tag/commit).
+- **Pinning**: prefer pinning to a reviewed upstream release/tag/commit so “what was vetted” is well-defined.
+  - If you can’t encode a pin in the schema yet, record it in `manifest.json` → `trust.reviewReferences` / `trust.notes`.
+- **Exceptions (when to vendor/submodule)**: only when you must patch upstream, preserve an upstream that might disappear, or need a strict “snapshot for audit” in-repo.
+
 ## Proposed GitHub Actions workflows
 
 ### 1) PR gate: validate + policy checks (required)
