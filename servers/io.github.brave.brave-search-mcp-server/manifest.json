@@ -1,0 +1,50 @@
+{
+  "version": "2.0.80",
+  "scope": "user",
+  "homepage": "https://github.com/brave/brave-search-mcp-server",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/index.js", "--transport", "stdio"],
+      "description": "Brave Search MCP (stdio). Requires BRAVE_API_KEY."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/brave/brave-search-mcp-server.git"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "brave_web_search", "description": "Web search with rich results and filtering." },
+    { "name": "brave_local_search", "description": "Local business/place search (falls back to web search if limited plan)." },
+    { "name": "brave_video_search", "description": "Video search with metadata." },
+    { "name": "brave_image_search", "description": "Image search." },
+    { "name": "brave_news_search", "description": "News search with freshness controls." },
+    { "name": "brave_summarizer", "description": "Generate AI-powered summaries from web search results (requires summary key)." },
+    { "name": "brave_place_search", "description": "Search points of interest (POIs) by location/coordinates." }
+  ],
+  "configurableProperties": [
+    {
+      "key": "BRAVE_API_KEY",
+      "label": "Brave Search API Key",
+      "description": "API key for Brave Search. Obtain from Brave Search API.",
+      "sensitive": true,
+      "required": true
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/brave/brave-search-mcp-server"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/brave/brave-search-mcp-server.git",
+      "build: npm ci && npm run build (dist/index.js)",
+      "auth: requires BRAVE_API_KEY"
+    ],
+    "notes": "Added for demo as a community-vetted entry. For stronger guarantees, pin to a specific upstream tag/commit and/or verify signatures.",
+    "securityNotes": "Networked search tool. Recommend restricting use to vetted registries and scoping API keys appropriately."
+  }
+}
+

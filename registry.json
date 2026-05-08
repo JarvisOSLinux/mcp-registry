@@ -192,6 +192,23 @@
         "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json"
+    },
+    "io.github.brave.brave-search-mcp-server": {
+      "id": "io.github.brave.brave-search-mcp-server",
+      "name": "Brave Search MCP",
+      "summary": "Brave Search API integration: web, local, images, videos, news, and summarization",
+      "version": "2.0.80",
+      "scope": "user",
+      "homepage": "https://github.com/brave/brave-search-mcp-server",
+      "icon": "network-workgroup",
+      "keywords": ["search", "web", "brave", "news", "images", "videos", "summarize"],
+      "categories": ["mcp", "mcp-web", "mcp-development"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "a9da3028850ba88993764c28a7ac1f47fd28b5722c7b8f63a78a161d92256869",
+        "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/manifest.json"
     }
   }
 }
