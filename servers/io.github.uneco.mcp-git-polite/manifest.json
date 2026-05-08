@@ -1,0 +1,38 @@
+{
+  "version": "0.1.0",
+  "scope": "user",
+  "homepage": "https://github.com/uneco/mcp-git-polite",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "git_polite.py", "mcp"],
+      "description": "Git polite MCP server (stdio)."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/uneco/mcp-git-polite.git"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "list_changes", "description": "List unstaged changes (including untracked files) as numbered lines with pagination." },
+    { "name": "diff", "description": "View complete numbered diff for a single file (no truncation)." },
+    { "name": "apply_changes", "description": "Apply selected change numbers to the git index (supports partial staging)." },
+    { "name": "auto_commit", "description": "Autopilot mode to group changes into focused commits." }
+  ],
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/uneco/mcp-git-polite"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/uneco/mcp-git-polite.git",
+      "build: uv sync"
+    ],
+    "notes": "Added for demo/testing as a vetted entry. Requires git installed and a git repo workspace for meaningful results.",
+    "securityNotes": "Can stage changes and create commits. Use in trusted repos only; consider restricting or reviewing auto_commit usage."
+  }
+}
+

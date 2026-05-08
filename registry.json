@@ -277,6 +277,23 @@
         "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json"
+    },
+    "io.github.uneco.mcp-git-polite": {
+      "id": "io.github.uneco.mcp-git-polite",
+      "name": "Git Polite",
+      "summary": "Git staging autopilot: line-level staging, diffs, and guided commits",
+      "version": "0.1.0",
+      "scope": "user",
+      "homepage": "https://github.com/uneco/mcp-git-polite",
+      "icon": "vcs-git",
+      "keywords": ["git", "staging", "diff", "commit", "patch"],
+      "categories": ["mcp", "mcp-development"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "b35cb75106a2e25a76e9d1826131e7d5377225ee434c1ec07d57b6c65877196f",
+        "setupScriptSha256": "adf44dcca167ae9de02baee6c4f713912eda40d9f7443043a871725752b7caf6"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/manifest.json"
     }
   }
 }
