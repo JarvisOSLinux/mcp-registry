@@ -243,6 +243,23 @@
         "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json"
+    },
+    "io.github.eduresser.sqlite-mcp": {
+      "id": "io.github.eduresser.sqlite-mcp",
+      "name": "SQLite MCP",
+      "summary": "Expose a local SQLite database for schema inspection and SQL querying",
+      "version": "0.1.0",
+      "scope": "user",
+      "homepage": "https://github.com/eduresser/sqlite-mcp",
+      "icon": "database",
+      "keywords": ["sqlite", "database", "sql", "query", "schema"],
+      "categories": ["mcp", "mcp-development", "mcp-utilities"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "cacae5f4bf09f899051b0c0c967536bfd07c5d340b28123bf291d07948fdf6b4",
+        "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/manifest.json"
     }
   }
 }

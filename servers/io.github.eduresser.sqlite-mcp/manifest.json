@@ -1,0 +1,60 @@
+{
+  "version": "0.1.0",
+  "scope": "user",
+  "homepage": "https://github.com/eduresser/sqlite-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "sqlite-mcp"],
+      "description": "SQLite MCP server (stdio). Requires SQLITE_DB_PATH."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/eduresser/sqlite-mcp.git"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "execute_sql", "description": "Execute SQL with optional dry-run and row limits." },
+    { "name": "get_table_info", "description": "Fetch schema + indexes + foreign keys + row count for a table." }
+  ],
+  "configurableProperties": [
+    {
+      "key": "SQLITE_DB_PATH",
+      "label": "SQLite DB Path",
+      "description": "Path to the SQLite database file.",
+      "sensitive": false,
+      "required": true
+    },
+    {
+      "key": "SQLITE_READ_ONLY",
+      "label": "Read-only mode",
+      "description": "Set to true to block write operations.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "SQLITE_TIMEOUT",
+      "label": "Query timeout (seconds)",
+      "description": "Per-query timeout to prevent runaway queries.",
+      "default": "30",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/eduresser/sqlite-mcp"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/eduresser/sqlite-mcp.git",
+      "build: uv sync"
+    ],
+    "notes": "Added for demo/testing as a vetted entry. Consider pinning to a specific upstream tag/commit for reproducibility.",
+    "securityNotes": "This server can execute SQL. Prefer SQLITE_READ_ONLY=true when connecting to valuable databases."
+  }
+}
+
