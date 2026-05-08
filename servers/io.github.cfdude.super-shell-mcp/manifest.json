@@ -1,0 +1,56 @@
+{
+  "version": "2.0.15",
+  "scope": "user",
+  "homepage": "https://github.com/cfdude/super-shell-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; if [ ! -f build/index.js ]; then npm ci; npm run build; fi; exec node build/index.js"
+      ],
+      "description": "Super Shell MCP server (stdio). Bootstraps npm build if missing."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/cfdude/super-shell-mcp.git"
+  },
+  "tools": [
+    { "name": "execute_command", "description": "Execute a shell command with security controls (whitelisting/approval)." },
+    { "name": "get_whitelist", "description": "Get the command whitelist for the current platform." },
+    { "name": "add_to_whitelist", "description": "Add commands to the whitelist." },
+    { "name": "get_platform_info", "description": "Get platform/shell info for diagnostics." }
+  ],
+  "configurableProperties": [
+    {
+      "key": "CUSTOM_SHELL",
+      "label": "Custom Shell Path",
+      "description": "Optional custom shell executable path (e.g. /bin/zsh).",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "SUPER_SHELL_USE_SHELL",
+      "label": "Enable shell parsing (unsafe)",
+      "description": "Set to true only for trusted workflows. Shell parsing is disabled by default to reduce injection risk.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/cfdude/super-shell-mcp"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/cfdude/super-shell-mcp.git",
+      "build: npm ci && npm run build (build/index.js)"
+    ],
+    "notes": "Added for demo/testing as a vetted entry. This server can execute shell commands; review whitelist/approval settings carefully.",
+    "securityNotes": "High-risk capability. Recommend strict whitelists and approval workflows; avoid enabling shell parsing unless absolutely necessary."
+  }
+}
+
