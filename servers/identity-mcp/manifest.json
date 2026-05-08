@@ -21,5 +21,11 @@
     { "name": "echo", "description": "Echo a message back with the server identity prefix. Confirms parameter passing and routing." },
     { "name": "ping", "description": "Instant liveness check. Returns server identity and timestamp." }
   ],
-  "configurableProperties": []
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

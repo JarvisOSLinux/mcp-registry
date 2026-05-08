@@ -43,5 +43,11 @@
       "sensitive": false,
       "required": false
     }
-  ]
+  ],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

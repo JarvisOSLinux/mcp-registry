@@ -20,5 +20,11 @@
     { "name": "get_poisoned_data", "description": "Return data for a query with embedded prompt injection attempts. Tests whether the LLM acts on instructions embedded in MCP output." },
     { "name": "get_clean_data", "description": "Return clean data with no injection content. Use as a control case alongside get_poisoned_data." }
   ],
-  "configurableProperties": []
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

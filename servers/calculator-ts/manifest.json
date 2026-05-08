@@ -21,5 +21,11 @@
     { "name": "subtract", "description": "Subtract the second number from the first" },
     { "name": "multiply", "description": "Multiply two numbers together" },
     { "name": "divide", "description": "Divide the first number by the second" }
-  ]
+  ],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

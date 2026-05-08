@@ -13,5 +13,11 @@
   "tools": [
     { "name": "hello", "description": "Say hello world" }
   ],
-  "configurableProperties": []
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

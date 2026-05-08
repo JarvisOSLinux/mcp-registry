@@ -1,6 +1,10 @@
 {
   "version": "1.0",
   "updated": "2026-05-01T00:00:00Z",
+  "signing": {
+    "keyringUrl": null,
+    "signatures": []
+  },
   "servers": {
     "com.github.yakupatahanov.mcp.calculator-ts": {
       "id": "com.github.yakupatahanov.mcp.calculator-ts",
@@ -12,6 +16,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["calculator", "math", "arithmetic", "typescript"],
       "categories": ["mcp", "mcp-development"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "009a0ce13425e7424653eccfee120e565f450cd5a08401cbd050e997d503c8df",
+        "setupScriptSha256": "8399e31355b5b5aa98d6d0d5d0e454347abd7f202049ccfeab3140a2cef5060f"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-ts/manifest.json"
     },
     "com.github.yakupatahanov.mcp.calculator-py": {
@@ -24,6 +33,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["calculator", "math", "arithmetic", "python"],
       "categories": ["mcp", "mcp-development"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "057a56afc71d77b2164b81ba385fb675951d4f31d2d0a0344f40dd80334d7979",
+        "setupScriptSha256": "3f6cea46553913f1460639864c155fcb12359f89a161374449ab5238493d8e05"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-py/manifest.json"
     },
     "com.github.yakupatahanov.mcp.calculator-rust": {
@@ -36,6 +50,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["calculator", "math", "arithmetic", "rust"],
       "categories": ["mcp", "mcp-development"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "4d0f8fba1d5e8afa0fb90bdba14a29f4b3ac9fc70e00b2dac01d2dd7fa958145",
+        "setupScriptSha256": "af3e39085b0be6924e7dc297c6c1e052bb46b54c27a0af32b07bd3746df6e5d3"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-rust/manifest.json"
     },
     "com.github.yakupatahanov.mcp.hello-config": {
@@ -48,6 +67,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["config", "test", "hello"],
       "categories": ["mcp", "mcp-development"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "acd8460920a0aea88f98ff959c18b7db3b85d0c19119232251f8312c65f8913a",
+        "setupScriptSha256": "26fc5c1c5c7120e82fcc08210f049f43f1ef01814a43f6ccb4fc6eb1dbb093f6"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-config/manifest.json"
     },
     "com.github.yakupatahanov.mcp.hello-sse": {
@@ -60,6 +84,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["sse", "remote", "hello", "test"],
       "categories": ["mcp", "mcp-development", "mcp-web"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "e7d546860c28bd500f9f948eb3912ebcf2cc52fb5b98b9012031693afdd84565",
+        "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/manifest.json"
     },
     "com.github.yakupatahanov.mcp.hello-ws": {
@@ -72,6 +101,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["websocket", "remote", "hello", "test"],
       "categories": ["mcp", "mcp-development", "mcp-web"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "ad67f1084c21c45535e7bb91e138d7d79a8c6eb4685477fdf526c85e9ac01195",
+        "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/manifest.json"
     },
     "com.github.yakupatahanov.mcp.slow-mcp": {
@@ -84,6 +118,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["test", "delay", "remind", "timeout", "dispatch", "slow"],
       "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "d95eadc8e14fa627d070241b3aa9e3601de4dbce0ea39205743b11fe9c88346a",
+        "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/slow-mcp/manifest.json"
     },
     "com.github.yakupatahanov.mcp.exit-mcp": {
@@ -96,6 +135,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["test", "exit", "success", "failure", "signal", "dispatch"],
       "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "d090f3914cf85556dfb42571be3b3c027a84d4b1e055d9e2acff0ac37ce06427",
+        "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/exit-mcp/manifest.json"
     },
     "com.github.yakupatahanov.mcp.poison-mcp": {
@@ -108,6 +152,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["test", "security", "injection", "poison", "boundary", "dispatch"],
       "categories": ["mcp", "mcp-development", "mcp-testing", "mcp-security"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "0b28622acd5f0297e42741750b939b0faf676ba6b3f5302e08a8dc50baa3994a",
+        "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/poison-mcp/manifest.json"
     },
     "com.github.yakupatahanov.mcp.identity-mcp": {
@@ -120,6 +169,11 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": ["test", "identity", "echo", "routing", "dispatch"],
       "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "4496e48e32a0221510b39f13ad4632fbf3bf81d21a1ab4e5c1548258b901c3c1",
+        "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
+      },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/identity-mcp/manifest.json"
     }
   }

@@ -22,5 +22,11 @@
     { "name": "multiply", "description": "Multiply two numbers together" },
     { "name": "divide", "description": "Divide the first number by the second" }
   ],
-  "configurableProperties": []
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }

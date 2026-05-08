@@ -21,5 +21,11 @@
     { "name": "fail", "description": "Raise an exception to produce a 500 EXIT signal in dispatch. Error content is nonce-tagged in the signal window." },
     { "name": "succeed_after", "description": "Wait a configurable number of seconds, then return success. Combine with fail() in a batch to test mixed exit states." }
   ],
-  "configurableProperties": []
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [],
+    "checks": [],
+    "notes": null,
+    "securityNotes": null
+  }
 }
