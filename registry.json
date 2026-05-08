@@ -226,6 +226,23 @@
         "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json"
+    },
+    "io.github.fangmd.time-mcp": {
+      "id": "io.github.fangmd.time-mcp",
+      "name": "Time MCP",
+      "summary": "Time-related tools (current UTC time and Unix timestamp)",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/fangmd/time-mcp",
+      "icon": "appointment-new",
+      "keywords": ["time", "date", "utc", "timestamp", "timezone"],
+      "categories": ["mcp", "mcp-utilities"],
+      "trustStatus": "vetted",
+      "integrity": {
+        "manifestSha256": "ca3d62e18c87466d78d1ac81942137878c7f94fa7a8618766dc91f4faded149f",
+        "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
+      },
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json"
     }
   }
 }

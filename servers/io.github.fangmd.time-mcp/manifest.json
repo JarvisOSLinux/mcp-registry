@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/fangmd/time-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/index.js"],
+      "description": "Time MCP server (stdio)."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/fangmd/time-mcp.git"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    { "name": "getCurrentTime", "description": "Return current UTC time in ISO 8601 format plus Unix timestamp." }
+  ],
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/fangmd/time-mcp"
+    ],
+    "checks": [
+      "license: ISC (upstream)",
+      "source: git clone https://github.com/fangmd/time-mcp.git",
+      "build: pnpm install && pnpm build (dist/index.js)"
+    ],
+    "notes": "Added for demo/testing as a vetted entry. Consider pinning to a specific commit for reproducibility.",
+    "securityNotes": "Low-risk utility server. No external network calls required for stdio mode."
+  }
+}
+
