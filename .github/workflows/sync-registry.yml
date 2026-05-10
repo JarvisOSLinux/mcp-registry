@@ -3,6 +3,11 @@ name: Sync Registry
 # Runs when manifests or setup scripts change on main, or on manual dispatch.
 # Recomputes integrity hashes and syncs descriptive fields, then opens a PR
 # with the diff rather than pushing directly to main.
+#
+# Permission requirement: either
+#   a) Repo Settings > Actions > General > "Allow GitHub Actions to create and
+#      approve pull requests" must be enabled, OR
+#   b) A WORKFLOW_TOKEN secret (PAT with repo+workflow scopes) must be set.
 
 on:
   push:
@@ -29,6 +34,7 @@ jobs:
       - name: Open PR if anything changed
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.WORKFLOW_TOKEN || github.token }}
           commit-message: 'chore: sync registry.json derived fields'
           title: 'chore: sync registry.json (automated)'
           body: |

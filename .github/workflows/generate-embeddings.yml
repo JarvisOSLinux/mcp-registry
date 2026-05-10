@@ -6,6 +6,11 @@ name: Generate Embeddings
 # Only servers whose canonical text has changed since the last run are
 # re-embedded. Changing the model forces a full re-run because the old model
 # key is absent in every manifest.
+#
+# Permission requirement: either
+#   a) Repo Settings > Actions > General > "Allow GitHub Actions to create and
+#      approve pull requests" must be enabled, OR
+#   b) A WORKFLOW_TOKEN secret (PAT with repo+workflow scopes) must be set.
 
 on:
   workflow_dispatch:
@@ -55,6 +60,7 @@ jobs:
       - name: Open PR if anything changed
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.WORKFLOW_TOKEN || github.token }}
           commit-message: 'chore: regenerate embeddings (${{ inputs.model || ''nomic-embed-text'' }})'
           title: 'chore: update embeddings (${{ inputs.model || ''nomic-embed-text'' }})'
           body: |
