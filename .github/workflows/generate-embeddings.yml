@@ -1,0 +1,75 @@
+name: Generate Embeddings
+
+# Manual dispatch only — embedding generation is slow (Ollama startup + model
+# calls) so it should be triggered intentionally, not on every push.
+#
+# Only servers whose canonical text has changed since the last run are
+# re-embedded. Changing the model forces a full re-run because the old model
+# key is absent in every manifest.
+#
+# Permission requirement: either
+#   a) Repo Settings > Actions > General > "Allow GitHub Actions to create and
+#      approve pull requests" must be enabled, OR
+#   b) A WORKFLOW_TOKEN secret (PAT with repo+workflow scopes) must be set.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Ollama model name (must be available on ollama.com)'
+        required: false
+        default: 'nomic-embed-text'
+      force:
+        description: 'Re-embed all servers even if canonical hash is unchanged'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.ai/install.sh | sh
+
+      - name: Start Ollama service
+        run: |
+          ollama serve &
+          echo "Waiting for Ollama to be ready..."
+          until ollama list >/dev/null 2>&1; do sleep 1; done
+          echo "Ollama ready."
+
+      - name: Pull embedding model
+        run: ollama pull ${{ inputs.model || 'nomic-embed-text' }}
+
+      - name: Generate embeddings
+        run: |
+          ARGS="--model ${{ inputs.model || 'nomic-embed-text' }}"
+          if [ "${{ inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+          python3 scripts/generate_embeddings.py $ARGS
+
+      - name: Open PR if anything changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN || github.token }}
+          commit-message: 'chore: regenerate embeddings (${{ inputs.model || ''nomic-embed-text'' }})'
+          title: 'chore: update embeddings (${{ inputs.model || ''nomic-embed-text'' }})'
+          body: |
+            Automated embedding update using model `${{ inputs.model || 'nomic-embed-text' }}`.
+
+            Only servers whose canonical text changed (or had no existing embedding) were
+            re-embedded. Servers with a matching `hash` were skipped.
+
+            After merging, run `dmcp sync-index` on your machine to reload the local vector index.
+          branch: auto/generate-embeddings
+          delete-branch: true
+          labels: automated,embeddings

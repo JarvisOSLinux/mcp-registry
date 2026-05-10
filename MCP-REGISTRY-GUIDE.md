@@ -42,6 +42,19 @@ A registry has two parts:
 1. **Index** (`registry.json`) – Display metadata (name, summary, icon, keywords, categories) and a pointer to each manifest. The server ID is the key.
 2. **Manifests** – Per-server JSON files (`servers/<name>/manifest.json`) with install/run metadata only (transports, source, setupScript, tools).
 
+### Optional: Trust, Integrity, and Signing (Community Registry)
+
+If you want a community-vetted registry (AUR-like), you can add optional fields to support **trust status**, **immutability**, and **signatures**.
+
+- **`trustStatus` (index entry)**: A lightweight status flag used for filtering without fetching manifests.
+  - Suggested values: `"unreviewed"`, `"in-review"`, `"vetted"`, `"deprecated"`, `"removed"`.
+- **`integrity` (index entry)**: Content fingerprints that bind review status to an exact manifest and setup script.
+  - `manifestSha256`: SHA-256 of the referenced `manifest.json` content.
+  - `setupScriptSha256`: SHA-256 of the referenced setup script content (if present).
+- **`signing` (registry top-level)**: Reserved fields for cryptographic signing. This guide does not mandate an algorithm; clients can optionally verify signatures using a keyring.
+  - `keyringUrl`: URL to a published set of trusted public keys (or `null`).
+  - `signatures`: Array of signature objects (empty if unsigned).
+
 ### Index Format
 
 The index is a single JSON file with this structure:
@@ -50,6 +63,10 @@ The index is a single JSON file with this structure:
 {
   "version": "1.0",
   "updated": "2025-02-03T00:00:00Z",
+  "signing": {
+    "keyringUrl": null,
+    "signatures": []
+  },
   "servers": {
     "com.example.mcp.my-server": {
       "id": "com.example.mcp.my-server",
@@ -61,6 +78,11 @@ The index is a single JSON file with this structure:
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
       "categories": ["mcp", "mcp-development"],
+      "trustStatus": "unreviewed",
+      "integrity": {
+        "manifestSha256": "<sha256 of manifest.json>",
+        "setupScriptSha256": "<sha256 of setup.sh (if present)>"
+      },
       "manifest": "https://raw.githubusercontent.com/example/mcp-registry/main/servers/my-server/manifest.json"
     }
   }
@@ -87,6 +109,8 @@ The index is a single JSON file with this structure:
 | `keywords`  | array  | Search keywords for discovery.                           |
 | `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
+| `trustStatus` | string | Optional. Community review status (e.g. `"unreviewed"`, `"vetted"`). |
+| `integrity` | object | Optional. Content hashes that bind vetting to specific manifest/script content. |
 
 Discover loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
 
@@ -121,6 +145,7 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 | `setupScript`           | string | For local: filename (e.g. `"setup.sh"`). For remote: URL. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
+| `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
 
 ### Tools
 
