@@ -11,6 +11,9 @@ name: Generate Embeddings
 #   a) Repo Settings > Actions > General > "Allow GitHub Actions to create and
 #      approve pull requests" must be enabled, OR
 #   b) A WORKFLOW_TOKEN secret (PAT with repo+workflow scopes) must be set.
+#
+# Auto-merge: enable "Allow auto-merge" in Settings > General > Pull Requests
+# to have these PRs merge themselves immediately (no required checks needed).
 
 on:
   workflow_dispatch:
@@ -73,3 +76,4 @@ jobs:
           branch: auto/generate-embeddings
           delete-branch: true
           labels: automated,embeddings
+          auto-merge: merge
