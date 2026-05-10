@@ -14,8 +14,16 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["calculator", "math", "arithmetic", "typescript"],
-      "categories": ["mcp", "mcp-development"],
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "typescript"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "009a0ce13425e7424653eccfee120e565f450cd5a08401cbd050e997d503c8df",
@@ -31,8 +39,16 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["calculator", "math", "arithmetic", "python"],
-      "categories": ["mcp", "mcp-development"],
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "python"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "057a56afc71d77b2164b81ba385fb675951d4f31d2d0a0344f40dd80334d7979",
@@ -48,8 +64,16 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["calculator", "math", "arithmetic", "rust"],
-      "categories": ["mcp", "mcp-development"],
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "rust"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "4d0f8fba1d5e8afa0fb90bdba14a29f4b3ac9fc70e00b2dac01d2dd7fa958145",
@@ -65,8 +89,15 @@
       "scope": "system",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["config", "test", "hello"],
-      "categories": ["mcp", "mcp-development"],
+      "keywords": [
+        "config",
+        "test",
+        "hello"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "acd8460920a0aea88f98ff959c18b7db3b85d0c19119232251f8312c65f8913a",
@@ -82,8 +113,17 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["sse", "remote", "hello", "test"],
-      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "keywords": [
+        "sse",
+        "remote",
+        "hello",
+        "test"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-web"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "e7d546860c28bd500f9f948eb3912ebcf2cc52fb5b98b9012031693afdd84565",
@@ -99,8 +139,17 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["websocket", "remote", "hello", "test"],
-      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "keywords": [
+        "websocket",
+        "remote",
+        "hello",
+        "test"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-web"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "ad67f1084c21c45535e7bb91e138d7d79a8c6eb4685477fdf526c85e9ac01195",
@@ -116,8 +165,19 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["test", "delay", "remind", "timeout", "dispatch", "slow"],
-      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "keywords": [
+        "test",
+        "delay",
+        "remind",
+        "timeout",
+        "dispatch",
+        "slow"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-testing"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "d95eadc8e14fa627d070241b3aa9e3601de4dbce0ea39205743b11fe9c88346a",
@@ -133,8 +193,19 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["test", "exit", "success", "failure", "signal", "dispatch"],
-      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "keywords": [
+        "test",
+        "exit",
+        "success",
+        "failure",
+        "signal",
+        "dispatch"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-testing"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "d090f3914cf85556dfb42571be3b3c027a84d4b1e055d9e2acff0ac37ce06427",
@@ -150,8 +221,20 @@
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["test", "security", "injection", "poison", "boundary", "dispatch"],
-      "categories": ["mcp", "mcp-development", "mcp-testing", "mcp-security"],
+      "keywords": [
+        "test",
+        "security",
+        "injection",
+        "poison",
+        "boundary",
+        "dispatch"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-testing",
+        "mcp-security"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "0b28622acd5f0297e42741750b939b0faf676ba6b3f5302e08a8dc50baa3994a",
@@ -162,13 +245,23 @@
     "com.github.yakupatahanov.mcp.identity-mcp": {
       "id": "com.github.yakupatahanov.mcp.identity-mcp",
       "name": "Identity MCP",
-      "summary": "Every response clearly identifies which server responded — confirms server discovery, routing, and LLM awareness",
+      "summary": "Every response clearly identifies which server responded \u2014 confirms server discovery, routing, and LLM awareness",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["test", "identity", "echo", "routing", "dispatch"],
-      "categories": ["mcp", "mcp-development", "mcp-testing"],
+      "keywords": [
+        "test",
+        "identity",
+        "echo",
+        "routing",
+        "dispatch"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-testing"
+      ],
       "trustStatus": "unreviewed",
       "integrity": {
         "manifestSha256": "4496e48e32a0221510b39f13ad4632fbf3bf81d21a1ab4e5c1548258b901c3c1",
@@ -184,8 +277,21 @@
       "scope": "user",
       "homepage": "https://github.com/j0hanz/filesystem-mcp",
       "icon": "utilities-terminal",
-      "keywords": ["filesystem", "files", "read", "write", "diff", "patch", "search", "grep"],
-      "categories": ["mcp", "mcp-utilities", "mcp-development"],
+      "keywords": [
+        "filesystem",
+        "files",
+        "read",
+        "write",
+        "diff",
+        "patch",
+        "search",
+        "grep"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-utilities",
+        "mcp-development"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "9f71104c068070a8685129f3bc40447eaaba21827441c180c1e55e42f69b7dde",
@@ -201,8 +307,20 @@
       "scope": "user",
       "homepage": "https://github.com/brave/brave-search-mcp-server",
       "icon": "network-workgroup",
-      "keywords": ["search", "web", "brave", "news", "images", "videos", "summarize"],
-      "categories": ["mcp", "mcp-web", "mcp-development"],
+      "keywords": [
+        "search",
+        "web",
+        "brave",
+        "news",
+        "images",
+        "videos",
+        "summarize"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-web",
+        "mcp-development"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "7d59ec30f56f5aee24ee83af6daa2472f3ea8cf10bd7ca908f29246b04a8dfad",
@@ -218,8 +336,19 @@
       "scope": "user",
       "homepage": "https://github.com/MissionSquad/mcp-github",
       "icon": "vcs-git",
-      "keywords": ["github", "git", "repo", "issues", "pull-requests", "search"],
-      "categories": ["mcp", "mcp-development", "mcp-web"],
+      "keywords": [
+        "github",
+        "git",
+        "repo",
+        "issues",
+        "pull-requests",
+        "search"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-web"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "8ec84c64dc5d44a6908ae187b7d7884258eaec86986593703d6355cb7ae0816f",
@@ -235,8 +364,17 @@
       "scope": "user",
       "homepage": "https://github.com/fangmd/time-mcp",
       "icon": "appointment-new",
-      "keywords": ["time", "date", "utc", "timestamp", "timezone"],
-      "categories": ["mcp", "mcp-utilities"],
+      "keywords": [
+        "time",
+        "date",
+        "utc",
+        "timestamp",
+        "timezone"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-utilities"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "858abbe32c4aaa1c84a4358d55f47a6ea0b33b072f0cfea5b0f005c937460dea",
@@ -252,8 +390,18 @@
       "scope": "user",
       "homepage": "https://github.com/eduresser/sqlite-mcp",
       "icon": "database",
-      "keywords": ["sqlite", "database", "sql", "query", "schema"],
-      "categories": ["mcp", "mcp-development", "mcp-utilities"],
+      "keywords": [
+        "sqlite",
+        "database",
+        "sql",
+        "query",
+        "schema"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-utilities"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "3a99f42b0c0f745fa01315bc230d7379e090b3d90ea0df096fb7a0e6ab234cc6",
@@ -269,8 +417,20 @@
       "scope": "user",
       "homepage": "https://github.com/Erodenn/fetch-guard",
       "icon": "internet-web-browser",
-      "keywords": ["fetch", "http", "web", "scrape", "markdown", "security", "prompt-injection"],
-      "categories": ["mcp", "mcp-web", "mcp-security"],
+      "keywords": [
+        "fetch",
+        "http",
+        "web",
+        "scrape",
+        "markdown",
+        "security",
+        "prompt-injection"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-web",
+        "mcp-security"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "00b74510008f7ea38bf5cad4e69ac9559d04b82618173e8ac76c1d4c2836ebb7",
@@ -286,8 +446,17 @@
       "scope": "user",
       "homepage": "https://github.com/uneco/mcp-git-polite",
       "icon": "vcs-git",
-      "keywords": ["git", "staging", "diff", "commit", "patch"],
-      "categories": ["mcp", "mcp-development"],
+      "keywords": [
+        "git",
+        "staging",
+        "diff",
+        "commit",
+        "patch"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "0bcbbb8f38eabe4914ad350edcf0cdc045df2d1f75f23c7b7ed6b692498c20cf",
@@ -303,13 +472,35 @@
       "scope": "user",
       "homepage": "https://github.com/cfdude/super-shell-mcp",
       "icon": "utilities-terminal",
-      "keywords": ["shell", "command", "terminal", "security", "whitelist", "approval"],
-      "categories": ["mcp", "mcp-utilities", "mcp-security"],
+      "keywords": [
+        "shell",
+        "command",
+        "terminal",
+        "security",
+        "whitelist",
+        "approval"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-utilities",
+        "mcp-security"
+      ],
       "trustStatus": "vetted",
       "integrity": {
         "manifestSha256": "17c25be08fea1e60b08a577faf0dc86b028df384a7bf36cd7cd51f13aa30157b"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.cfdude.super-shell-mcp/manifest.json"
     }
+  },
+  "embedding_spec": {
+    "model": "nomic-embed-text",
+    "dimensions": 768,
+    "provider": "ollama",
+    "canonical_fields": [
+      "name",
+      "summary",
+      "keywords",
+      "tools"
+    ]
   }
 }
