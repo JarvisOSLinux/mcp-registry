@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-01T00:00:00Z",
+  "updated": "2026-05-10T06:02:01Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -26,7 +26,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "009a0ce13425e7424653eccfee120e565f450cd5a08401cbd050e997d503c8df",
+        "manifestSha256": "88f85e2fa06e7070a5398de4e5e2443ec49e76ee177ca387d8e3d5c7fecc2224",
         "setupScriptSha256": "8399e31355b5b5aa98d6d0d5d0e454347abd7f202049ccfeab3140a2cef5060f"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-ts/manifest.json"
@@ -51,7 +51,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "057a56afc71d77b2164b81ba385fb675951d4f31d2d0a0344f40dd80334d7979",
+        "manifestSha256": "04460282a4a5c49f86205a123e7a5ac1756f10a64b5b7027707fb195d860da3b",
         "setupScriptSha256": "3f6cea46553913f1460639864c155fcb12359f89a161374449ab5238493d8e05"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-py/manifest.json"
@@ -76,7 +76,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "4d0f8fba1d5e8afa0fb90bdba14a29f4b3ac9fc70e00b2dac01d2dd7fa958145",
+        "manifestSha256": "4efd9f42aaa9a80077bb950bf650df3a89089ff755b5c661e4bfb25273e5f3ea",
         "setupScriptSha256": "af3e39085b0be6924e7dc297c6c1e052bb46b54c27a0af32b07bd3746df6e5d3"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/calculator-rust/manifest.json"
@@ -100,7 +100,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "acd8460920a0aea88f98ff959c18b7db3b85d0c19119232251f8312c65f8913a",
+        "manifestSha256": "898bc1e723a643a2e89b6840ec3be46758d3e7a07327c530c5dba1a11053023e",
         "setupScriptSha256": "26fc5c1c5c7120e82fcc08210f049f43f1ef01814a43f6ccb4fc6eb1dbb093f6"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-config/manifest.json"
@@ -126,7 +126,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "e7d546860c28bd500f9f948eb3912ebcf2cc52fb5b98b9012031693afdd84565",
+        "manifestSha256": "2ea6dbf10a50b902c72d5b979ecea067698f383e1ce693c7654d408107726a77",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/manifest.json"
@@ -152,7 +152,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "ad67f1084c21c45535e7bb91e138d7d79a8c6eb4685477fdf526c85e9ac01195",
+        "manifestSha256": "ce025ac6883ed77dd5f14327d2f374b74831a67004a81563166420c9dbae5f69",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-ws/manifest.json"
@@ -180,7 +180,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "d95eadc8e14fa627d070241b3aa9e3601de4dbce0ea39205743b11fe9c88346a",
+        "manifestSha256": "9acc97fbb455fd44e484c891375c1adf74a47344fb9748a3569768be592a9b17",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/slow-mcp/manifest.json"
@@ -208,7 +208,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "d090f3914cf85556dfb42571be3b3c027a84d4b1e055d9e2acff0ac37ce06427",
+        "manifestSha256": "d5a3b6c4642422afc857a642993c98816009995a5a777557e59a4e39c61165b1",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/exit-mcp/manifest.json"
@@ -237,7 +237,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "0b28622acd5f0297e42741750b939b0faf676ba6b3f5302e08a8dc50baa3994a",
+        "manifestSha256": "ff5827025625961a51fe10a35ffb668c0256532c039aff871f5566db1685e0c0",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/poison-mcp/manifest.json"
@@ -264,7 +264,7 @@
       ],
       "trustStatus": "unreviewed",
       "integrity": {
-        "manifestSha256": "4496e48e32a0221510b39f13ad4632fbf3bf81d21a1ab4e5c1548258b901c3c1",
+        "manifestSha256": "4b044616533d3680c6114f2ad8adb3fee2e27880a5f9271cbe08f12016587108",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/identity-mcp/manifest.json"
@@ -294,7 +294,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "9f71104c068070a8685129f3bc40447eaaba21827441c180c1e55e42f69b7dde",
+        "manifestSha256": "14794922a5d234d5209adbc9d581ae773abba98bae6376f0242e2318f5451ec4",
         "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json"
@@ -323,7 +323,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "7d59ec30f56f5aee24ee83af6daa2472f3ea8cf10bd7ca908f29246b04a8dfad",
+        "manifestSha256": "6e0870f8b4bf4294b9aa2b72fd39559c9e3f772bf0b14719a09a3ea4c9500514",
         "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/manifest.json"
@@ -351,7 +351,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "8ec84c64dc5d44a6908ae187b7d7884258eaec86986593703d6355cb7ae0816f",
+        "manifestSha256": "b4f6c37aca489fbd4a7c143efd775355fd1671f3ef7cfd5ec74b64cd717b9078",
         "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json"
@@ -377,7 +377,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "858abbe32c4aaa1c84a4358d55f47a6ea0b33b072f0cfea5b0f005c937460dea",
+        "manifestSha256": "ce97bb718b0c0c45dd51867f4bcb44bf0df25800039468ed080b3078a1cd5dc8",
         "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json"
@@ -404,7 +404,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "3a99f42b0c0f745fa01315bc230d7379e090b3d90ea0df096fb7a0e6ab234cc6",
+        "manifestSha256": "a46214feff9c2a18659cc14a8f16e203fd78ca3cc7024fb0038462411d4c54de",
         "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/manifest.json"
@@ -433,7 +433,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "00b74510008f7ea38bf5cad4e69ac9559d04b82618173e8ac76c1d4c2836ebb7",
+        "manifestSha256": "5560c35119119c4ac992e76569de663cc2a609c7a6df2ffc7d07254b33ff610a",
         "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json"
@@ -459,7 +459,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "0bcbbb8f38eabe4914ad350edcf0cdc045df2d1f75f23c7b7ed6b692498c20cf",
+        "manifestSha256": "1e243ec26e3b5908d10222c410100679b8da711a6af09d03d69603cdb8011005",
         "setupScriptSha256": "adf44dcca167ae9de02baee6c4f713912eda40d9f7443043a871725752b7caf6"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/manifest.json"
@@ -487,7 +487,7 @@
       ],
       "trustStatus": "vetted",
       "integrity": {
-        "manifestSha256": "17c25be08fea1e60b08a577faf0dc86b028df384a7bf36cd7cd51f13aa30157b"
+        "manifestSha256": "5d092719f92b957763495f1866fccb85b4f2ee18d862baac4c0ee17968e6c624"
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.cfdude.super-shell-mcp/manifest.json"
     }
