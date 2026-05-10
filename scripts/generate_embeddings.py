@@ -7,12 +7,21 @@ already matches, the server is skipped — Ollama is only called for new or chan
 servers. When the embedding model changes, all servers are missing the new key
 and get re-embedded automatically.
 
-Embedding format stored in each manifest.json:
+Embedding format stored in each manifest.json (for incremental skipping):
   "embeddings": {
     "nomic-embed-text": {
       "v": [0.031, -0.184, ...],
       "hash": "sha256-of-canonical-text"
     }
+  }
+
+Embedding format written inline into registry.json (read by dmcp sync-index):
+  server entry gets an "embeddings" field:
+  {
+    "model": "nomic-embed-text",
+    "version": "<hash-prefix>",
+    "server": [0.031, -0.184, ...],
+    "tools": {}
   }
 
 Usage:
@@ -128,28 +137,40 @@ def main() -> None:
         print(f"done ({len(vector)}d)")
         updated += 1
 
-    # Update embedding_spec in registry.json if any vectors were generated
-    if updated > 0:
-        dims = None
-        for entry in registry["servers"].values():
-            dir_name = dir_from_url(entry.get("manifest", ""))
-            if not dir_name:
-                continue
-            mp = SERVERS_DIR / dir_name / "manifest.json"
-            if mp.exists():
-                m = json.loads(mp.read_text())
-                emb = m.get("embeddings", {}).get(model)
-                if isinstance(emb, dict) and "v" in emb:
-                    dims = len(emb["v"])
-                    break
-
-        registry["embedding_spec"] = {
+    # Write inline embeddings into registry.json in the format dmcp sync-index expects.
+    # This runs regardless of whether anything was newly embedded, so skipped servers
+    # (already embedded in manifest.json) still get their vectors into registry.json.
+    dims = None
+    inline_count = 0
+    for server_id, entry in registry["servers"].items():
+        dir_name = dir_from_url(entry.get("manifest", ""))
+        if not dir_name:
+            continue
+        mp = SERVERS_DIR / dir_name / "manifest.json"
+        if not mp.exists():
+            continue
+        m = json.loads(mp.read_text())
+        emb = m.get("embeddings", {}).get(model)
+        if not (isinstance(emb, dict) and "v" in emb):
+            continue
+        registry["servers"][server_id]["embeddings"] = {
             "model": model,
-            "dimensions": dims,
-            "provider": "ollama",
-            "canonical_fields": ["name", "summary", "keywords", "tools"],
+            "version": emb.get("hash", "")[:16],
+            "server": emb["v"],
+            "tools": {},
         }
-        REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
+        if dims is None:
+            dims = len(emb["v"])
+        inline_count += 1
+
+    registry["embedding_spec"] = {
+        "model": model,
+        "dimensions": dims,
+        "provider": "ollama",
+        "canonical_fields": ["name", "summary", "keywords", "tools"],
+    }
+    REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
+    print(f"Written {inline_count} inline embedding(s) into registry.json.")
 
     print(f"\nDone: {updated} embedded, {skipped} skipped, {failed} failed.")
     if failed:
