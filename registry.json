@@ -476,33 +476,6 @@
       },
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/manifest.json"
     },
-    "io.github.cfdude.super-shell-mcp": {
-      "id": "io.github.cfdude.super-shell-mcp",
-      "name": "Super Shell MCP",
-      "summary": "Execute shell commands with built-in security controls (whitelisting/approval)",
-      "version": "2.0.15",
-      "scope": "user",
-      "homepage": "https://github.com/cfdude/super-shell-mcp",
-      "icon": "utilities-terminal",
-      "keywords": [
-        "shell",
-        "command",
-        "terminal",
-        "security",
-        "whitelist",
-        "approval"
-      ],
-      "categories": [
-        "mcp",
-        "mcp-utilities",
-        "mcp-security"
-      ],
-      "trustStatus": "vetted",
-      "integrity": {
-        "manifestSha256": "5d092719f92b957763495f1866fccb85b4f2ee18d862baac4c0ee17968e6c624"
-      },
-      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.cfdude.super-shell-mcp/manifest.json"
-    }
   },
   "embedding_spec": {
     "model": "nomic-embed-text",
