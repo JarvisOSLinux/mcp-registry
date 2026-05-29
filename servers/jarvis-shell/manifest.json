@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["server.py"],
+      "description": "JARVIS Shell MCP Server"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/jarvis-shell"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    {
+      "name": "execute_command",
+      "description": "Execute a program and return its stdout, stderr, and exit code"
+    },
+    {
+      "name": "execute_script",
+      "description": "Execute a multi-line shell script via /bin/sh and return its output"
+    }
+  ]
+}
