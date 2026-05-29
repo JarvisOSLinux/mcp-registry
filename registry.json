@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-10T06:02:01Z",
+  "updated": "2026-05-29T17:57:47Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4009,14 +4009,29 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo — use jarvis-shell-system-mcp for privileged commands.",
+      "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["shell", "execute", "command", "subprocess", "script", "jarvis", "user"],
-      "categories": ["mcp", "system"],
-      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell/manifest.json"
+      "keywords": [
+        "shell",
+        "execute",
+        "command",
+        "subprocess",
+        "script",
+        "jarvis",
+        "user"
+      ],
+      "categories": [
+        "mcp",
+        "system"
+      ],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell/manifest.json",
+      "integrity": {
+        "manifestSha256": "59e82084304c5ce95b629b6b71b4fd79d25f85a66d8d2cf26c3fb3b25453d6ba",
+        "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
+      }
     },
     "com.github.yakupatahanov.jarvis-shell-system-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-system-mcp",
