@@ -108,6 +108,7 @@ def _call_execute_command(arguments: dict) -> dict:
     extra_env = arguments.get("env") or {}
 
     env = os.environ.copy()
+    env.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
     env.update(extra_env)
 
     try:
@@ -138,6 +139,9 @@ def _call_execute_script(arguments: dict) -> dict:
     cwd = arguments.get("cwd") or None
     timeout = float(arguments.get("timeout") or 30)
 
+    env = os.environ.copy()
+    env.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+
     try:
         proc = subprocess.run(
             ["/bin/sh"],
@@ -146,6 +150,7 @@ def _call_execute_script(arguments: dict) -> dict:
             text=True,
             cwd=cwd,
             timeout=timeout,
+            env=env,
         )
         return _run_result(
             proc.returncode == 0,
@@ -178,7 +183,7 @@ def _handle(request: dict) -> dict | None:
         return ok({
             "protocolVersion": "2024-11-05",
             "capabilities": {"tools": {}},
-            "serverInfo": {"name": "jarvis-shell-mcp", "version": "1.0.0"},
+            "serverInfo": {"name": "jarvis-shell-system-mcp", "version": "1.0.0"},
         })
 
     if method == "ping":
