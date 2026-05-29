@@ -4009,7 +4009,7 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "Minimal shell command execution MCP server for JARVIS. Runs programs and scripts, returns stdout/stderr/exit_code. No whitelist \u2014 security is handled by JARVIS's confirmation layer.",
+      "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
@@ -4020,7 +4020,8 @@
         "command",
         "subprocess",
         "script",
-        "jarvis"
+        "jarvis",
+        "user"
       ],
       "categories": [
         "mcp",
@@ -4031,6 +4032,18 @@
         "manifestSha256": "59e82084304c5ce95b629b6b71b4fd79d25f85a66d8d2cf26c3fb3b25453d6ba",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       }
+    },
+    "com.github.yakupatahanov.jarvis-shell-system-mcp": {
+      "id": "com.github.yakupatahanov.jarvis-shell-system-mcp",
+      "name": "JARVIS Shell (System)",
+      "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",
+      "version": "1.0.0",
+      "scope": "system",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["shell", "execute", "command", "sudo", "system", "admin", "package", "pacman", "apt", "systemd", "privileged"],
+      "categories": ["mcp", "system"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell-system/manifest.json"
     },
     "com.github.yakupatahanov.mcp.hello-ws": {
       "id": "com.github.yakupatahanov.mcp.hello-ws",

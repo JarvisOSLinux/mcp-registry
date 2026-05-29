@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "scope": "system",
+  "name": "JARVIS Shell (System)",
+  "description": "Run programs and shell scripts with system-level (sudo) privileges. Use for package management, system updates, systemd, and any command that requires elevated privileges.",
+  "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",
+  "keywords": ["shell", "command", "script", "execute", "sudo", "system", "admin", "package", "pacman", "apt", "systemd", "privileged"],
+  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["server.py"],
+      "description": "JARVIS Shell System MCP Server"
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "path": "servers/jarvis-shell-system"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    {
+      "name": "execute_command",
+      "description": "Execute a program with system privileges and return its stdout, stderr, and exit code"
+    },
+    {
+      "name": "execute_script",
+      "description": "Execute a multi-line shell script with system privileges via /bin/sh"
+    }
+  ]
+}
