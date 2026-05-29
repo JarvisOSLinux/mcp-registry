@@ -4009,14 +4009,26 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "Minimal shell command execution MCP server for JARVIS. Runs programs and scripts, returns stdout/stderr/exit_code. No whitelist — security is handled by JARVIS's confirmation layer.",
+      "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo — use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["shell", "execute", "command", "subprocess", "script", "jarvis"],
+      "keywords": ["shell", "execute", "command", "subprocess", "script", "jarvis", "user"],
       "categories": ["mcp", "system"],
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell/manifest.json"
+    },
+    "com.github.yakupatahanov.jarvis-shell-system-mcp": {
+      "id": "com.github.yakupatahanov.jarvis-shell-system-mcp",
+      "name": "JARVIS Shell (System)",
+      "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",
+      "version": "1.0.0",
+      "scope": "system",
+      "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
+      "keywords": ["shell", "execute", "command", "sudo", "system", "admin", "package", "pacman", "apt", "systemd", "privileged"],
+      "categories": ["mcp", "system"],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell-system/manifest.json"
     },
     "com.github.yakupatahanov.mcp.hello-ws": {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
