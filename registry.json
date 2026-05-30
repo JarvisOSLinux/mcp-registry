@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-29T17:57:47Z",
+  "updated": "2026-05-29T21:43:58Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4016,11 +4016,10 @@
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
       "keywords": [
         "shell",
-        "execute",
         "command",
-        "subprocess",
         "script",
-        "jarvis",
+        "execute",
+        "run",
         "user"
       ],
       "categories": [
@@ -4029,7 +4028,7 @@
       ],
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "59e82084304c5ce95b629b6b71b4fd79d25f85a66d8d2cf26c3fb3b25453d6ba",
+        "manifestSha256": "e3c786f80759d33230a0693a6f51771cce7d9dcda59a2f47d327fe758dc92249",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       }
     },
@@ -4041,9 +4040,29 @@
       "scope": "system",
       "homepage": "https://github.com/YakupAtahanov/mcp-registry",
       "icon": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/logo/Logo.png",
-      "keywords": ["shell", "execute", "command", "sudo", "system", "admin", "package", "pacman", "apt", "systemd", "privileged"],
-      "categories": ["mcp", "system"],
-      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell-system/manifest.json"
+      "keywords": [
+        "shell",
+        "command",
+        "script",
+        "execute",
+        "sudo",
+        "system",
+        "admin",
+        "package",
+        "pacman",
+        "apt",
+        "systemd",
+        "privileged"
+      ],
+      "categories": [
+        "mcp",
+        "system"
+      ],
+      "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
+      "integrity": {
+        "manifestSha256": "e82462a38de0c19705bf3495076bc768ed6f40ffd795f611b79a4b99143c5bf8",
+        "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
+      }
     },
     "com.github.yakupatahanov.mcp.hello-ws": {
       "id": "com.github.yakupatahanov.mcp.hello-ws",
