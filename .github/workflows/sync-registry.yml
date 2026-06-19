@@ -29,13 +29,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Sync derived fields
         run: python3 scripts/sync_registry.py
 
       - name: Open PR if anything changed
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.WORKFLOW_TOKEN || github.token }}
           commit-message: 'chore: sync registry.json derived fields'
