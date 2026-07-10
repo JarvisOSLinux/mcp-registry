@@ -17,7 +17,7 @@
     "type": "git",
     "url": "https://github.com/eduresser/sqlite-mcp.git"
   },
-  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/setup.sh",
   "tools": [
     {
       "name": "execute_sql",

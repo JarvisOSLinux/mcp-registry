@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "scope": "user",
-  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
     {
       "type": "stdio",
@@ -14,7 +14,7 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
     "path": "servers/calculator-ts"
   },
   "setupScript": "setup.sh",

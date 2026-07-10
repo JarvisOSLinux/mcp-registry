@@ -5,7 +5,7 @@
   "description": "Run programs and shell scripts as the current user. Use for git, python, file operations, and any command that does not require elevated privileges.",
   "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo — use jarvis-shell-system-mcp for privileged commands.",
   "keywords": ["shell", "command", "script", "execute", "run", "user"],
-  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
     {
       "type": "stdio",
@@ -16,7 +16,7 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/YakupAtahanov/mcp-registry.git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
     "path": "servers/jarvis-shell"
   },
   "setupScript": "setup.sh",
