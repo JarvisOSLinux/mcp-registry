@@ -37,7 +37,7 @@ MCP-REGISTRY-GUIDE.md      Full registry and manifest specification
 Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
 - `keywords`, `categories`
-- `trustStatus` (unreviewed / community / verified)
+- `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)
 - `integrity` (manifestSha256, setupScriptSha256)
 - `manifest` URL pointing to the server's manifest.json
 - `embeddings` (model, version, vector array)
