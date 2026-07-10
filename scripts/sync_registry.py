@@ -88,7 +88,9 @@ def main() -> None:
         if args.check:
             print("\nFAIL: registry.json is out of sync. Run scripts/sync_registry.py to fix.")
             sys.exit(1)
-        registry["updated"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        registry["updated"] = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
         print("\nregistry.json updated.")
     else:
