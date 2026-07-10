@@ -1,0 +1,42 @@
+name: Validate PR
+
+# Blocking PR gate for the registry. Validates registry.json and manifests
+# (schema, id/scope/trustStatus, integrity hashes) and enforces that a server
+# cannot be promoted to the `official` tier without a maintainer applying the
+# `trust-approved` label. See docs/TRUST-MODEL.md §4 and
+# docs/REGISTRY-AUTOMATION.md §"PR gate".
+#
+# `labeled`/`unlabeled` are included so the run re-evaluates when a maintainer
+# adds or removes the approval label.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch base registry.json
+        run: |
+          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+          git show "FETCH_HEAD:registry.json" > /tmp/base_registry.json \
+            || echo '{}' > /tmp/base_registry.json
+
+      - name: Validate registry
+        run: |
+          python3 scripts/validate_registry.py \
+            --base /tmp/base_registry.json \
+            ${{ contains(github.event.pull_request.labels.*.name, 'trust-approved') && '--approval-label-present' || '' }}
