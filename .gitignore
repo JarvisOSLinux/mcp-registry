@@ -1,0 +1,22 @@
+# Python (scripts/ tooling generates bytecode caches)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Node (vendored JS/TS servers)
+node_modules/
+
+# Rust (vendored Rust servers)
+target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / caches
+*.log
+.cache/
