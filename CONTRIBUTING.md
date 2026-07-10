@@ -134,7 +134,7 @@ The manifest describes how to install and run your server. Full field reference:
 
 ### Trust block (fill in honestly)
 
-All submissions start at `unreviewed`. The `trust` block is informational — fill it in to help reviewers and users understand what your server does:
+All submissions start at `community`. The `trust` block is informational — fill it in to help reviewers and users understand what your server does:
 
 ```json
 "trust": {
@@ -208,24 +208,25 @@ Fill out the PR checklist completely. Incomplete submissions will be asked to re
 
 ## Trust Levels
 
-All new servers start at `unreviewed`. Trust is earned through review.
+All new servers start at `community`. The `official` tier is earned through maintainer review.
 
 | Level | `trustStatus` value | Meaning |
 |-------|---------------------|---------|
-| Unreviewed | `"unreviewed"` | Newly submitted. No security or code review has occurred. Use with caution. |
-| Community | `"community"` | A maintainer or trusted community member has reviewed the manifest and source. No known security issues. Suitable for general use. |
-| Verified | `"verified"` | Deep review by a core maintainer. Source pinned to a specific commit or tag with hash verification. Suitable for security-sensitive deployments. |
+| Community | `"community"` | Newly submitted; passed automated validation but no human has audited the source. Installing means trusting the submitter, not the registry maintainers. Default for every submission. |
+| Official | `"official"` | A maintainer reviewed the source and tool descriptions, confirmed the license, and pinned `source.url` to a specific commit. Suitable for security-sensitive and autonomous-agent use. |
 
-For full promotion criteria and the review process, see [`docs/trust-levels.md`](docs/trust-levels.md).
+`trustStatus` cannot be raised to `official` in a submission PR — a maintainer applies the `trust-approved` label, which the PR gate enforces. `"deprecated"` / `"removed"` are revocation states. For the full model and vetting flow, see [`docs/TRUST-MODEL.md`](docs/TRUST-MODEL.md).
 
 ---
 
 ## Manifest Validation Requirements
 
-CI runs `python3 scripts/sync_registry.py --check` on every PR. The check fails if:
+CI runs `python3 scripts/validate_registry.py` on every PR (the `validate-pr.yml` workflow), and `scripts/sync_registry.py --check` keeps derived fields honest. The gate fails if:
 
 - `registry.json` integrity hashes do not match the submitted manifest files.
-- Descriptive fields (`name`, `summary`, `keywords`) in `registry.json` do not match the manifest.
+- A required field is missing, or `scope`/`trustStatus` uses a value outside the allowed set.
+- An entry's `id` does not match its map key, or its `manifest` URL does not resolve locally.
+- `trustStatus` is raised to `official` without a maintainer `trust-approved` label.
 
 Beyond the automated check, reviewers verify:
 

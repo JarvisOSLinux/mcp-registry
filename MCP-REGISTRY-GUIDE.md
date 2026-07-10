@@ -1,20 +1,19 @@
 # MCP Registry Guide
 
-How to create and host an MCP server registry for KDE Discover.
+How to create and host an MCP server registry for dmcp.
 
 ## Overview
 
-The MCP catalogue in KDE Discover fetches server listings from **registries** -- JSON files hosted at a URL. Users add your registry URL to their `~/.config/mcp/sources.list`, and Discover pulls your server catalogue automatically.
+dmcp fetches server listings from **registries** -- JSON files hosted at a URL. Users add your registry URL to their `~/.config/mcp/sources.list` (`dmcp sources add <url>`), and dmcp browses, searches, and installs from your catalogue. dmcp is a command-line and programmatic client; the JARVIS agent drives it through the same interface (see `dmcp serve`).
 
 The flow looks like this:
 
 ```
 Your GitHub repo                     User's machine
-  registry.json         -->        KDE Discover
-  (index: id -> manifest URL)       fetches index & caches
-  servers/*/manifest.json  -->     fetches manifests as needed
-                                    shows servers in UI
-                                    user clicks Install
+  registry.json         -->        dmcp browse / search
+  (index: id -> manifest URL)       fetches the index
+  servers/*/manifest.json  -->     fetches a manifest on install
+                                    dmcp install <id>
                                     manifest.json written to installed/{id}/
                                     index.json updated (id -> manifest location)
 ```
@@ -25,14 +24,14 @@ Registry sources are read from (in priority order):
 
 ### Automatic vs Manual Setup
 
-Discover creates most files automatically; only the system sources list needs manual setup:
+dmcp creates most files automatically; only the system sources list needs manual setup:
 
 | File or directory | Created by | Notes |
 |-------------------|------------|-------|
-| `~/.config/mcp/sources.list` | Discover | Auto-created on first run from the installed default, or a fallback if none exists. Users can add registry URLs here. |
-| `~/.local/share/mcp/installed/index.json` | Discover | Created when the first server is installed. Updated on each install/remove. |
-| `~/.local/share/mcp/installed/<id>/manifest.json` | Discover | Written per server on install; updated when the user saves configuration. |
-| `~/.cache/discover/mcp-registries/` | Discover | Cache for fetched registries. Created when registries are first fetched. |
+| `~/.config/mcp/sources.list` | dmcp | Auto-created on first run from the installed default, or a fallback if none exists. Users can add registry URLs here. |
+| `~/.local/share/mcp/installed/index.json` | dmcp | Created when the first server is installed. Updated on each install/remove. |
+| `~/.local/share/mcp/installed/<id>/manifest.json` | dmcp | Written per server on install; updated when the user saves configuration. |
+| `~/.local/share/mcp/vector_index/index.json` | dmcp | Semantic-search index built from registry embeddings. Rebuildable via `dmcp sync-index`. |
 | `/etc/mcp/sources.list` | Admin/distro | **Manual setup.** System-wide registry sources. Create this file if you want all users on the machine to see the same registries by default. |
 
 ## Registry File Format
@@ -47,7 +46,7 @@ A registry has two parts:
 If you want a community-vetted registry (AUR-like), you can add optional fields to support **trust status**, **immutability**, and **signatures**.
 
 - **`trustStatus` (index entry)**: A lightweight status flag used for filtering without fetching manifests.
-  - Suggested values: `"unreviewed"`, `"in-review"`, `"vetted"`, `"deprecated"`, `"removed"`.
+  - Values: `"community"` (submitted, automated checks only) and `"official"` (maintainer-reviewed, source pinned), plus `"deprecated"` / `"removed"` for revocation. See [`docs/TRUST-MODEL.md`](docs/TRUST-MODEL.md) for the canonical model and the vetting flow.
 - **`integrity` (index entry)**: Content fingerprints that bind review status to an exact manifest and setup script.
   - `manifestSha256`: SHA-256 of the referenced `manifest.json` content.
   - `setupScriptSha256`: SHA-256 of the referenced setup script content (if present).
@@ -78,7 +77,7 @@ The index is a single JSON file with this structure:
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
       "categories": ["mcp", "mcp-development"],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "<sha256 of manifest.json>",
         "setupScriptSha256": "<sha256 of setup.sh (if present)>"
@@ -109,10 +108,10 @@ The index is a single JSON file with this structure:
 | `keywords`  | array  | Search keywords for discovery.                           |
 | `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
-| `trustStatus` | string | Optional. Community review status (e.g. `"unreviewed"`, `"vetted"`). |
+| `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
 | `integrity` | object | Optional. Content hashes that bind vetting to specific manifest/script content. |
 
-Discover loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
+dmcp loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
 
 ### Manifest Format (Server Entry Schema)
 
@@ -160,7 +159,7 @@ Define each tool the MCP server provides. Required for tooling and validation.
 
 ### Setup Script
 
-Developers point to a `setupScript` URL in the registry. Discover **downloads** that script and runs it in the server’s **install directory** (where `manifest.json` lives), so the script can read the user’s config from the manifest and set up the environment.
+Developers point to a `setupScript` URL in the registry. dmcp **downloads** that script and runs it in the server’s **install directory** (where `manifest.json` lives), so the script can read the user’s config from the manifest and set up the environment.
 
 - **Local servers (stdio):** The script runs after the Git clone. Use it to install dependencies (e.g. `pip install -r requirements.txt`, `npm install`, `cargo build --release`) and optionally apply config from `manifest.json`.
 - **Remote servers (SSE/WebSocket):** There is no clone; the install directory only contains `manifest.json` with the user’s config (API key, endpoint, etc.). The script runs **locally** in that directory, reads the manifest, and prepares the connection (e.g. writes a `.env` or client config file) so the local client can use the user’s config when connecting to the remote server. The script never runs on the remote server—it bridges the user’s local config with the remote endpoint.
@@ -198,7 +197,7 @@ Registry owners define each server's icon in the `icon` field. Two formats are s
    - GitHub raw URL: `"https://raw.githubusercontent.com/yourorg/mcp-registry/main/logos/my-server.png"`
    - Any public image URL (PNG, SVG, etc.)
 
-If omitted, Discover falls back to `"application-x-executable"`. Prefer Freedesktop names when a suitable one exists; use URLs for custom branding.
+If omitted, dmcp falls back to `"application-x-executable"`. Prefer Freedesktop names when a suitable one exists; use URLs for custom branding.
 
 ## Transports (Entrypoints)
 
@@ -296,15 +295,15 @@ For **local servers** (stdio), the `source` object specifies a Git repository to
 | `url`  | string | Git repository URL.                                              |
 | `path` | string | Project root within the repo (optional). Empty = repo root.      |
 
-Discover clones the repo, extracts the project root (`path` or repo root), and runs the transport's `command` + `args` from that directory. The registry author specifies the exact launcher (e.g. `python3 server.py`, `node index.js`) — any language works.
+dmcp clones the repo, extracts the project root (`path` or repo root), and runs the transport's `command` + `args` from that directory. The registry author specifies the exact launcher (e.g. `python3 server.py`, `node index.js`) — any language works.
 
-For **remote servers** (SSE/WebSocket), omit `source` or use an empty object. Discover validates the endpoint and stores the connection details. Shows "Connect" / "Disconnect" instead of "Install" / "Remove".
+For **remote servers** (SSE/WebSocket), omit `source` or use an empty object. dmcp validates the endpoint and stores the connection details rather than cloning a repo.
 
 ## Configuration Properties
 
 Servers can declare configurable properties in a single `configurableProperties` array. Each property has a `required` flag to indicate whether it must be filled before installation.
 
-Discover shows a configuration dialog before installation if any required properties are empty. Optional properties are pre-filled with their `default` value and can be edited post-install.
+dmcp prompts for any required properties that are unset before installing. Optional properties fall back to their `default` value and can be changed later with `dmcp config set`.
 
 ```json
 "configurableProperties": [
@@ -339,7 +338,7 @@ Discover shows a configuration dialog before installation if any required proper
 | Field         | Type    | Description                                                |
 |---------------|---------|------------------------------------------------------------|
 | `key`         | string  | Internal identifier. Used as the key in config storage.    |
-| `label`       | string  | Label shown in the configuration dialog.                   |
+| `label`       | string  | Human-readable label for the property.                     |
 | `description` | string  | Help text shown below the input field.                     |
 | `default`     | string  | Default value. Pre-filled in the UI (mainly for optional). |
 | `sensitive`   | boolean | If `true`, field is shown as a password input.             |
@@ -347,7 +346,7 @@ Discover shows a configuration dialog before installation if any required proper
 
 User-provided values are stored in the per-server manifest at `<installDir>/manifest.json` in the `config` object. MCP servers read their configuration from this manifest file. Optional property defaults are applied automatically if the user doesn't override them.
 
-All MCP servers appear under **Development > MCP Servers** in Discover. Use `keywords` for searchability.
+Use `keywords` to make your server discoverable via `dmcp browse -k <keyword>` and semantic search.
 
 
 ## Hosting Your Registry
@@ -378,7 +377,7 @@ https://yourorg.github.io/mcp-registry/registry.json
 
 ### Option 3: Your Own Server
 
-Host `registry.json` on any web server. Discover sends a standard HTTP GET with the User-Agent `KDE Discover MCP Backend/1.0`. Ensure HTTPS is used and redirects are followed.
+Host `registry.json` on any web server. dmcp sends a standard HTTP GET with the User-Agent `dmcp/1.0`. Ensure HTTPS is used and redirects are followed.
 
 ## Minimal Working Example
 
@@ -435,19 +434,19 @@ Here is a complete minimal registry with one local server (Git) and one remote S
 }
 ```
 
-## How Discover Processes Your Registry
+## How dmcp Processes Your Registry
 
-1. **Fetch**: On startup (and on manual refresh), Discover fetches each URL from `sources.list`.
-2. **Cache**: The response is cached locally at `~/.cache/discover/mcp-registries/`.
-3. **Parse**: Each server entry in the `servers` array becomes a resource in the MCP Servers catalogue.
-4. **Merge**: If a server from the registry is already installed (matched by `id`), Discover compares versions and marks it as upgradeable if the registry version is newer.
-5. **Display**: Servers appear under Development > MCP Servers, searchable by name, summary, id, and keywords.
+1. **Fetch**: On startup (and on manual refresh), dmcp fetches each URL from `sources.list`.
+2. **Cache**: The response is cached locally at `the vector index (see dmcp sync-index)`.
+3. **Parse**: Each server entry in the `servers` object becomes an installable server in the catalogue.
+4. **Merge**: If a server from the registry is already installed (matched by `id`), dmcp compares versions and marks it as upgradeable if the registry version is newer.
+5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords.
 
 ## What Happens on Install
 
-When a user clicks Install on your server:
+When a user runs `dmcp install <id>`:
 
-1. If `configurableProperties` exist and any required ones are unconfigured, a configuration dialog is shown.
+1. If `configurableProperties` exist and any required ones are unset, dmcp prompts for them.
 2. If `scope` is `"system"`, the user authenticates via polkit (password prompt for pkexec).
 3. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
 4. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
@@ -479,8 +478,8 @@ Removal is a simple `rm -rf <installDir>`. All files are self-contained. For sys
 
 ## Tips
 
-- **Keep IDs stable.** The `id` field is how Discover tracks a server across registry updates. Changing it creates a "new" server.
-- **Use semantic versioning.** Discover compares `installedVersion` against your registry's `version` to detect upgrades.
+- **Keep IDs stable.** The `id` field is how dmcp tracks a server across registry updates. Changing it creates a "new" server.
+- **Use semantic versioning.** dmcp compares `installedVersion` against your registry's `version` to detect upgrades.
 - **Test your JSON.** A malformed registry file is silently skipped. Validate your JSON before publishing.
 - **Update the `updated` timestamp** when you publish changes, so users know the registry is maintained.
-- **Provide a `bugUrl`.** It shows a "Report Bug" link on the server's detail page in Discover.
+- **Provide a `bugUrl`.** It shows a "Report Bug" link on the server's detail page in dmcp.
