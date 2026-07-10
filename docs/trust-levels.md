@@ -1,5 +1,14 @@
 # Trust Levels
 
+> **Superseded by [`TRUST-MODEL.md`](TRUST-MODEL.md).** The canonical model uses
+> **two** tiers — `community` and `official` — plus the `deprecated`/`removed`
+> revocation states, not the three-level scale below. `TRUST-MODEL.md` also
+> defines the actor model (human CLI vs. autonomous agent) and the dmcp
+> enforcement contract, neither of which is covered here. The review criteria and
+> revocation process below remain accurate and now describe the `official` tier;
+> read them through the two-tier mapping in `TRUST-MODEL.md` §3. Do not add new
+> `trustStatus` values from this file.
+
 Every server in the registry carries a `trustStatus` field in `registry.json`. This field signals how thoroughly the server has been reviewed and how much a user can trust its behavior.
 
 Trust is not a binary flag. It is a progressive scale that balances openness (accepting new servers quickly) with safety (protecting users from malicious or broken servers).
