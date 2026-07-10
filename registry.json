@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-29T21:43:58Z",
+  "updated": "2026-07-10T07:41:31Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -24,7 +24,7 @@
         "mcp",
         "mcp-development"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "88f85e2fa06e7070a5398de4e5e2443ec49e76ee177ca387d8e3d5c7fecc2224",
         "setupScriptSha256": "8399e31355b5b5aa98d6d0d5d0e454347abd7f202049ccfeab3140a2cef5060f"
@@ -824,7 +824,7 @@
         "mcp",
         "mcp-development"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "04460282a4a5c49f86205a123e7a5ac1756f10a64b5b7027707fb195d860da3b",
         "setupScriptSha256": "3f6cea46553913f1460639864c155fcb12359f89a161374449ab5238493d8e05"
@@ -1624,7 +1624,7 @@
         "mcp",
         "mcp-development"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "4efd9f42aaa9a80077bb950bf650df3a89089ff755b5c661e4bfb25273e5f3ea",
         "setupScriptSha256": "af3e39085b0be6924e7dc297c6c1e052bb46b54c27a0af32b07bd3746df6e5d3"
@@ -2423,7 +2423,7 @@
         "mcp",
         "mcp-development"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "898bc1e723a643a2e89b6840ec3be46758d3e7a07327c530c5dba1a11053023e",
         "setupScriptSha256": "26fc5c1c5c7120e82fcc08210f049f43f1ef01814a43f6ccb4fc6eb1dbb093f6"
@@ -3224,7 +3224,7 @@
         "mcp-development",
         "mcp-web"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "2ea6dbf10a50b902c72d5b979ecea067698f383e1ce693c7654d408107726a77",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
@@ -4026,6 +4026,7 @@
         "mcp",
         "system"
       ],
+      "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
         "manifestSha256": "e3c786f80759d33230a0693a6f51771cce7d9dcda59a2f47d327fe758dc92249",
@@ -4058,6 +4059,7 @@
         "mcp",
         "system"
       ],
+      "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
       "integrity": {
         "manifestSha256": "e82462a38de0c19705bf3495076bc768ed6f40ffd795f611b79a4b99143c5bf8",
@@ -4083,7 +4085,7 @@
         "mcp-development",
         "mcp-web"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "ce025ac6883ed77dd5f14327d2f374b74831a67004a81563166420c9dbae5f69",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
@@ -4886,7 +4888,7 @@
         "mcp-development",
         "mcp-testing"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "9acc97fbb455fd44e484c891375c1adf74a47344fb9748a3569768be592a9b17",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
@@ -5689,7 +5691,7 @@
         "mcp-development",
         "mcp-testing"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "d5a3b6c4642422afc857a642993c98816009995a5a777557e59a4e39c61165b1",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
@@ -6493,7 +6495,7 @@
         "mcp-testing",
         "mcp-security"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "ff5827025625961a51fe10a35ffb668c0256532c039aff871f5566db1685e0c0",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
@@ -7295,7 +7297,7 @@
         "mcp-development",
         "mcp-testing"
       ],
-      "trustStatus": "unreviewed",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "4b044616533d3680c6114f2ad8adb3fee2e27880a5f9271cbe08f12016587108",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
@@ -8100,7 +8102,7 @@
         "mcp-utilities",
         "mcp-development"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "14794922a5d234d5209adbc9d581ae773abba98bae6376f0242e2318f5451ec4",
         "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
@@ -8904,7 +8906,7 @@
         "mcp-web",
         "mcp-development"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "6e0870f8b4bf4294b9aa2b72fd39559c9e3f772bf0b14719a09a3ea4c9500514",
         "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
@@ -9707,7 +9709,7 @@
         "mcp-development",
         "mcp-web"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "b4f6c37aca489fbd4a7c143efd775355fd1671f3ef7cfd5ec74b64cd717b9078",
         "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
@@ -10508,7 +10510,7 @@
         "mcp",
         "mcp-utilities"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "ce97bb718b0c0c45dd51867f4bcb44bf0df25800039468ed080b3078a1cd5dc8",
         "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
@@ -11310,7 +11312,7 @@
         "mcp-development",
         "mcp-utilities"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "a46214feff9c2a18659cc14a8f16e203fd78ca3cc7024fb0038462411d4c54de",
         "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
@@ -12114,7 +12116,7 @@
         "mcp-web",
         "mcp-security"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "5560c35119119c4ac992e76569de663cc2a609c7a6df2ffc7d07254b33ff610a",
         "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
@@ -12915,7 +12917,7 @@
         "mcp",
         "mcp-development"
       ],
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "1e243ec26e3b5908d10222c410100679b8da711a6af09d03d69603cdb8011005",
         "setupScriptSha256": "adf44dcca167ae9de02baee6c4f713912eda40d9f7443043a871725752b7caf6"
