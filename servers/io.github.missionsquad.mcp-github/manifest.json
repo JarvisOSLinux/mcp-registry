@@ -16,7 +16,7 @@
     "type": "git",
     "url": "https://github.com/MissionSquad/mcp-github.git"
   },
-  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/io.github.missionsquad.mcp-github/setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/setup.sh",
   "tools": [
     {
       "name": "create_or_update_file",

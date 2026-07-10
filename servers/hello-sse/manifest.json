@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "scope": "user",
-  "homepage": "https://github.com/YakupAtahanov/mcp-registry",
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
     {
       "type": "sse",
@@ -9,7 +9,7 @@
       "description": "Local test endpoint"
     }
   ],
-  "setupScript": "https://raw.githubusercontent.com/YakupAtahanov/mcp-registry/main/servers/hello-sse/setup.sh",
+  "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/hello-sse/setup.sh",
   "tools": [
     {
       "name": "hello",
