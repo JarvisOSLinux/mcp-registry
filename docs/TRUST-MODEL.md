@@ -61,24 +61,29 @@ manifest and `setup.sh` before running them), not to forbid it.
 ### 2.2 Autonomous agent — Project-JARVIS via `dmcp serve`
 
 The LLM talks to dmcp only through the MCP tool surface exposed by
-`dmcp serve`. That surface is **confined**, and the confinement is the mitigation
-for Threats #1 and #3 (see §6). The agent:
+`dmcp serve`. That surface is **confined to the human's configured sources**, and
+that source-confinement — not a tier allowlist — is the mitigation for Threats #1
+and #3 (see §6). The agent:
 
 - installs servers **by ID only**, from **already-configured** registries
   — `install_server` calls `fetch_server_from_registry(paths, id)` and has no
   URL parameter (`src/serve.rs:156`), **implemented**;
 - has **no tool to add, remove, or reorder sources** — the source list is not
   reachable from the MCP surface, **implemented (by absence)**;
-- must, by policy, install **official**-tier servers only unless a human has
-  explicitly widened the policy — **proposed** (dmcp does not yet read
-  `trustStatus`; see §5).
+- may install **both `community` and `official`** entries from those sources —
+  every registry entry is PR-vetted, so `community` is *reviewed-but-not-
+  maintainer-endorsed*, not *unvetted*. `community` installs surface a
+  "not maintainer-reviewed" warning; a deployment that wants official-only can set
+  `DMCP_AGENT_ALLOW_COMMUNITY=0` (human-controlled config, never the MCP surface),
+  **implemented** (`install.rs::agent_trust_gate`). `deprecated` / `removed`
+  entries are never agent-installable.
 
-> **The confinement currently holds by accident, not by contract.** It is true
-> today only because nobody has added a `url` field to `install_server` or an
-> `add_source` MCP tool. The single most important hardening task is to make this
-> an **explicit, tested invariant** so a future convenience change cannot silently
-> dissolve the boundary. See issue: *"dmcp: assert serve surface cannot add
-> sources or install from URL."*
+> **The source-confinement is now an explicit, tested invariant.** It no longer
+> holds "by accident": `serve.rs` exposes no `url` parameter on `install_server`
+> and no `add_source` tool, and that is locked by an invariant test (dmcp PR #24)
+> so a future convenience change cannot silently dissolve the boundary. The trust
+> tier is a *within-source* assurance signal layered on top; the source list
+> itself remains the primary control and is human-only.
 
 ---
 
@@ -95,7 +100,9 @@ trusting the submitter, not the registry maintainers.
 
 - Human CLI: installable after an explicit acknowledgment that shows the manifest
   and any `setup.sh`.
-- Autonomous agent: **not installed by default.**
+- Autonomous agent: **installable, with a "not maintainer-reviewed" warning** —
+  because every entry is PR-vetted before it reaches the registry. Deployments
+  that want official-only can opt in via `DMCP_AGENT_ALLOW_COMMUNITY=0`.
 
 ### `official`
 **A maintainer reviewed and endorsed it.** To reach `official` a maintainer has:
@@ -113,8 +120,9 @@ trusting the submitter, not the registry maintainers.
 ### Revocation (`deprecated` / `removed`)
 Orthogonal to the two tiers. Set when a security issue is found, the upstream
 disappears or is taken over, or the server misbehaves. Entries are kept (not
-hard-deleted) to avoid breaking existing installs; dmcp should warn on
-`deprecated` and refuse `removed`. **proposed** (dmcp reads neither today).
+hard-deleted) to avoid breaking existing installs. dmcp warns on `deprecated` and
+refuses `removed` on the human CLI, and refuses **both** on the agent path.
+**implemented** (`install.rs::cli_trust_gate` / `agent_trust_gate`).
 
 ### Migration from current data
 `registry.json` currently holds `unreviewed` (10) and `vetted` (7), and
@@ -141,7 +149,7 @@ is what makes the mitigation real enough to publish.
  developer opens submission PR (adds servers/<id>/manifest.json [+ setup.sh])
         │
         ▼
- PR-gate CI (required, blocking):                              [proposed]
+ PR-gate CI (required, blocking):                              [implemented]
    • JSON + schema validation of registry.json and the manifest
    • entry id == manifest id; manifest URL resolves to the file
    • integrity.manifestSha256 / setupScriptSha256 recomputed and match
@@ -149,7 +157,8 @@ is what makes the mitigation real enough to publish.
      it CANNOT be raised to "official" without a maintainer approval label
         │
         ▼
- trustStatus = community  (installable by humans, invisible to the agent)
+ trustStatus = community  (installable by humans and the agent; the agent sees
+                           a "not maintainer-reviewed" warning)
         │
         ▼
  maintainer review: read source, verify license, verify tool descriptions,
@@ -162,9 +171,10 @@ is what makes the mitigation real enough to publish.
 
 The crucial CI rule — **`trustStatus` cannot be raised except through a
 maintainer-gated approval** — is what stops a submitter from marking their own
-server `official`. `REGISTRY-AUTOMATION.md` §3.1 already proposes this; it is not
-yet built. The existing `sync-registry.yml` runs only on push-to-`main`, not on
-PRs, so there is currently **no PR gate at all**.
+server `official`. This is now built: `.github/workflows/validate-pr.yml` runs
+`scripts/validate_registry.py` on every PR to `main` and fails the check if an
+entry is promoted to `official` without a maintainer applying the `trust-approved`
+label (schema, id/scope, and integrity hashes are validated in the same gate).
 
 ---
 
@@ -177,7 +187,7 @@ installs are the bytes that were reviewed. The full chain:
 reviewed PR  →  merged entry records manifestSha256 + pinned source commit
              →  dmcp verifies manifestSha256 against the RAW fetched bytes
              →  dmcp clones source at the pinned commit (not branch HEAD)
-             →  agent is confined to configured official sources
+             →  agent is confined to the human's configured sources (community + official)
 ```
 
 Enforcement status in dmcp today:
@@ -185,16 +195,17 @@ Enforcement status in dmcp today:
 | Requirement | Where | Status |
 |---|---|---|
 | Verify `setupScriptSha256` before running `setup.sh` | `install.rs` | **implemented** |
-| Verify `integrity.manifestSha256` on install | `install.rs` | **missing** — never read; raw bytes are discarded by `resp.json()` + merge before any check could run |
-| Read `trustStatus`; gate agent path to `official` | `install.rs` / `serve.rs` | **missing** — field never read anywhere in `src/` |
-| Pin `source.url` to a commit (not `--depth 1` HEAD) | `install.rs` | **missing** — clones branch HEAD |
-| Warn on `deprecated`, refuse `removed` | `install.rs` | **missing** |
-| Serve surface exposes no URL-install / no add-source | `serve.rs` | **implemented, untested** — make it an invariant test |
-| Validate embedding dimension against `embedding_spec` | `sync_index.rs` | **missing** — mismatched vectors silently score 0.0 |
+| Verify `integrity.manifestSha256` on install | `install.rs` | **implemented** — hashed against the RAW fetched bytes before parse/merge (`verify_manifest_hash`) |
+| Read `trustStatus`; gate the agent path | `install.rs` / `serve.rs` | **implemented** — `agent_trust_gate` allows `official`, warns+allows `community` (opt-out via `DMCP_AGENT_ALLOW_COMMUNITY=0`), refuses `deprecated`/`removed` |
+| Pin `source.url` to a commit (not `--depth 1` HEAD) | `install.rs` | **implemented** — clones and checks out the recorded commit, then verifies HEAD matches the pin |
+| Warn on `deprecated`, refuse `removed` | `install.rs` | **implemented** — `cli_trust_gate` / `agent_trust_gate` |
+| Serve surface exposes no URL-install / no add-source | `serve.rs` | **implemented + tested** — locked by an invariant test (PR #24) |
+| Validate embedding dimension against `embedding_spec` | `sync_index.rs` | **missing** — mismatched vectors still silently score 0.0 |
 
-The first four rows are the substance of the Threat #1 mitigation. Until they
-land, the registry's trust metadata is **recorded but not enforced**, and the
-paper must describe it that way.
+The integrity + trust rows — the substance of the Threat #1 mitigation — have now
+landed, so the registry's trust metadata is **recorded *and* enforced by the
+client**. One gap remains in this table (embedding-dimension validation), and the
+PR-gate above is what keeps the recorded metadata honest at submission time.
 
 ---
 
@@ -202,15 +213,21 @@ paper must describe it that way.
 
 Honest status of the mitigations this document underpins:
 
-- **Threat #1 — Malicious MCP Servers.** Mitigation = the community-vetted
-  registry + client integrity verification + agent source-confinement.
-  Status: **partial.** Vetting *venue* and metadata exist; the PR-gate and dmcp's
-  integrity/trust enforcement do not yet. Source-confinement of the agent is
-  **implemented** (by absence) and needs to become a tested invariant.
+- **Threat #1 — Malicious MCP Servers.** Mitigation = a **PR-gated registry**
+  (no anonymous upload; every tier reviewed before inclusion) + **agent
+  source-confinement** (installs only from human-configured sources, by id, never
+  a URL — a tested invariant) + the **client integrity chain** (`manifestSha256`
+  over raw bytes + pinned-commit clones). The trust *tiers* layer higher assurance
+  on top (`official` = maintainer-endorsed) but are not the boundary — the boundary
+  is "reviewed-before-inclusion, from a confined source, byte-for-byte verified."
+  Status: **largely implemented** — PR-gate, integrity verification, commit
+  pinning, revocation, and the confinement invariant are all in code; embedding-
+  dimension validation (§5) is the one remaining gap.
 - **Threat #3 — Misleading MCP Server Usage.** Mitigation = the `official`-tier
   review step that verifies tool descriptions match behavior, plus the structured
-  tool schema. Status: **partial** — the review criterion is defined here; the
-  structured-schema half exists in the manifest format.
+  tool schema. Status: **partial** — the review criterion is defined here and the
+  structured-schema half exists in the manifest format; the maintainer-review
+  process itself is the human step that remains ongoing.
 
 Threats #2 (Prompt Injection), #4/#5 (sudo), and #6 (Bloated Context) are
 mitigated elsewhere (dispatch, the OS embodiment, contextor) and are out of scope
@@ -235,13 +252,14 @@ for this document.
 1. **Naming.** `community`/`official` is used here. If the paper prefers to keep
    the word `verified`, rename `official` → `verified` consistently everywhere
    (data + docs + dmcp). Pick one and only one.
-2. **Default agent policy source.** Is "agent installs official-only" a
-   hard-coded default in `dmcp serve`, or a config value a deployment sets? A
-   config value is more flexible but adds a knob the agent must not be able to
-   flip — it must live in human-controlled config, never the MCP surface.
+2. ~~**Default agent policy source.**~~ **Resolved (#28).** The agent is **not**
+   official-only: it installs `community` + `official` from configured sources,
+   because all tiers are PR-vetted. Official-only is an *opt-in* via the
+   `DMCP_AGENT_ALLOW_COMMUNITY` environment variable — human-controlled config,
+   never reachable from the MCP surface.
 3. **Signing scheme** (if adopted): OpenPGP vs. Ed25519/minisign vs. Sigstore.
-4. **Where `community` servers live.** Either as `community`-tier entries inside
-   the official registry (this document's assumption), or only as open PRs / in
-   separate user-added sources. The former lets a human opt into them by tier;
-   the latter keeps the official registry uniformly `official`. This choice
-   determines whether dmcp's tier-gate or its source-gate is the primary control.
+4. ~~**Where `community` servers live.**~~ **Resolved (#28).** `community` entries
+   live in the registry alongside `official` ones and are installable by both the
+   human and the agent. The **source-gate** (confinement to human-configured
+   registries) is the primary control; the tier is a within-source assurance
+   signal, not the boundary.
