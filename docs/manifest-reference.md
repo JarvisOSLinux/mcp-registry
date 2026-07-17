@@ -145,6 +145,7 @@ Specifies the Git repository to clone for local stdio servers. Omit for remote (
 | `type` | string | Yes | Must be `"git"`. |
 | `url` | string | Yes | Full HTTPS or SSH Git URL. Must be publicly accessible. |
 | `path` | string | No | Subdirectory within the repo to use as the project root. Omit to use the repo root. |
+| `rev` | string | No | Full 40-character commit SHA to pin the clone to. Required for `official`-tier servers — dmcp clones with full history, checks out this exact commit, and refuses to install if the resolved `HEAD` doesn't match (`SourceRevMismatch`). Omit for `community`-tier servers, which take a fast shallow (`--depth 1`) clone of the default branch instead. |
 
 After cloning, the transport's `command` + `args` run from the resolved project root.
 
