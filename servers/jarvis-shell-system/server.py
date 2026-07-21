@@ -39,8 +39,7 @@ TOOLS = [
                 },
                 "timeout": {
                     "type": "number",
-                    "description": "Timeout in seconds (default: 30)",
-                    "default": 30,
+                    "description": "Optional. Seconds before the command is killed. Omit to run with no timeout — long-running work is tracked and controlled via dispatch's REMIND/wait/kill, not killed here.",
                 },
                 "env": {
                     "type": "object",
@@ -70,8 +69,7 @@ TOOLS = [
                 },
                 "timeout": {
                     "type": "number",
-                    "description": "Timeout in seconds (default: 30)",
-                    "default": 30,
+                    "description": "Optional. Seconds before the command is killed. Omit to run with no timeout — long-running work is tracked and controlled via dispatch's REMIND/wait/kill, not killed here.",
                 },
             },
             "required": ["script"],
@@ -100,11 +98,22 @@ def _run_result(success: bool, exit_code: int, stdout: str, stderr: str) -> dict
     }
 
 
+def _timeout_seconds(arguments: dict):
+    """Seconds before the command is killed, or None for no timeout.
+
+    Long-running commands are not killed here on a default timer: dispatch's
+    REMIND/wait/kill keeps JARVIS informed and in control instead. A timeout is
+    applied only when the caller explicitly sets a positive one.
+    """
+    t = arguments.get("timeout")
+    return float(t) if t else None
+
+
 def _call_execute_command(arguments: dict) -> dict:
     command = arguments["command"]
     args = [str(a) for a in arguments.get("args") or []]
     cwd = arguments.get("cwd") or None
-    timeout = float(arguments.get("timeout") or 30)
+    timeout = _timeout_seconds(arguments)
     extra_env = arguments.get("env") or {}
 
     env = os.environ.copy()
@@ -137,7 +146,7 @@ def _call_execute_command(arguments: dict) -> dict:
 def _call_execute_script(arguments: dict) -> dict:
     script = arguments["script"]
     cwd = arguments.get("cwd") or None
-    timeout = float(arguments.get("timeout") or 30)
+    timeout = _timeout_seconds(arguments)
 
     env = os.environ.copy()
     env.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
