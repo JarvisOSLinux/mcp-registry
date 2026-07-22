@@ -73,13 +73,27 @@ multiple models to coexist if the registry ever ships vectors for more than one.
     { "name": "write", "description": "Write file contents." }
   ],
   "embeddings": {
-    "nomic-embed-text": [0.0312, -0.1847, 0.0091, ...]
+    "nomic-embed-text": {
+      "v": [0.0312, -0.1847, 0.0091, ...],
+      "hash": "<sha256 of the canonical text>"
+    }
   }
 }
 ```
 
-The array length must equal `embedding_spec.dimensions`. Consumers validate
-this at load time and skip malformed entries.
+Each model key maps to `{"v": [floats], "hash": "<sha256>"}` — `hash` is the
+SHA-256 of the canonical text, used by `generate_embeddings.py` for
+incremental regeneration (unchanged text is skipped).
+
+Vector length should equal `embedding_spec.dimensions`. Consumers do not
+hard-validate this at load time; dmcp infers dimensions from the fetched
+vectors.
+
+**Registry inline embeddings (primary consumer path):** in addition to the
+per-manifest form above, `generate_embeddings.py` writes each `registry.json`
+entry an `embeddings` object `{model, version, server: [vector], tools:
+{tool-name → vector}}`. This inline form is what `dmcp sync-index` actually
+fetches; the per-manifest form is the authoring/source-of-truth copy.
 
 ---
 
@@ -127,42 +141,34 @@ JARVIS reads `EMBED_MODEL` from the environment (default `nomic-embed-text`,
 | Condition                                         | Action                                                        |
 |---------------------------------------------------|---------------------------------------------------------------|
 | `EMBED_MODEL` == `embedding_spec.model`           | Use pre-computed vectors from manifests directly.             |
-| `EMBED_MODEL` != `embedding_spec.model` (or null) | Re-embed canonical text locally using `EMBED_MODEL`.          |
-| `embedding_spec` missing                          | Re-embed canonical text locally.                              |
+| `EMBED_MODEL` != `embedding_spec.model` (or spec missing) | JARVIS adopts the registry's model: it sets its local Ollama embedding model to `embedding_spec.model` and pulls it if absent, so its query vectors match the registry's pre-computed vectors. |
 
-Re-embedding happens once at startup and is cached in memory for the session.
 Results are never written back to the manifest files — the registry is the
 canonical source of pre-computed vectors.
 
 ### Fallback chain
 
 ```
-1. Pre-computed vectors (fast, no model call)          ← preferred
-2. Local re-embedding of canonical text (one-time cost)
+1. Pre-computed registry vectors via dmcp sync-index   ← preferred
+2. Local indexing of non-registry servers after install (dmcp index-server —
+   JARVIS embeds server-id + tool docs)
 3. Keyword substring match on name/summary/keywords    ← always available
 ```
-
-Fallback 3 is always tried for any server that fails steps 1 or 2 (e.g. the
-manifest is missing the `embeddings` key because it was added before this spec
-was adopted).
 
 ---
 
 ## How dmcp Uses Embeddings
 
-`dmcp browse` currently filters by keyword (`-k`). When `embedding_spec` is
-present in a fetched registry and the local model matches, dmcp can optionally
-rank results by cosine similarity instead of substring match.
+**Implemented.** `dmcp sync-index` downloads per-server embeddings from
+`registry.json` into a local vector index; `dmcp browse --vector '<json
+array>'` (or `--vectors` for a batch) ranks by cosine similarity with
+`--top-k` (default 5) and `--min-score`. `dmcp embedding-spec` reports the
+model the index expects, `dmcp server-count`/`dmcp index-server` support the
+consumer flow. The keyword path (`-k`) remains available.
 
-This is **not yet implemented** — the spec is defined here so the schema is
-stable before implementation begins. The existing keyword path is unchanged.
-
-Future `dmcp browse` flags (planned):
-
-```
---semantic <query>   rank by cosine similarity (requires local Ollama)
---model <name>       override the local model used for comparison
-```
+Note: dmcp's `Manifest` struct intentionally has no embeddings field — vectors
+flow from `registry.json` inline embeddings into a dedicated local vector
+index (`src/vector_index.rs`, populated by `sync_index.rs`).
 
 ---
 
@@ -175,75 +181,19 @@ along with the manifest. Use the script below when:
 - A server's `name`, `summary`, `keywords`, or `tools` change.
 - The embedding model version changes (requires a full re-run for all servers).
 
-### Quick script (Python, Ollama)
+### Generation script
 
-```python
-#!/usr/bin/env python3
-"""generate_embeddings.py — regenerate embeddings for all registry manifests."""
-import json, pathlib, urllib.request
+Use `scripts/generate_embeddings.py`:
 
-MODEL = "nomic-embed-text"
-OLLAMA_URL = "http://localhost:11434/api/embeddings"
-SERVERS_DIR = pathlib.Path("servers")
-
-def canonical_text(m: dict) -> str:
-    parts = []
-    if m.get("name"):
-        parts.append(m["name"] + ".")
-    if m.get("summary"):
-        parts.append(m["summary"] + ".")
-    if m.get("keywords"):
-        parts.append("Keywords: " + ", " .join(m["keywords"]) + ".")
-    tools = m.get("tools", [])[:20]
-    if tools:
-        tool_strs = []
-        for t in tools:
-            name = t["name"] if isinstance(t, dict) else str(t)
-            desc = t.get("description", "") if isinstance(t, dict) else ""
-            tool_strs.append(f"{name}: {desc}" if desc else name)
-        parts.append("Tools: " + "; ".join(tool_strs) + ".")
-    return " ".join(parts)
-
-def embed(text: str) -> list[float]:
-    body = json.dumps({"model": MODEL, "prompt": text}).encode()
-    req = urllib.request.Request(OLLAMA_URL, data=body,
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())["embedding"]
-
-for manifest_path in sorted(SERVERS_DIR.glob("*/manifest.json")):
-    manifest = json.loads(manifest_path.read_text())
-    text = canonical_text(manifest)
-    print(f"Embedding {manifest_path.parent.name} ...")
-    vector = embed(text)
-    manifest.setdefault("embeddings", {})[MODEL] = vector
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"  done ({len(vector)}d)")
-
-print("All done. Commit the updated manifests.")
+```
+python3 scripts/generate_embeddings.py [--model <name>] [--force]
 ```
 
-Run it:
-
-```bash
-# Ensure Ollama is running with the target model pulled
-ollama pull nomic-embed-text
-python3 scripts/generate_embeddings.py
-git add servers/*/manifest.json
-git commit -m "chore: regenerate embeddings (nomic-embed-text)"
-```
-
-### GitHub Actions (automated)
-
-See [REGISTRY-AUTOMATION.md](REGISTRY-AUTOMATION.md) section 3 for the
-workflow_dispatch approach. The same script above can be invoked there, with
-the Ollama server started as a service step.
-
-Recommendation: regenerate via PR rather than pushing directly to `main`, so
-the large diff (many floats) can be reviewed and the hash in `integrity` blocks
-can be updated in the same commit.
-
----
+It is incremental — servers whose canonical-text SHA-256 matches the stored
+`embeddings[model].hash` are skipped (`--force` re-embeds everything). It
+writes both the per-manifest `{"v": ..., "hash": ...}` form and the inline
+`registry.json` `embeddings` objects (server + per-tool vectors), and updates
+`embedding_spec`.
 
 ## Full Example
 
@@ -265,7 +215,7 @@ can be updated in the same commit.
       "id": "org.modelcontextprotocol.server-filesystem",
       "name": "Filesystem MCP",
       "summary": "Secure local filesystem server: read, write, search, diff, patch, and manage files",
-      "trustStatus": "vetted",
+      "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/.../manifest.json"
     }
   }
@@ -320,3 +270,7 @@ The current `Manifest` struct in dmcp (see `src/models.rs`) does not yet have
 an `embeddings` field — unknown fields are silently ignored by serde. The spec
 is defined here first; the dmcp struct will gain `embeddings` when the semantic
 browse feature is implemented.
+
+## Changelog — corrected claims
+
+*2026-07-22:* semantic search marked implemented (`dmcp sync-index` + `browse --vector`); per-manifest embeddings shape corrected to `{model: {v, hash}}`; registry inline `embeddings` (server + per-tool vectors) documented as the consumer path; model-mismatch behavior corrected (JARVIS adopts the registry's model); fallback chain corrected; inline script replaced by the real incremental `scripts/generate_embeddings.py`; `vetted` example fixed; load-time length validation claim removed.

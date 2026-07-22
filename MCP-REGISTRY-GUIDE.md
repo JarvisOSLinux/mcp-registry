@@ -28,7 +28,7 @@ dmcp creates most files automatically; only the system sources list needs manual
 
 | File or directory | Created by | Notes |
 |-------------------|------------|-------|
-| `~/.config/mcp/sources.list` | dmcp | Auto-created on first run from the installed default, or a fallback if none exists. Users can add registry URLs here. |
+| `~/.config/mcp/sources.list` | dmcp | Created by `dmcp sources add <url>` on first use. If absent, dmcp treats the source list as empty — there is no built-in default registry. |
 | `~/.local/share/mcp/installed/index.json` | dmcp | Created when the first server is installed. Updated on each install/remove. |
 | `~/.local/share/mcp/installed/<id>/manifest.json` | dmcp | Written per server on install; updated when the user saves configuration. |
 | `~/.local/share/mcp/vector_index/index.json` | dmcp | Semantic-search index built from registry embeddings. Rebuildable via `dmcp sync-index`. |
@@ -110,6 +110,7 @@ The index is a single JSON file with this structure:
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
 | `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
 | `integrity` | object | Optional. Content hashes that bind vetting to specific manifest/script content. |
+| `embeddings` | object | Optional, machine-managed. Pre-computed vectors `{model, version, server, tools}` consumed by `dmcp sync-index` for semantic search — see `docs/EMBEDDING-SPEC.md`. |
 
 dmcp loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
 
@@ -164,9 +165,9 @@ Developers point to a `setupScript` URL in the registry. dmcp **downloads** that
 - **Local servers (stdio):** The script runs after the Git clone. Use it to install dependencies (e.g. `pip install -r requirements.txt`, `npm install`, `cargo build --release`) and optionally apply config from `manifest.json`.
 - **Remote servers (SSE/WebSocket):** There is no clone; the install directory only contains `manifest.json` with the user’s config (API key, endpoint, etc.). The script runs **locally** in that directory, reads the manifest, and prepares the connection (e.g. writes a `.env` or client config file) so the local client can use the user’s config when connecting to the remote server. The script never runs on the remote server—it bridges the user’s local config with the remote endpoint.
 
-- **User opt-in**: Users must explicitly enable "Run setup script" during install (checkbox off by default).
-- **Re-run**: Installed servers can run the setup script from the Configure dialog (e.g. "Repair" or after upgrading dependencies).
-- **Execution**: The script runs with `bash` in the install directory. For system scope, it runs with elevated privileges.
+- **Default-on**: `dmcp install` downloads and runs the setup script by default (after SHA-256 verification against the registry's `setupScriptSha256`). Pass `--no-setup` to skip it.
+- **Re-run**: `dmcp setup <id>` re-runs the setup script for an installed server (e.g. after config changes or dependency upgrades).
+- **Execution**: The script runs with `sh` in the install directory (write POSIX-compatible scripts) and receives `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` env vars. For system scope, it runs with elevated privileges.
 - **Storage**: The installed manifest stores `setupScript`, `setupScriptPath`, `setupScriptVersion`, and `setupScriptRunAt`.
 
 Example (local server):
@@ -197,7 +198,7 @@ Registry owners define each server's icon in the `icon` field. Two formats are s
    - GitHub raw URL: `"https://raw.githubusercontent.com/yourorg/mcp-registry/main/logos/my-server.png"`
    - Any public image URL (PNG, SVG, etc.)
 
-If omitted, dmcp falls back to `"application-x-executable"`. Prefer Freedesktop names when a suitable one exists; use URLs for custom branding.
+`icon` is stored as metadata for GUI frontends (e.g. the JARVIS desktop app); the dmcp CLI ignores it. Prefer Freedesktop names when a suitable one exists; use URLs for custom branding.
 
 ## Transports (Entrypoints)
 
@@ -243,19 +244,10 @@ Remote endpoint. No local installation.
 }
 ```
 
-### Legacy Format
+### Legacy Format (unsupported)
 
-For backward compatibility, a single transport can be specified with top-level `type` and `transport`:
-
-```json
-{
-  "type": "stdio",
-  "transport": {
-    "command": "python3",
-    "args": ["server.py"]
-  }
-}
-```
+The pre-1.0 single-transport form (top-level `type` + `transport`) is **not**
+accepted by dmcp; always use the `transports` array.
 
 ## Scope
 
@@ -294,6 +286,7 @@ For **local servers** (stdio), the `source` object specifies a Git repository to
 |--------|--------|------------------------------------------------------------------|
 | `url`  | string | Git repository URL.                                              |
 | `path` | string | Project root within the repo (optional). Empty = repo root.      |
+| `rev`  | string | Optional git ref to check out after clone. A full 40-character commit SHA is a binding pin — dmcp verifies the checked-out HEAD matches it and aborts the install on mismatch. |
 
 dmcp clones the repo, extracts the project root (`path` or repo root), and runs the transport's `command` + `args` from that directory. The registry author specifies the exact launcher (e.g. `python3 server.py`, `node index.js`) — any language works.
 
@@ -303,7 +296,7 @@ For **remote servers** (SSE/WebSocket), omit `source` or use an empty object. dm
 
 Servers can declare configurable properties in a single `configurableProperties` array. Each property has a `required` flag to indicate whether it must be filled before installation.
 
-dmcp prompts for any required properties that are unset before installing. Optional properties fall back to their `default` value and can be changed later with `dmcp config set`.
+dmcp does not prompt or validate `required` properties itself — it stores config values and injects them into the server process as environment variables at spawn. Wrapper UIs (e.g. the JARVIS daemon) prompt for required fields; set values with `dmcp config <id> set <key> <value>`. Defaults are not auto-applied.
 
 ```json
 "configurableProperties": [
@@ -344,7 +337,7 @@ dmcp prompts for any required properties that are unset before installing. Optio
 | `sensitive`   | boolean | If `true`, field is shown as a password input.             |
 | `required`    | boolean | If `true`, must be filled before installation.             |
 
-User-provided values are stored in the per-server manifest at `<installDir>/manifest.json` in the `config` object. MCP servers read their configuration from this manifest file. Optional property defaults are applied automatically if the user doesn't override them.
+User-provided values are stored in the per-server manifest at `<installDir>/manifest.json` in the `config` object and injected into the server process as **environment variables** — the `key` IS the env var name (e.g. `BRAVE_API_KEY`). Defaults are not auto-applied.
 
 Use `keywords` to make your server discoverable via `dmcp browse -k <keyword>` and semantic search.
 
@@ -437,9 +430,9 @@ Here is a complete minimal registry with one local server (Git) and one remote S
 ## How dmcp Processes Your Registry
 
 1. **Fetch**: On startup (and on manual refresh), dmcp fetches each URL from `sources.list`.
-2. **Cache**: The response is cached locally at `the vector index (see dmcp sync-index)`.
+2. **Embeddings**: `dmcp sync-index` separately downloads registry embeddings into the local vector index for semantic search; registry JSON itself is never cached.
 3. **Parse**: Each server entry in the `servers` object becomes an installable server in the catalogue.
-4. **Merge**: If a server from the registry is already installed (matched by `id`), dmcp compares versions and marks it as upgradeable if the registry version is newer.
+4. **Merge**: servers already installed (matched by `id`) are flagged as installed in `dmcp browse` output. There is no automatic upgrade detection; rerun `dmcp install <id>` to update in place.
 5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords.
 
 ## What Happens on Install
@@ -448,12 +441,17 @@ When a user runs `dmcp install <id>`:
 
 1. If `configurableProperties` exist and any required ones are unset, dmcp prompts for them.
 2. If `scope` is `"system"`, the user authenticates via polkit (password prompt for pkexec).
-3. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
-4. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
-5. For **remote servers** (SSE/WebSocket): The endpoint is validated via HTTP HEAD, then the manifest is written. No local clone.
-6. A manifest is written to `<installDir>/manifest.json` with full metadata and config. MCP servers read their configuration from this file.
-7. The index at `<base>/mcp/installed/index.json` is updated with `{ "<id>": { "location": "<path>/manifest.json", "keywords": ["..."] } }`. The index stores pointers plus keywords for search; full metadata lives in each manifest.
-8. For user-scope, `<base>` is `~/.local/share`. For system-scope, `<base>` is `/usr/share`.
+3. dmcp checks the entry's `trustStatus` (refuses `removed`, warns on
+   `community`/`deprecated`; the autonomous agent path refuses
+   `deprecated`/`removed` outright), then verifies the fetched manifest's raw
+   bytes against `integrity.manifestSha256` — a mismatch aborts the install.
+   Setup scripts are verified against `setupScriptSha256` before running.
+4. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
+5. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
+6. For **remote servers** (SSE/WebSocket): the manifest with the connection details is written; the endpoint is not probed — connection errors surface on first `dmcp run`/`dmcp call`.
+7. A manifest is written to `<installDir>/manifest.json` with full metadata and config; the `config` map is injected as environment variables when the server is spawned.
+8. The index at `<base>/mcp/installed/index.json` is updated with `{ "<id>": { "location": "<path>/manifest.json", "keywords": ["..."] } }`. The index stores pointers plus keywords for search; full metadata lives in each manifest.
+9. For user-scope, `<base>` is `~/.local/share`. For system-scope, `<base>` is `/usr/share`.
 
 ### Directory Layout After Install
 
@@ -463,7 +461,7 @@ When a user runs `dmcp install <id>`:
 ~/.local/share/mcp/installed/
 ├── index.json                                 (id -> location + keywords)
 ├── com.example.calculator/                     (local server — Git clone)
-│   ├── manifest.json                           (full metadata + config; MCP servers read this)
+│   ├── manifest.json                           (full metadata + config; injected as env vars at spawn)
 │   ├── server.py                               (project root contents)
 │   └── ...                                     (other project files)
 └── com.example.remote-api/                     (SSE server)
@@ -479,7 +477,11 @@ Removal is a simple `rm -rf <installDir>`. All files are self-contained. For sys
 ## Tips
 
 - **Keep IDs stable.** The `id` field is how dmcp tracks a server across registry updates. Changing it creates a "new" server.
-- **Use semantic versioning.** dmcp compares `installedVersion` against your registry's `version` to detect upgrades.
-- **Test your JSON.** A malformed registry file is silently skipped. Validate your JSON before publishing.
+- **Use semantic versioning.** Versions are informational metadata today — dmcp does not compare versions to detect upgrades.
+- **Test your JSON.** A registry that fails to fetch or parse is skipped with a warning on stderr; a valid file with a missing/malformed `servers` key yields an empty listing. Validate your JSON before publishing.
 - **Update the `updated` timestamp** when you publish changes, so users know the registry is maintained.
-- **Provide a `bugUrl`.** It shows a "Report Bug" link on the server's detail page in dmcp.
+- **Provide a `homepage`.** dmcp stores it and wrapper UIs can surface it. (`bugUrl` is not read by dmcp.)
+
+## Changelog — corrected claims
+
+*2026-07-22:* setup script is default-on (`--no-setup` to skip), runs with `sh`, and receives `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; config is injected as env vars (no prompting, no auto-defaults, no Configure dialog); trust/integrity gating documented in the install flow; `source.rev` pinning and the index-entry `embeddings` field documented; no registry cache, endpoint probe, upgrade detection, icon fallback, or `bugUrl` handling; legacy single-transport form marked unsupported; sources.list is user-created.

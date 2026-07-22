@@ -1,5 +1,12 @@
 # Trust Levels
 
+> **Note (2026-07):** the enforced `trustStatus` set is
+> {`community`, `official`, `deprecated`, `removed`} —
+> `scripts/validate_registry.py` rejects any other value. The `unreviewed` and
+> `verified` tiers described below are legacy design vocabulary retained for
+> the historical record; see `docs/TRUST-MODEL.md` for the current model.
+
+
 > **Superseded by [`TRUST-MODEL.md`](TRUST-MODEL.md).** The canonical model uses
 > **two** tiers — `community` and `official` — plus the `deprecated`/`removed`
 > revocation states, not the three-level scale below. `TRUST-MODEL.md` also
@@ -61,7 +68,7 @@ A human reviewer has:
 
 In addition to `community` criteria, a verified server has:
 1. Source pinned to a specific commit or release tag (not just a branch).
-2. The pinned source hash recorded in `trust.checks`.
+2. The pin recorded as a full 40-character commit SHA in the manifest's `source.rev` field — dmcp checks out this exact commit and refuses to install on mismatch.
 3. A build verified from that exact commit to ensure the running artifact matches the source.
 4. All `configurableProperties` and their handling audited for secret leakage.
 5. Network access (if any) audited and limited to declared endpoints.
@@ -94,7 +101,7 @@ It is not set in `manifest.json` — the manifest is under the control of the su
 1. The server has been in the registry for at least **48 hours** with no reported issues.
 2. A maintainer or trusted contributor opens a review PR or leaves a review comment.
 3. The reviewer checks the criteria listed above for `community`.
-4. A maintainer updates `trustStatus` to `"community"` in `registry.json` and records the review in `trust.reviewReferences`.
+4. A maintainer updates `trustStatus` in `registry.json`; the review reference (reviewer handle + PR/issue link) is recorded in the server's `manifest.json` `trust` block — registry.json entries carry no `trust` object.
 
 To request community review, open a GitHub issue with the title:
 ```
@@ -107,7 +114,7 @@ Link the review issue from your original submission PR.
 1. The submitter or a maintainer opens a verified-review request issue.
 2. A core maintainer performs the deep review described above.
 3. The source is pinned to a specific commit or tag and the hash is recorded.
-4. `trustStatus` is updated to `"verified"` and the reviewer's GitHub handle is added to `trust.reviewReferences`.
+4. `trustStatus` is updated to `"official"` (the enforced promotion target) and the reviewer's GitHub handle is recorded in the manifest's `trust` block.
 
 Verified reviews are done on a best-effort basis. System-scope servers and servers handling credentials are prioritized.
 
@@ -120,7 +127,7 @@ Trust can be downgraded or the server deprecated if:
 - The upstream repository is deleted, abandoned, or taken over.
 - The server is found to behave contrary to its declared description.
 
-Revoked servers are set to `trustStatus: "deprecated"` or `"removed"` and a note is added to `trust.notes`. They are not deleted from the registry immediately to avoid breaking existing installations, but dmcp will warn users about deprecated servers.
+Revoked servers are set to `trustStatus: "deprecated"` or `"removed"` and a note is added to `trust.notes`. They are not deleted from the registry immediately to avoid breaking existing installations. dmcp warns on `deprecated` and refuses `removed` on the human CLI; the autonomous agent path refuses both.
 
 ---
 
@@ -131,3 +138,7 @@ Revoked servers are set to `trustStatus: "deprecated"` or `"removed"` and a note
 | `unreviewed` | No | No | No | No | Testing, personal use |
 | `community` | Yes | Yes | Yes | No | General use |
 | `verified` | Yes (deep) | Yes | Yes (from pin) | Yes | Security-sensitive, enterprise, system-scope |
+
+## Changelog — corrected claims
+
+*2026-07-22:* banner added — the enforced `trustStatus` set is {community, official, deprecated, removed}; `unreviewed`/`verified` below are legacy design vocabulary. Source pin corrected to the manifest's `source.rev` (full-SHA binding pin); review records live in the manifest's `trust` block; revocation enforcement corrected (deprecated warns, removed refused; agent refuses both).
