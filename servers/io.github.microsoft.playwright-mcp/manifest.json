@@ -1,0 +1,151 @@
+{
+  "version": "0.0.78",
+  "scope": "user",
+  "name": "Playwright Browser",
+  "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic — acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
+  "keywords": [
+    "browser",
+    "playwright",
+    "web",
+    "automation",
+    "navigate",
+    "click",
+    "form",
+    "scrape",
+    "screenshot",
+    "a11y"
+  ],
+  "homepage": "https://github.com/microsoft/playwright-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "cli.js",
+        "--headless"
+      ],
+      "description": "Playwright MCP (stdio, headless Chromium). Upstream defaults to headed, so --headless is passed explicitly."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/microsoft/playwright-mcp.git",
+    "rev": "5f8fc00210b27b4407c375b59cda4838045d429c"
+  },
+  "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.microsoft.playwright-mcp/setup.sh",
+  "tools": [
+    {
+      "name": "browser_navigate",
+      "description": "Navigate to a URL"
+    },
+    {
+      "name": "browser_snapshot",
+      "description": "Capture accessibility snapshot of the current page, this is better than screenshot"
+    },
+    {
+      "name": "browser_click",
+      "description": "Perform click on a web page"
+    },
+    {
+      "name": "browser_type",
+      "description": "Type text into editable element"
+    },
+    {
+      "name": "browser_fill_form",
+      "description": "Fill multiple form fields"
+    },
+    {
+      "name": "browser_press_key",
+      "description": "Press a key on the keyboard"
+    },
+    {
+      "name": "browser_hover",
+      "description": "Hover over element on page"
+    },
+    {
+      "name": "browser_select_option",
+      "description": "Select an option in a dropdown"
+    },
+    {
+      "name": "browser_drag",
+      "description": "Perform drag and drop between two elements"
+    },
+    {
+      "name": "browser_file_upload",
+      "description": "Upload one or multiple files"
+    },
+    {
+      "name": "browser_handle_dialog",
+      "description": "Handle a dialog"
+    },
+    {
+      "name": "browser_wait_for",
+      "description": "Wait for text to appear or disappear or a specified time to pass"
+    },
+    {
+      "name": "browser_take_screenshot",
+      "description": "Take a screenshot of the current page. You can't perform actions based on the screenshot, use browser_snapshot for actions."
+    },
+    {
+      "name": "browser_tabs",
+      "description": "List, create, close, or select a browser tab."
+    },
+    {
+      "name": "browser_navigate_back",
+      "description": "Go back to the previous page in the history"
+    },
+    {
+      "name": "browser_find",
+      "description": "Search the accessibility snapshot of the current page for text or a regular expression; returns matching snapshot nodes with surrounding context, cheaper than capturing the whole snapshot"
+    },
+    {
+      "name": "browser_console_messages",
+      "description": "Returns all console messages"
+    },
+    {
+      "name": "browser_network_requests",
+      "description": "Returns a numbered list of network requests since loading the page. Use browser_network_request with the number to get full details."
+    },
+    {
+      "name": "browser_network_request",
+      "description": "Returns full details (headers and body) of a single network request. Use the number from browser_network_requests."
+    },
+    {
+      "name": "browser_evaluate",
+      "description": "Evaluate JavaScript expression on page or element"
+    },
+    {
+      "name": "browser_resize",
+      "description": "Resize the browser window"
+    },
+    {
+      "name": "browser_drop",
+      "description": "Drop files or MIME-typed data onto an element, as if dragged from outside the page."
+    },
+    {
+      "name": "browser_run_code_unsafe",
+      "description": "Run a Playwright code snippet. Unsafe: executes arbitrary JavaScript in the Playwright server process and is RCE-equivalent."
+    },
+    {
+      "name": "browser_close",
+      "description": "Close the page"
+    }
+  ],
+  "configurableProperties": [],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/microsoft/playwright-mcp",
+      "https://github.com/microsoft/playwright-mcp/blob/main/LICENSE",
+      "https://github.com/microsoft/playwright-mcp/blob/main/SECURITY.md"
+    ],
+    "checks": [
+      "license: Apache-2.0 (upstream)",
+      "source: git clone https://github.com/microsoft/playwright-mcp.git @ 5f8fc00210b27b4407c375b59cda4838045d429c (tag v0.0.78, verified against npm gitHead)",
+      "build: npm ci (repo ships runnable cli.js at root; `npm run build` is a no-op `echo OK` at this tag)",
+      "browsers: setup.sh downloads Chromium via `npx playwright install chromium`",
+      "auth: none required"
+    ],
+    "notes": "Official Microsoft MCP server for Playwright. Acts on the structured accessibility tree rather than screenshots. Runs headless Chromium by default via the pinned transport args; default tool set only (opt-in capability groups like vision/pdf/devtools are not enabled).",
+    "securityNotes": "Web page content is untrusted input — every tool output (snapshots, console messages, network bodies, screenshots) can carry prompt injection and must stay inside JARVIS's Cryptographic Boundary Protocol, with dangerous follow-up actions gated through TLA. browser_run_code_unsafe executes arbitrary JavaScript in the server process and is RCE-equivalent — gate its use. setup.sh downloads a Chromium build from Playwright's CDN; missing system libraries must be installed via the user's package manager."
+  }
+}
