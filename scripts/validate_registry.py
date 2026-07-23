@@ -12,6 +12,8 @@ Static checks (always run):
   - the manifest URL resolves to an existing servers/<dir>/manifest.json
   - integrity.manifestSha256 is present and matches the manifest file bytes
   - if a setup.sh exists, integrity.setupScriptSha256 is present and matches
+  - no orphan directory: every first-party servers/<dir>/ is referenced by an
+    entry (catches a half-done removal that dropped the entry but left the dir)
 
 Trust-promotion gate (when --base is given):
   - compares trustStatus per entry against the base registry.json
@@ -104,6 +106,29 @@ def validate_static(registry: dict, errors: list) -> None:
                 )
 
 
+def validate_no_orphan_dirs(registry: dict, errors: list) -> None:
+    """Flag any first-party servers/<dir>/ not referenced by a registry entry.
+
+    Deleting an entry but leaving its directory is the one removal mistake the
+    entry-driven checks above cannot see — this closes that gap.
+    """
+    if not SERVERS_DIR.is_dir():
+        return
+
+    referenced = {
+        dir_from_url(entry.get("manifest", ""))
+        for entry in registry.get("servers", {}).values()
+    }
+    referenced.discard(None)
+
+    for child in sorted(SERVERS_DIR.iterdir()):
+        if child.is_dir() and child.name not in referenced:
+            errors.append(
+                f"servers/{child.name}/: orphan directory — no registry entry "
+                f"references it (remove the directory, or add its entry)"
+            )
+
+
 def validate_promotions(registry: dict, base: dict, approval: bool, errors: list) -> None:
     base_servers = base.get("servers", {}) if isinstance(base, dict) else {}
     promotions = []
@@ -156,6 +181,7 @@ def main() -> int:
         return 1
 
     validate_static(registry, errors)
+    validate_no_orphan_dirs(registry, errors)
 
     if args.base:
         try:

@@ -23,6 +23,8 @@ servers/                   Per-server directories (dir name from the entry's
 scripts/
   sync_registry.py         Recompute integrity hashes (SHA-256)
   generate_embeddings.py   Generate embedding vectors via Ollama
+  validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
+  remove_server.py         Hard-excise a server (entry + dir + embeddings)
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -61,16 +63,20 @@ Main index. Each server entry contains:
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
 - `validate-pr.yml` — Blocking PR gate; runs `scripts/validate_registry.py`
-  (schema, id/scope/trustStatus enums, integrity hashes) and blocks
-  `trustStatus` promotion to `official` without the maintainer
+  (schema, id/scope/trustStatus enums, integrity hashes, orphan directories)
+  and blocks `trustStatus` promotion to `official` without the maintainer
   `trust-approved` label
+- `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
+  runs `scripts/remove_server.py` and opens a **non-auto-merged** removal PR
+  for a maintainer to review
 
 ### Scripts
 
 ```bash
-python scripts/sync_registry.py        # Update integrity hashes + sync name/summary/keywords (--check for CI)
-python scripts/generate_embeddings.py  # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
-python scripts/validate_registry.py    # Validate schema, hashes, trust tiers (PR gate)
+python scripts/sync_registry.py         # Update integrity hashes + sync name/summary/keywords (--check for CI)
+python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
+python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
+python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
 ```
 
 ## Adding a Server
@@ -84,6 +90,22 @@ python scripts/validate_registry.py    # Validate schema, hashes, trust tiers (P
 5. Submit PR — `validate-pr.yml` gates it
 
 See `MCP-REGISTRY-GUIDE.md` for format details.
+
+## Removing a Server
+
+Two stages, safest first:
+
+1. **Soft revoke** (recommended first): set the entry's `trustStatus` to
+   `removed` in `registry.json`. dmcp then refuses new installs while existing
+   installs keep working, and the entry/provenance stay intact.
+2. **Hard excise** (destructive): after a grace period, run the removal —
+   locally with `python scripts/remove_server.py <id>`, or via the
+   **Remove Server** workflow (Actions → Run workflow → `server_id`). It drops
+   the registry entry (including inline embeddings + integrity hashes), deletes
+   the `servers/<dir>/` directory, and opens a review PR. `remove_server.py`
+   refuses a still-live entry (`trustStatus` other than `removed`/`deprecated`)
+   unless `--force` is passed. `validate-pr.yml` blocks any half-done removal
+   (dangling entry or orphan directory).
 
 ## Conventions
 

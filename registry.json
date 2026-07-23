@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-10T12:05:02Z",
+  "updated": "2026-07-23T06:58:04Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -13698,6 +13698,30 @@
         ],
         "tools": {}
       }
+    },
+    "com.github.jarvisoslinux.mcp.delete-smoke": {
+      "id": "com.github.jarvisoslinux.mcp.delete-smoke",
+      "name": "Delete Smoke Test",
+      "summary": "Disposable fixture used to verify the hard-excise removal workflow end to end. Marked trustStatus: removed so it is never installable; safe to delete at any time.",
+      "version": "0.0.1",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "keywords": [
+        "test",
+        "fixture",
+        "delete",
+        "smoke",
+        "removal"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development"
+      ],
+      "trustStatus": "removed",
+      "integrity": {
+        "manifestSha256": "fb1f872a3a005ad48f7c988926137e7fcfb6908a800a34360502236d4b50f19c"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/_delete-smoke/manifest.json"
     }
   },
   "embedding_spec": {

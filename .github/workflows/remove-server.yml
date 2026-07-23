@@ -1,0 +1,78 @@
+name: Remove Server
+
+# Manual, auditable hard-excise of a server from the registry.
+#
+# Given a server id, runs scripts/remove_server.py to drop the registry.json
+# entry (including its inline embeddings + integrity hashes) and delete the
+# server's directory, then opens a PR with the diff. The PR is NOT auto-merged:
+# a hard deletion is destructive (it breaks pinned/installed users and drops the
+# audit trail), so a maintainer reviews and merges it. The validate-pr gate runs
+# on the PR and will fail if the excision left the registry inconsistent.
+#
+# Prefer soft revocation first: set the entry's trustStatus to `removed` (dmcp
+# then refuses new installs while existing installs keep working), then excise
+# after a grace period. remove_server.py refuses a still-live entry unless
+# `force` is set.
+#
+# Permission requirement: same as Sync Registry — either
+#   a) Repo Settings > Actions > General > "Allow GitHub Actions to create and
+#      approve pull requests" must be enabled, OR
+#   b) A WORKFLOW_TOKEN secret (PAT with repo+workflow scopes) must be set.
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_id:
+        description: 'Registry map key / entry id to excise (e.g. com.github.org.mcp.name)'
+        required: true
+        type: string
+      force:
+        description: 'Excise even if the entry is still live (trustStatus not removed/deprecated)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Excise the server
+        run: |
+          python3 scripts/remove_server.py "${{ inputs.server_id }}" \
+            ${{ inputs.force && '--force' || '' }}
+
+      - name: Open removal PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN || github.token }}
+          commit-message: 'chore: remove server ${{ inputs.server_id }}'
+          title: 'chore: remove server ${{ inputs.server_id }}'
+          body: |
+            Hard-excise of `${{ inputs.server_id }}`, requested via the Remove Server workflow.
+
+            Applied by `scripts/remove_server.py`:
+            - Dropped the `registry.json` entry (including its inline embeddings and integrity hashes)
+            - Deleted the server's `servers/<dir>/` directory
+            - Bumped the top-level `updated` timestamp
+
+            Force: `${{ inputs.force }}`
+
+            This deletion is destructive — it breaks anyone who pinned or installed
+            the server, and drops its provenance. Review the diff and merge only if
+            that is intended. The `validate-pr` gate must pass (no orphan directory,
+            no dangling entry).
+          branch: auto/remove-${{ inputs.server_id }}
+          delete-branch: true
+          labels: automated, server-removal
