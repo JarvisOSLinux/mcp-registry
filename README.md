@@ -22,12 +22,16 @@ servers/
   hello-ws/
   ...
 scripts/
-  sync_registry.py     Recompute integrity hashes
+  sync_registry.py     Recompute integrity hashes + sync derived fields (name, summary, keywords); --check for CI
+  validate_registry.py Validate schema, hashes, and trust tiers (PR gate)
   generate_embeddings.py  Generate semantic embeddings via Ollama
 docs/
   EMBEDDING-SPEC.md    Embedding format and generation spec
   REGISTRY-AUTOMATION.md  CI/CD automation strategy
   REGISTRY-AS-SERVICE.md  Hosting patterns
+  TRUST-MODEL.md       Trust tiers and revocation
+  manifest-reference.md  Full manifest field reference
+  trust-levels.md      Trust level definitions
 ```
 
 ## How It Works
@@ -45,6 +49,15 @@ docs/
    dmcp install com.github.yakupatahanov.mcp.calculator-ts
    ```
 
+## Trust Model
+
+Each entry carries a `trustStatus`: `community` (default for new servers) or
+`official`; `deprecated`/`removed` mark revocation. dmcp warns on `community`
+installs ("you are trusting the submitter") and refuses `removed`; the
+autonomous agent path is stricter still. Promotion to `official` requires a
+maintainer review and the `trust-approved` PR label — see
+`docs/TRUST-MODEL.md`.
+
 ## Adding a Server
 
 See [MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md) for the full specification.
@@ -52,14 +65,17 @@ See [MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md) for the full specification.
 In short:
 1. Create `servers/<your-server>/manifest.json` with metadata and transport config
 2. Optionally add a `setup.sh` for dependency installation
-3. Run `python scripts/sync_registry.py` to update `registry.json`
+3. Add an entry for your server to `registry.json` (id, scope, trustStatus, manifest URL pointing at `servers/<id>/manifest.json`), then run `python scripts/sync_registry.py` to fill integrity hashes and sync derived fields
 4. Submit a PR
 
 ## Integrity
 
 Each server entry includes SHA-256 hashes of its manifest and setup script.
-The `sync_registry.py` script recomputes these on every change. The CI
-workflow (`sync-registry.yml`) runs this automatically on PRs.
+The `sync-registry.yml` workflow recomputes hashes automatically when
+manifests or setup scripts change on `main` (or on manual dispatch) and opens
+an automated PR with the updated `registry.json`. Pull requests are gated by
+`validate-pr.yml`, which runs `scripts/validate_registry.py` (schema,
+trust-tier, and integrity checks).
 
 ## Embeddings
 

@@ -2,7 +2,7 @@
 
 `manifest.json` is the per-server file that describes how to install and run an MCP server. It lives at `servers/<server-id>/manifest.json`.
 
-Display metadata (name, summary, keywords, icon, categories) lives in `registry.json`, not in the manifest. The manifest contains only install and runtime metadata.
+Display metadata (name, summary, keywords, icon, categories) lives in `registry.json`, not in the manifest. The manifest contains install and runtime metadata, plus a machine-managed top-level `embeddings` object (`{"<model>": {"v": [...], "hash": "..."}}`) written by `scripts/generate_embeddings.py` — do not edit it by hand.
 
 ---
 
@@ -104,7 +104,7 @@ Connects to a remote WebSocket endpoint.
 
 ## Tools
 
-The `tools` array declares the tools the server exposes. This list is used for display in dmcp and for semantic search (embeddings are generated from tool names and descriptions).
+The `tools` array declares the tools the server exposes. This list is used for display in dmcp and for semantic search (embeddings are generated from the manifest's `name`, `summary`, `keywords`, and the names/descriptions of the first 20 `tools` entries — tool descriptions directly affect semantic ranking).
 
 ```json
 "tools": [
@@ -158,9 +158,9 @@ After cloning, the transport's `command` + `args` run from the resolved project 
 - **Local server:** value is a filename (e.g. `"setup.sh"`). The script runs in the project root after `git clone`.
 - **Remote server:** value is a full HTTPS URL to a script. The script runs locally in the install directory (which contains only `manifest.json`).
 
-The script runs with `bash`. For system-scope installs it runs with elevated privileges via pkexec.
+The script is executed via `sh <script>` — write it to be POSIX-sh compatible. For system-scope installs it runs with elevated privileges via pkexec. dmcp exports `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` (uppercased, `-`/`.` → `_`) for each config key.
 
-Users must explicitly opt in to running the setup script (checkbox in the install dialog, off by default). The script can be re-run from the Configure dialog after install.
+The setup script runs **by default** during install; pass `--no-setup` to `dmcp install` to skip it. It can be re-run at any time with `dmcp setup <id>` (e.g. after changing config). For registry-listed servers, `setup.sh` lives in the registry repo at `servers/<id>/setup.sh` next to the manifest; its SHA-256 is recorded in the registry entry's `integrity.setupScriptSha256` and verified before running.
 
 **Requirements:**
 - Must be a bash script.
@@ -200,7 +200,7 @@ Declares user-configurable values (API keys, endpoint URLs, options). These are 
 | `label` | string | Yes | Label shown in the UI. |
 | `description` | string | Yes | Help text shown below the input field. Include a link to obtain the value if applicable. |
 | `default` | string | No | Default value pre-filled in the UI. For optional properties only. |
-| `sensitive` | boolean | Yes | If `true`, the field is shown as a password input and the value is stored encrypted. |
+| `sensitive` | boolean | Yes | If `true`, the field is shown as a password input and masked in UIs. Values are currently stored in **plaintext** in the installed manifest's `config` object; encryption at rest is planned (kernel keyring). |
 | `required` | boolean | Yes | If `true`, the install dialog blocks until the user provides a value. |
 
 Never hardcode API keys or tokens directly in the manifest. All secrets must be declared here as `"required": true, "sensitive": true` properties.
@@ -293,3 +293,7 @@ A Python stdio server with one required API key:
   }
 }
 ```
+
+## Changelog — corrected claims
+
+*2026-07-22:* `sensitive` values are stored in plaintext today (masking is UI-only; encryption planned); setup scripts run by default with `sh` (`--no-setup` to skip, `dmcp setup <id>` to re-run) and receive `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; registry-hosted `setup.sh` location and SHA-256 verification documented; machine-managed `embeddings` field documented; embedding canonical text corrected.

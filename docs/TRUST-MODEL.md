@@ -98,8 +98,10 @@ tiers** plus a revocation state. This supersedes the older three-level scale.
 human has endorsed the source code.** Installing a `community` server means
 trusting the submitter, not the registry maintainers.
 
-- Human CLI: installable after an explicit acknowledgment that shows the manifest
-  and any `setup.sh`.
+- Human CLI: installable with a printed "not maintainer-reviewed — you are
+  trusting the submitter" warning (no interactive acknowledgment, and the
+  manifest/setup.sh are not displayed — rendering them pre-install is a
+  desired hardening, currently *proposed*).
 - Autonomous agent: **installable, with a "not maintainer-reviewed" warning** —
   because every entry is PR-vetted before it reaches the registry. Deployments
   that want official-only can opt in via `DMCP_AGENT_ALLOW_COMMUNITY=0`.
@@ -124,18 +126,11 @@ hard-deleted) to avoid breaking existing installs. dmcp warns on `deprecated` an
 refuses `removed` on the human CLI, and refuses **both** on the agent path.
 **implemented** (`install.rs::cli_trust_gate` / `agent_trust_gate`).
 
-### Migration from current data
-`registry.json` currently holds `unreviewed` (10) and `vetted` (7), and
-`trust-levels.md` documents `unreviewed`/`community`/`verified`. Collapse to:
-
-| Old value(s) | New value |
-|---|---|
-| `unreviewed`, (absent) | `community` |
-| `vetted`, `verified`, `community` (old "reviewed" sense) | `official` |
-| `deprecated`, `removed` | unchanged |
-
-Tracked in issue: *"mcp-registry: collapse trustStatus to community/official and
-backfill all entries."*
+### Migration from legacy data — complete
+All legacy `unreviewed`/`vetted` values have been collapsed; `registry.json`
+now holds 19 entries, all `community`. No entry has yet been promoted to
+`official`. (`validate_registry.py` rejects any value outside
+{community, official, deprecated, removed}.)
 
 ---
 
@@ -150,11 +145,13 @@ is what makes the mitigation real enough to publish.
         │
         ▼
  PR-gate CI (required, blocking):                              [implemented]
-   • JSON + schema validation of registry.json and the manifest
-   • entry id == manifest id; manifest URL resolves to the file
+   • registry.json parses; per-entry required fields present;
+     trustStatus/scope enums valid; entry id == registry map key
+   • manifest URL resolves to an existing servers/<id>/manifest.json file
+     (the manifest itself is hash-checked, not schema-validated)
    • integrity.manifestSha256 / setupScriptSha256 recomputed and match
-   • trustStatus MUST be "community" (or absent) on a submission PR —
-     it CANNOT be raised to "official" without a maintainer approval label
+   • trustStatus is REQUIRED and CANNOT be (or become) "official" without a
+     maintainer applying the `trust-approved` label
         │
         ▼
  trustStatus = community  (installable by humans and the agent; the agent sees
@@ -263,3 +260,7 @@ for this document.
    human and the agent. The **source-gate** (confinement to human-configured
    registries) is the primary control; the tier is a within-source assurance
    signal, not the boundary.
+
+## Changelog — corrected claims
+
+*2026-07-22:* migration marked complete (19 entries, all `community`); community-tier install described as a printed warning (no interactive acknowledgment or manifest display — that hardening is proposed); PR-gate bullets matched to `validate_registry.py` (manifest is hash-checked, not schema-validated; `trustStatus` is required).
