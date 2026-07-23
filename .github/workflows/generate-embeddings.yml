@@ -60,6 +60,12 @@ jobs:
           fi
           python3 scripts/generate_embeddings.py $ARGS
 
+      # Embedding generation rewrites servers/*/manifest.json (adds the
+      # per-model {v, hash} block), so the recorded manifestSha256 hashes go
+      # stale. Resync them or the validate-pr gate rejects the resulting PR.
+      - name: Resync integrity hashes
+        run: python3 scripts/sync_registry.py
+
       - name: Open PR if anything changed
         uses: peter-evans/create-pull-request@v6
         with:
