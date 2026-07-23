@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-23T09:55:27Z",
+  "updated": "2026-07-23T16:45:13Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4029,7 +4029,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "44dfe7d5f5bfcd28f328421e8a34109c09f90f53bfc470006d6e3e0431511a64",
+        "manifestSha256": "aad0fd3013a8b739c5719e885bb8d3dd770de7a75a6734f943d1197c304de748",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -4837,7 +4837,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
       "integrity": {
-        "manifestSha256": "dc10e6e8741a972137b13a3c7c7cccc2f9fc395a293a143680328ace5f53d4f6",
+        "manifestSha256": "f38d6bd1a45045b7c5964fe535d794bd44ed5c505580490a20e2fb7506b292bb",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -15276,7 +15276,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "d804a1dffb57a1e3c7cb60b5617efe949a989c933fe4cf86f855ffd3bf3d04e8",
+        "manifestSha256": "d7035bc5a7411c8b44eb47a1b17100f758c19d1cc53a7f290f9d611c7496fd15",
         "setupScriptSha256": "bda6a4dc766894f065daa41effb99a1f35b591279ff331e712faabd174944d6c"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.microsoft.playwright-mcp/manifest.json",
