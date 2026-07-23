@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-23T07:15:51Z",
+  "updated": "2026-07-23T09:55:27Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -13698,6 +13698,38 @@
         ],
         "tools": {}
       }
+    },
+    "io.github.microsoft.playwright-mcp": {
+      "id": "io.github.microsoft.playwright-mcp",
+      "name": "Playwright Browser",
+      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic \u2014 acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
+      "version": "0.0.78",
+      "scope": "user",
+      "homepage": "https://github.com/microsoft/playwright-mcp",
+      "icon": "web-browser",
+      "keywords": [
+        "browser",
+        "playwright",
+        "web",
+        "automation",
+        "navigate",
+        "click",
+        "form",
+        "scrape",
+        "screenshot",
+        "a11y"
+      ],
+      "categories": [
+        "mcp",
+        "browser",
+        "automation"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "d804a1dffb57a1e3c7cb60b5617efe949a989c933fe4cf86f855ffd3bf3d04e8",
+        "setupScriptSha256": "bda6a4dc766894f065daa41effb99a1f35b591279ff331e712faabd174944d6c"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.microsoft.playwright-mcp/manifest.json"
     }
   },
   "embedding_spec": {
