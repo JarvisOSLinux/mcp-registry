@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "scope": "user",
+  "name": "Delete Smoke Test",
+  "summary": "Disposable fixture used to verify the hard-excise removal workflow end to end. Marked trustStatus: removed so it is never installable; safe to delete at any time.",
+  "keywords": ["test", "fixture", "delete", "smoke", "removal"],
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "true",
+      "args": [],
+      "description": "No-op — this fixture is never run."
+    }
+  ],
+  "tools": []
+}
