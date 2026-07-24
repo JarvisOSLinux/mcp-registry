@@ -16,6 +16,7 @@
     "a11y"
   ],
   "homepage": "https://github.com/microsoft/playwright-mcp",
+  "stateful": true,
   "transports": [
     {
       "type": "stdio",

@@ -145,6 +145,7 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 | `setupScript`           | string | For local: filename (e.g. `"setup.sh"`). For remote: URL. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
+| `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls. Absent/`false` = stateless. |
 | `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
 
 ### Tools
