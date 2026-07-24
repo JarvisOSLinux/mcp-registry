@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-24T20:16:00Z",
+  "updated": "2026-07-24T21:07:09Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -11262,7 +11262,7 @@
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "c4d7533b8716acb80dfbe5d34ed650191da50a1d85c11b5a2f155a79f56d1579",
-        "setupScriptSha256": "94eda06125977ffdf0d8848f7eadfeacadfaba0e675106b27e78809e3b6c5c09"
+        "setupScriptSha256": "43c12a871e79aff0eae9bcbbdb587006639cb9c11cc77d42e9f227bb1ce611d9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json",
       "embeddings": {
@@ -12063,7 +12063,7 @@
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "5c26bca465685e0c7f2aa8d88d0dac4b17ef651acc6ab91f7b5fb0c7431fbfb1",
-        "setupScriptSha256": "d54ec579ecca14e1993d40300885b46dbe3b8432aca3105da72a5c9ee35ddb81"
+        "setupScriptSha256": "a54abef13f787254429fd8b2ab70aaceefcf41808988bef122514b8dd801ee4e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json",
       "embeddings": {

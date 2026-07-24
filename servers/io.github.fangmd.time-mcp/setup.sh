@@ -16,12 +16,24 @@ if [ "${node_major:-0}" -lt 18 ]; then
   exit 1
 fi
 
-echo "Enabling corepack (for pnpm) and installing dependencies."
-corepack enable
-pnpm --version
+# corepack is NOT implied by node: distributions ship it separately (Arch has a
+# standalone `corepack` package) and upstream Node dropped it from the default
+# install in 25. Prefer `corepack pnpm` over `corepack enable` — enable writes
+# shims into the Node prefix, which needs root on a system-wide install.
+if command -v corepack >/dev/null 2>&1; then
+  pnpm_cmd="corepack pnpm"
+elif command -v pnpm >/dev/null 2>&1; then
+  pnpm_cmd="pnpm"
+else
+  echo "Missing pnpm: install corepack (pacman -S corepack, apt install nodejs-corepack) or pnpm." >&2
+  exit 1
+fi
 
-pnpm install
-pnpm build
+echo "Installing dependencies with '${pnpm_cmd}'."
+${pnpm_cmd} --version
+
+${pnpm_cmd} install
+${pnpm_cmd} build
 
 echo "OK: built dist/index.js"
 
