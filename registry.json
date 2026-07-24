@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-24T16:52:08Z",
+  "updated": "2026-07-24T20:16:00Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -13669,7 +13669,7 @@
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "2eb750b9d17ef38ca39f2e677e19cbd54295da4e15580171c6afe4d95337c085",
-        "setupScriptSha256": "49c30ac2015ed315eee670c51f05af5d408d67a9a47efe1481d733bfcf68de66"
+        "setupScriptSha256": "e5933abeeb449e1312b73dae899ce3ebc99ae997591e88e7773f0a74d5e312da"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json",
       "embeddings": {
