@@ -1,0 +1,81 @@
+{
+  "version": "0.2.2",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "homepage": "https://github.com/korotovsky/slack-mcp-server",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "dist/index.js"
+      ],
+      "description": "Slack MCP server (stdio). Requires SLACK_BOT_TOKEN and SLACK_TEAM_ID."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/korotovsky/slack-mcp-server.git"
+  },
+  "tools": [
+    {
+      "name": "list_channels",
+      "description": "List public channels in the Slack workspace."
+    },
+    {
+      "name": "get_channel_history",
+      "description": "Retrieve message history from a Slack channel."
+    },
+    {
+      "name": "send_message",
+      "description": "Post a message to a Slack channel or thread. Gates through TLA confirmation before sending."
+    },
+    {
+      "name": "get_thread_replies",
+      "description": "Get all replies in a Slack message thread."
+    },
+    {
+      "name": "search_messages",
+      "description": "Search Slack messages across the workspace by keyword."
+    },
+    {
+      "name": "list_users",
+      "description": "List users in the Slack workspace."
+    },
+    {
+      "name": "get_user_profile",
+      "description": "Get profile details for a specific Slack user."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "SLACK_BOT_TOKEN",
+      "label": "Slack Bot Token",
+      "description": "Slack bot OAuth token (xoxb-...). Generated from your Slack app's OAuth & Permissions page.",
+      "sensitive": true,
+      "required": true
+    },
+    {
+      "key": "SLACK_TEAM_ID",
+      "label": "Slack Team ID",
+      "description": "Slack workspace/team ID (e.g. T01234ABCD). Found in workspace settings or via Slack API.",
+      "sensitive": false,
+      "required": true
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/korotovsky/slack-mcp-server"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/korotovsky/slack-mcp-server.git",
+      "build: npm install && npm run build",
+      "auth: requires SLACK_BOT_TOKEN (xoxb-) and SLACK_TEAM_ID"
+    ],
+    "notes": "Community Slack MCP server. Uses Slack Web API via bot token. send_message triggers real outbound messages to workspace members — gates through TLA confirmation. Read-only tools (list_channels, get_history, search) require only `channels:read` and `channels:history` scopes.",
+    "securityNotes": "SLACK_BOT_TOKEN stored as dmcp secret. Scope bot token to minimum Slack OAuth scopes: channels:read, channels:history, chat:write (only if send_message needed), users:read. send_message is irreversible in a Slack workspace context — TLA gate mandatory."
+  }
+}

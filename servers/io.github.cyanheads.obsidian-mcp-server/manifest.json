@@ -1,0 +1,78 @@
+{
+  "version": "1.3.0",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "homepage": "https://github.com/cyanheads/obsidian-mcp-server",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "dist/index.js"
+      ],
+      "description": "Obsidian vault MCP server (stdio). Requires OBSIDIAN_VAULT_PATH."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/cyanheads/obsidian-mcp-server.git"
+  },
+  "tools": [
+    {
+      "name": "read_note",
+      "description": "Read the full content of a note in the Obsidian vault by path."
+    },
+    {
+      "name": "write_note",
+      "description": "Create or overwrite a note at a given vault path with new content."
+    },
+    {
+      "name": "append_to_note",
+      "description": "Append content to an existing note without overwriting it."
+    },
+    {
+      "name": "search_vault",
+      "description": "Full-text search across all notes in the Obsidian vault."
+    },
+    {
+      "name": "list_notes",
+      "description": "List notes in the vault, optionally filtered by directory or tag."
+    },
+    {
+      "name": "get_backlinks",
+      "description": "Get all notes that link to a given note."
+    },
+    {
+      "name": "get_tags",
+      "description": "Return all tags used in the vault, with occurrence counts."
+    },
+    {
+      "name": "delete_note",
+      "description": "Delete a note from the vault (irreversible — gates through TLA confirmation)."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "OBSIDIAN_VAULT_PATH",
+      "label": "Obsidian Vault Path",
+      "description": "Absolute path to the root directory of the Obsidian vault. Example: /home/user/Notes",
+      "sensitive": false,
+      "required": true
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/cyanheads/obsidian-mcp-server"
+    ],
+    "checks": [
+      "license: Apache-2.0 (upstream)",
+      "source: git clone https://github.com/cyanheads/obsidian-mcp-server.git",
+      "build: npm install && npm run build",
+      "auth: vault path only — no API key, no network egress"
+    ],
+    "notes": "Community Obsidian vault MCP server. Reads/writes local files in vault directory only. No external network calls — purely local file I/O. Suitable for personal knowledge management workflows.",
+    "securityNotes": "Scoped to OBSIDIAN_VAULT_PATH — server cannot traverse outside the vault root. delete_note is irreversible; gates through TLA confirmation. Vault path should not contain secrets."
+  }
+}

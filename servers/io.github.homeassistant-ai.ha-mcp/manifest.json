@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "homepage": "https://github.com/homeassistant-ai/ha-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "dist/index.js"
+      ],
+      "description": "Home Assistant MCP server (stdio). Requires HA_BASE_URL and HA_TOKEN."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/homeassistant-ai/ha-mcp.git"
+  },
+  "tools": [
+    {
+      "name": "get_entity",
+      "description": "Get the current state and attributes of a Home Assistant entity (e.g. light.living_room, sensor.temperature)."
+    },
+    {
+      "name": "list_entities",
+      "description": "List all entities in the Home Assistant instance, optionally filtered by domain."
+    },
+    {
+      "name": "call_service",
+      "description": "Call a Home Assistant service (e.g. light.turn_on, switch.toggle, climate.set_temperature). Passes through TLA confirmation for actuation."
+    },
+    {
+      "name": "list_services",
+      "description": "List all available Home Assistant services, optionally filtered by domain."
+    },
+    {
+      "name": "list_automations",
+      "description": "List all automations defined in the Home Assistant instance."
+    },
+    {
+      "name": "get_history",
+      "description": "Retrieve historical state data for an entity over a time range."
+    },
+    {
+      "name": "render_template",
+      "description": "Render a Home Assistant Jinja2 template and return the result."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "HA_BASE_URL",
+      "label": "Home Assistant Base URL",
+      "description": "Base URL of your Home Assistant instance. Example: http://homeassistant.local:8123",
+      "sensitive": false,
+      "required": true
+    },
+    {
+      "key": "HA_TOKEN",
+      "label": "Home Assistant Long-Lived Access Token",
+      "description": "Long-lived access token generated from your HA profile (Profile → Security → Long-Lived Access Tokens).",
+      "sensitive": true,
+      "required": true
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/homeassistant-ai/ha-mcp"
+    ],
+    "checks": [
+      "license: MIT (upstream)",
+      "source: git clone https://github.com/homeassistant-ai/ha-mcp.git",
+      "build: npm install && npm run build",
+      "auth: requires HA_BASE_URL + HA_TOKEN long-lived access token"
+    ],
+    "notes": "Community-vetted Home Assistant MCP server. Communicates with a local HA instance over the local network — aligned with the local-first thesis. call_service triggers home automation actuators and should gate through TLA confirmation.",
+    "securityNotes": "Outward-facing actuation (lights, locks, climate). call_service tool requires TLA confirmation. HA_TOKEN stored as dmcp secret. Scope the HA token to the minimum required permissions via HA's token system."
+  }
+}

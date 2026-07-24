@@ -1,0 +1,79 @@
+{
+  "version": "0.3.3",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "homepage": "https://github.com/crystaldba/postgres-mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "description": "PostgreSQL MCP server (stdio via uvx). Requires DATABASE_URI."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/crystaldba/postgres-mcp.git"
+  },
+  "tools": [
+    {
+      "name": "query",
+      "description": "Execute a SQL query against the configured PostgreSQL database."
+    },
+    {
+      "name": "list_schemas",
+      "description": "List all schemas in the database."
+    },
+    {
+      "name": "list_tables",
+      "description": "List all tables in a schema."
+    },
+    {
+      "name": "describe_table",
+      "description": "Get column definitions, types, and constraints for a table."
+    },
+    {
+      "name": "list_extensions",
+      "description": "List installed PostgreSQL extensions."
+    },
+    {
+      "name": "get_stats",
+      "description": "Retrieve table/index statistics for performance analysis."
+    },
+    {
+      "name": "explain",
+      "description": "Run EXPLAIN (ANALYZE) on a query to surface execution plan and cost."
+    },
+    {
+      "name": "list_indexes",
+      "description": "List indexes for a table."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "DATABASE_URI",
+      "label": "PostgreSQL Connection URI",
+      "description": "PostgreSQL connection string. Format: postgresql://user:password@host:port/dbname",
+      "sensitive": true,
+      "required": true
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/crystaldba/postgres-mcp"
+    ],
+    "checks": [
+      "license: Apache-2.0 (upstream)",
+      "source: git clone https://github.com/crystaldba/postgres-mcp.git",
+      "install: uvx postgres-mcp (Python package via uv/pip)",
+      "auth: requires DATABASE_URI connection string"
+    ],
+    "notes": "Community-vetted PostgreSQL MCP server. Defaults to unrestricted mode — configure a read-only database role for production use. Access-mode flag can be set to `restricted` for read-only queries only.",
+    "securityNotes": "Direct database access. Recommend using a read-only PostgreSQL role scoped to the target schema. DATABASE_URI is stored as a dmcp secret and never logged."
+  }
+}
