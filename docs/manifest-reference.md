@@ -18,6 +18,7 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `homepage` | string | No | URL to the project homepage or upstream repo. |
 | `setupScript` | string | No | For local servers: filename (e.g. `"setup.sh"`). For remote: full HTTPS URL. See [Setup Script](#setup-script). |
 | `configurableProperties` | array | No | User-configurable properties (API keys, endpoints). See [Configurable Properties](#configurable-properties). |
+| `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
 | `name` | string | No | Display name. Synced into `registry.json` by `sync_registry.py`. |
 | `summary` | string | No | One-line description. Synced into `registry.json`. |
@@ -204,6 +205,27 @@ Declares user-configurable values (API keys, endpoint URLs, options). These are 
 | `required` | boolean | Yes | If `true`, the install dialog blocks until the user provides a value. |
 
 Never hardcode API keys or tokens directly in the manifest. All secrets must be declared here as `"required": true, "sensitive": true` properties.
+
+---
+
+## Stateful
+
+```json
+"stateful": true
+```
+
+Optional top-level boolean. Set it to `true` when the server holds state
+in-process across tool calls — a browser session, a desktop-control connection,
+a language REPL, an open database connection. Absent or `false` means the server
+is **stateless**: every tool call is self-contained and nothing is retained
+between calls (the default; existing servers need no change).
+
+A `stateful: true` server is eligible for dmcp **session-scoped** calls
+(`dmcp call <id> <tool> --session <session_id>`), where a single long-lived
+server process is reused across a series of calls so the in-process state
+persists. Stateless servers ignore sessions entirely and always run one-shot.
+Declaring `stateful` never changes one-shot behavior; it only advertises that
+the server *can* be driven session-scoped.
 
 ---
 

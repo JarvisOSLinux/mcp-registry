@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-23T17:46:31Z",
+  "updated": "2026-07-24T16:52:08Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -15276,7 +15276,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "d7035bc5a7411c8b44eb47a1b17100f758c19d1cc53a7f290f9d611c7496fd15",
+        "manifestSha256": "9be8e8e45894c9e967ee5c2c537d1da928fba9e9d4cecfe5521c9aee919031ed",
         "setupScriptSha256": "bda6a4dc766894f065daa41effb99a1f35b591279ff331e712faabd174944d6c"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.microsoft.playwright-mcp/manifest.json",
