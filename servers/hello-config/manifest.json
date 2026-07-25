@@ -1,6 +1,9 @@
 {
   "version": "1.0.0",
   "scope": "system",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
     {

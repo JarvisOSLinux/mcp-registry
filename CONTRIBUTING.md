@@ -75,6 +75,7 @@ The manifest describes how to install and run your server. Full field reference:
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/alice/git-summary-mcp",
   "transports": [
     {
@@ -105,6 +106,7 @@ The manifest describes how to install and run your server. Full field reference:
 {
   "version": "2.1.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/alice/cloud-search-mcp",
   "transports": [
     {
@@ -131,6 +133,48 @@ The manifest describes how to install and run your server. Full field reference:
   ]
 }
 ```
+
+### Platforms (list only what you ran it on)
+
+`platforms` is required. It is an array of `"linux"`, `"darwin"` (macOS), and/or
+`"windows"` naming the operating systems you actually tested the server on —
+what the registry vouches for, not what upstream advertises. A cross-platform
+server you only exercised on Linux is `["linux"]`.
+
+dmcp refuses to install an entry on a host the list excludes, so an over-broad
+list breaks users instead of helping them. The list grows afterwards by PR: run
+the server on another OS (`dmcp install --ignore-platform` is how you get it
+installed there to check), then submit the added platform.
+
+**Do not open a second entry for another OS.** One capability, one server: a
+server that works on Linux and Windows is one entry listing both, not
+`my-server` and `my-server-windows`. When the launch details differ, give the
+manifest one transport per platform — each transport entry may carry its own
+`platforms` array, and dmcp picks the first one matching the host:
+
+```json
+"transports": [
+  {
+    "type": "stdio",
+    "command": ".venv/bin/python3",
+    "args": ["server.py"],
+    "platforms": ["linux", "darwin"]
+  },
+  {
+    "type": "stdio",
+    "command": ".venv\\Scripts\\python.exe",
+    "args": ["server.py"],
+    "platforms": ["windows"]
+  }
+]
+```
+
+A transport with no `platforms` matches every host, which is why existing
+single-transport manifests need no change. Per-OS *servers* are right only when
+the capability itself is platform-shaped — Linux desktop control built on
+AT-SPI, ydotool, and KWin is Linux desktop technology, not a portable capability
+with a Linux port. See "One Capability, One Server" in
+[`MCP-REGISTRY-GUIDE.md`](MCP-REGISTRY-GUIDE.md).
 
 ### Trust block (fill in honestly)
 
@@ -174,6 +218,24 @@ Requirements:
 - Must be idempotent — safe to run more than once.
 - Must not prompt for user input (it may run in an automated context).
 - Should exit non-zero on failure.
+
+### Windows: setup.ps1
+
+`setup.sh` is bash — dmcp runs it through bash when its shebang asks for bash,
+`sh` otherwise — and stock Windows has neither. If your
+`platforms` includes `"windows"`, add a PowerShell script next to `setup.sh`,
+name it exactly `setup.ps1`, and declare it in the manifest:
+
+```json
+"setupScript": "setup.sh",
+"setupScriptWindows": "setup.ps1"
+```
+
+dmcp runs `setup.ps1` on Windows hosts and `setup.sh` everywhere else, verifying
+the hash of whichever one it runs — `sync_registry.py` records both, as
+`integrity.setupScriptSha256` and `integrity.setupScriptWindowsSha256`. The
+filename is fixed because it is the name the hash sync looks for; a Windows
+script under any other name would ship unverified, and the PR gate rejects it.
 
 ---
 
@@ -224,9 +286,16 @@ All new servers start at `community`. The `official` tier is earned through main
 CI runs `python3 scripts/validate_registry.py` on every PR (the `validate-pr.yml` workflow), and `scripts/sync_registry.py --check` keeps derived fields honest. The gate fails if:
 
 - `registry.json` integrity hashes do not match the submitted manifest files.
-- A required field is missing, or `scope`/`trustStatus` uses a value outside the allowed set.
+- A required field is missing, or `scope`/`trustStatus`/`platforms` uses a value outside the allowed set.
+- `platforms` is absent or empty on an entry, or the entry's list disagrees with its manifest (re-run `sync_registry.py`).
+- A transport's own `platforms` is empty or uses a value outside the allowed set.
+- A `setup.sh` / `setup.ps1` has no recorded hash, a recorded hash has no script, or a local Windows script is named anything but `setup.ps1`.
 - An entry's `id` does not match its map key, or its `manifest` URL does not resolve locally.
 - `trustStatus` is raised to `official` without a maintainer `trust-approved` label.
+
+It warns (without failing) when a platform in `platforms` has no transport that
+matches it — that host would pass the install gate and then find nothing to
+launch.
 
 Beyond the automated check, reviewers verify:
 
@@ -237,9 +306,14 @@ Beyond the automated check, reviewers verify:
 | Unique server ID | The directory name must not conflict with an existing entry in `registry.json`. |
 | Stable server ID | The ID (directory name) must not change after submission — it is how dmcp tracks installations. |
 | Valid `scope` | Must be `"user"` or `"system"`. |
+| Honest `platforms` | Non-empty; `"linux"`, `"darwin"`, `"windows"` only; lists only the platforms the server was actually run on. |
 | Transport fields | stdio requires `command`; SSE requires `url`; WebSocket requires `wsUrl`. |
+| Transport coverage | Every platform in `platforms` is served by some transport (one without `platforms` serves all). |
+| Transport order | Most-specific first: a transport carrying `platforms` must precede any transport without the field, or dmcp's first-match selection makes it unreachable. |
+| Setup script location | `setupScript` / `setupScriptWindows` name a committed `servers/<id>/setup.sh` / `setup.ps1` — an off-registry URL would be fetched and run with no hash to verify it. |
 | Tools list non-empty | At least one tool must be declared. |
 | `setup.sh` is bash | If present, must start with `#!/usr/bin/env bash` or `#!/bin/bash`. |
+| `setup.ps1` if Windows | If `platforms` includes `"windows"`, a bash-only setup script cannot run there. |
 | No credentials in manifest | API keys must use `configurableProperties`, never hardcoded values. |
 
 ---
@@ -270,6 +344,7 @@ Create `servers/com.github.alice.mcp.git-summary/manifest.json`:
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "name": "Git Summary MCP",
   "summary": "Summarize recent git commits for a repository",
   "keywords": ["git", "commits", "summary", "version-control"],
@@ -344,6 +419,7 @@ Expected output:
   com.github.alice.mcp.git-summary: 'name' synced from manifest
   com.github.alice.mcp.git-summary: 'summary' synced from manifest
   com.github.alice.mcp.git-summary: 'keywords' synced from manifest
+  com.github.alice.mcp.git-summary: 'platforms' synced from manifest
 registry.json updated.
 ```
 

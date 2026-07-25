@@ -149,7 +149,8 @@ is what makes the mitigation real enough to publish.
      trustStatus/scope enums valid; entry id == registry map key
    • manifest URL resolves to an existing servers/<id>/manifest.json file
      (the manifest itself is hash-checked, not schema-validated)
-   • integrity.manifestSha256 / setupScriptSha256 recomputed and match
+   • integrity.manifestSha256 / setupScriptSha256 / setupScriptWindowsSha256
+     recomputed and match, in both directions (a recorded hash needs its script)
    • trustStatus is REQUIRED and CANNOT be (or become) "official" without a
      maintainer applying the `trust-approved` label
         │

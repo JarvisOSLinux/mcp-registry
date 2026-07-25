@@ -1,6 +1,9 @@
 {
   "version": "0.0.78",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "name": "Playwright Browser",
   "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic \u2014 acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
   "keywords": [

@@ -1,6 +1,9 @@
 {
   "version": "1.0.0",
   "scope": "system",
+  "platforms": [
+    "linux"
+  ],
   "name": "JARVIS Shell (System)",
   "description": "Run programs and shell scripts with system-level (sudo) privileges. Use for package management, system updates, systemd, and any command that requires elevated privileges.",
   "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",

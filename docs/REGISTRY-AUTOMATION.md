@@ -12,7 +12,7 @@ This document sketches a practical automation plan for a community-vetted, clien
 
 - `registry.json`:
   - **`trustStatus`** per server entry for fast filtering.
-  - **`integrity`** per server entry (`manifestSha256`, `setupScriptSha256`) to bind trust decisions to exact content.
+  - **`integrity`** per server entry (`manifestSha256`, `setupScriptSha256`, `setupScriptWindowsSha256`) to bind trust decisions to exact content.
   - Reserved top-level **`signing`** fields (keyring + signatures).
   - **`embedding_spec`** (optional) — declares the model used to generate pre-computed vectors stored in manifests. See [EMBEDDING-SPEC.md](EMBEDDING-SPEC.md).
 - `servers/*/manifest.json`:
@@ -39,7 +39,7 @@ Suggested checks:
 - `registry.json` server IDs match their entry `id`.
 - `registry.json` `manifest` URLs correspond to existing `servers/<name>/manifest.json` (when applicable).
 - `integrity.manifestSha256` matches the actual manifest content.
-- If a manifest has a `setupScript`, `integrity.setupScriptSha256` exists and matches the referenced script content.
+- If a manifest has a `setupScript` / `setupScriptWindows`, the matching `integrity.setupScriptSha256` / `integrity.setupScriptWindowsSha256` exists and matches the referenced script content — and the reverse, since a recorded hash whose script was deleted verifies nothing. Both directions are derived state, so the sync step below is what clears a hash after its script is removed.
 - Disallow or flag “unsafe” changes (optional policy):
   - `trustStatus` cannot be changed to `"vetted"` without maintainer label/approval.
   - `setupScript` changes require additional review label.
@@ -49,9 +49,10 @@ Suggested checks:
 Run via “Run workflow” (workflow_dispatch) and/or on merge to main.
 
 Actions:
-- Recompute and update:
+- Recompute and update (dropping a setup-script hash whose script is gone):
   - `integrity.manifestSha256`
   - `integrity.setupScriptSha256`
+  - `integrity.setupScriptWindowsSha256`
 - Normalize manifests to ensure the `trust` details object exists (if you want strict uniformity).
 
 Two safe modes:

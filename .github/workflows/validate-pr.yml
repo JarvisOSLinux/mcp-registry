@@ -1,10 +1,14 @@
 name: Validate PR
 
 # Blocking PR gate for the registry. Validates registry.json and manifests
-# (schema, id/scope/trustStatus, integrity hashes) and enforces that a server
+# (schema, id/scope/trustStatus/platforms, integrity hashes) and enforces that a server
 # cannot be promoted to the `official` tier without a maintainer applying the
 # `trust-approved` label. See docs/TRUST-MODEL.md §4 and
 # docs/REGISTRY-AUTOMATION.md §"PR gate".
+#
+# The self-test runs first: it builds throwaway registries in a temp dir and
+# asserts the validator still rejects what it is supposed to reject, so a gate
+# that has quietly stopped firing fails here instead of passing everything.
 #
 # `labeled`/`unlabeled` are included so the run re-evaluates when a maintainer
 # adds or removes the approval label.
@@ -28,6 +32,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
+      - name: Self-test the validation logic
+        run: python3 scripts/selftest_platform_format.py
 
       - name: Fetch base registry.json
         run: |

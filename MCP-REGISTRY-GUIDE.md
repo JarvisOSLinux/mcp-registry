@@ -34,6 +34,39 @@ dmcp creates most files automatically; only the system sources list needs manual
 | `~/.local/share/mcp/vector_index/index.json` | dmcp | Semantic-search index built from registry embeddings. Rebuildable via `dmcp sync-index`. |
 | `/etc/mcp/sources.list` | Admin/distro | **Manual setup.** System-wide registry sources. Create this file if you want all users on the machine to see the same registries by default. |
 
+## One Capability, One Server
+
+**One capability, one server.** A server's identity is its *capability*, not the
+platform it happens to run on. A shell server that gains macOS support widens its
+[`platforms`](#platforms) list to `["linux", "darwin"]` — it does not become
+`jarvis-shell` plus `jarvis-shell-darwin`. `platforms` is **coverage state**: how
+far vetting has reached, growing as people verify the server on more operating
+systems. It is never a reason to publish per-OS sibling entries for the same
+capability.
+
+The manifest format is built to make that possible rather than merely
+aspirational. A single entry can carry one stdio transport per platform —
+`command: "python3"` on POSIX, `"python"` on Windows; `.venv/bin/…` against
+`.venv\Scripts\….exe` — and ship a `setup.ps1` next to its `setup.sh`. "Runs
+everywhere" is therefore one entry with per-platform launch details, not three
+catalogue entries. See [Per-Transport Platforms](#per-transport-platforms) and
+[Setup Script](#setup-script).
+
+**The exception: capabilities that are themselves platform-shaped.** Per-OS
+servers are legitimate when the platform is the subject matter rather than an
+implementation detail. Linux desktop control built on AT-SPI, ydotool, and KWin
+*is* Linux desktop technology: `computer-use-linux` is a genuinely different
+capability from a macOS accessibility-API equivalent, not the same capability
+wearing a different coat. Splitting there is honest. Splitting a portable Python
+server because its launcher is spelled differently on Windows is not.
+
+**The LLM never reasons about platform.** That is the point of keeping the
+catalogue this way. An agent searching for a shell server gets one result to
+weigh, not three near-identical ones it has to disambiguate by OS — and dmcp
+filters entries the host cannot run *out of the results before they reach the
+agent* ([`dmcp browse`](#how-dmcp-processes-your-registry) flags them, install
+refuses them). Platform is infrastructure's problem, not the model's.
+
 ## Registry File Format
 
 A registry has two parts:
@@ -50,6 +83,7 @@ If you want a community-vetted registry (AUR-like), you can add optional fields 
 - **`integrity` (index entry)**: Content fingerprints that bind review status to an exact manifest and setup script.
   - `manifestSha256`: SHA-256 of the referenced `manifest.json` content.
   - `setupScriptSha256`: SHA-256 of the referenced setup script content (if present).
+  - `setupScriptWindowsSha256`: SHA-256 of the PowerShell setup script `setup.ps1` (if present). dmcp verifies whichever script it is about to run, so a per-platform script is not a hole in integrity verification.
 - **`signing` (registry top-level)**: Reserved fields for cryptographic signing. This guide does not mandate an algorithm; clients can optionally verify signatures using a keyring.
   - `keyringUrl`: URL to a published set of trusted public keys (or `null`).
   - `signatures`: Array of signature objects (empty if unsigned).
@@ -76,11 +110,13 @@ The index is a single JSON file with this structure:
       "homepage": "https://github.com/example/mcp-registry",
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
+      "platforms": ["linux"],
       "categories": ["mcp", "mcp-development"],
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "<sha256 of manifest.json>",
-        "setupScriptSha256": "<sha256 of setup.sh (if present)>"
+        "setupScriptSha256": "<sha256 of setup.sh (if present)>",
+        "setupScriptWindowsSha256": "<sha256 of setup.ps1 (if present)>"
       },
       "manifest": "https://raw.githubusercontent.com/example/mcp-registry/main/servers/my-server/manifest.json"
     }
@@ -106,6 +142,7 @@ The index is a single JSON file with this structure:
 | `homepage`  | string | Optional. URL to the project homepage.                   |
 | `icon`      | string | Icon for display (Freedesktop name or URL).              |
 | `keywords`  | array  | Search keywords for discovery.                           |
+| `platforms` | array  | Mirrored from the manifest by `sync_registry.py`. Operating systems the registry vouches for; absent = unrestricted. See Platforms below. |
 | `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
 | `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
@@ -142,11 +179,49 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 
 | Field                   | Type   | Description                                                     |
 |-------------------------|--------|-----------------------------------------------------------------|
+| `platforms`             | array  | Operating systems the registry vouches for: `"linux"`, `"darwin"`, `"windows"`. Absent = unrestricted. **Required for entries in this registry.** See Platforms below. |
 | `setupScript`           | string | For local: filename (e.g. `"setup.sh"`). For remote: URL. See Setup Script below. |
+| `setupScriptWindows`    | string | PowerShell setup script used on Windows hosts instead of `setupScript`. For local servers the value must be `"setup.ps1"`. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
 | `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls. Absent/`false` = stateless. |
 | `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
+
+### Platforms
+
+```json
+"platforms": ["linux"]
+```
+
+`platforms` names the operating systems the registry **vouches for**: the ones an
+entry was actually vetted on. Allowed values are `"linux"`, `"darwin"` (macOS),
+and `"windows"`. dmcp resolves the machine it is running on to one of those three
+strings; a host that matches none of them is treated as unsupported.
+
+- **Absent = unrestricted.** Manifests without the field install anywhere, so
+  registries written before `platforms` existed behave exactly as they did. In
+  this registry the field is mandatory — `scripts/validate_registry.py` rejects a
+  PR whose entry omits it, leaves it empty, or uses a value outside the enum.
+- **Mirrored into the index.** `scripts/sync_registry.py` copies `platforms` from
+  each manifest into its `registry.json` entry, because dmcp filters by host from
+  the index alone: `dmcp browse` marks entries the host cannot run, and
+  `dmcp install` refuses them before any clone or setup script executes, without
+  fetching every manifest to find out.
+- **Trust rides on `trustStatus`.** `platforms` is plain manifest data, no more
+  and no less trustworthy than `transports`, `tools`, or `setup.sh` — `official`
+  means a maintainer confirmed it, `community` means it is the submitter's word
+  pending promotion review.
+- **The list grows by vetting.** Verify a server on another OS (dmcp's
+  `--ignore-platform` flag is the intended path for that), then open a PR adding
+  the platform; the manifest-hash change propagates the wider support to
+  installed users via `dmcp update`.
+
+**Coverage, not identity.** `platforms` records how far vetting has reached; it
+is never a reason to split one capability into per-OS sibling entries. A server
+that runs on more than one OS says so in one entry, with a transport per platform
+if the launch details differ — see
+[One Capability, One Server](#one-capability-one-server) and
+[Per-Transport Platforms](#per-transport-platforms).
 
 ### Tools
 
@@ -168,7 +243,7 @@ Developers point to a `setupScript` URL in the registry. dmcp **downloads** that
 
 - **Default-on**: `dmcp install` downloads and runs the setup script by default (after SHA-256 verification against the registry's `setupScriptSha256`). Pass `--no-setup` to skip it.
 - **Re-run**: `dmcp setup <id>` re-runs the setup script for an installed server (e.g. after config changes or dependency upgrades).
-- **Execution**: The script runs with `sh` in the install directory (write POSIX-compatible scripts) and receives `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` env vars. For system scope, it runs with elevated privileges.
+- **Execution**: The script runs in the install directory under the interpreter its shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`) and receives `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` env vars. For system scope, it runs with elevated privileges.
 - **Storage**: The installed manifest stores `setupScript`, `setupScriptPath`, `setupScriptVersion`, and `setupScriptRunAt`.
 
 Example (local server):
@@ -177,6 +252,7 @@ Example (local server):
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/example/mcp-registry",
   "setupScript": "setup.sh",
   "source": { "type": "git", "url": "...", "path": "servers/my-server" },
@@ -184,6 +260,38 @@ Example (local server):
   "tools": [{ "name": "add", "description": "Add two numbers" }]
 }
 ```
+
+#### Windows: `setupScriptWindows`
+
+`setup.sh` is a bash script — dmcp runs it through bash when its shebang asks
+for bash, `sh` otherwise — and stock Windows has neither. A server that is
+vetted on Windows therefore ships a PowerShell script
+alongside its POSIX one and names it in the optional `setupScriptWindows` field:
+
+```json
+{
+  "setupScript": "setup.sh",
+  "setupScriptWindows": "setup.ps1"
+}
+```
+
+- **Selection**: dmcp runs `setup.ps1` through PowerShell on Windows hosts and
+  `setup.sh` everywhere else. The two scripts are siblings, not alternatives —
+  a server with both covers every platform it is vetted on.
+- **Integrity**: the registry entry carries
+  `integrity.setupScriptWindowsSha256` next to `setupScriptSha256`, and dmcp
+  verifies whichever script it is about to execute. A per-platform script is
+  not a hash-verification hole.
+- **Filename**: the value must be `"setup.ps1"`, stored next to `manifest.json`
+  in the server directory. That is the only name `scripts/sync_registry.py`
+  hashes, so any other name would ship an unverified script;
+  `scripts/validate_registry.py` rejects it, along with a script that has no
+  recorded hash and a recorded hash whose script is gone. The same holds for
+  `setupScript`: either field may be written as a URL, but only the one that
+  resolves to the committed sibling of the manifest — dmcp fetches an
+  off-registry `https://` script and runs it with nothing to verify it against.
+- **Not required**: a server with no Windows vetting needs neither the field nor
+  the file, and existing manifests are unaffected.
 
 ### Icons
 
@@ -223,6 +331,7 @@ Runs as a local process. The `command` and `args` are executed from the project 
 | `command`     | string | Executable (e.g. `python3`, `node`).          |
 | `args`        | array  | Arguments, relative to project root.          |
 | `description` | string | Optional description of this entrypoint.       |
+| `platforms`   | array  | Optional. Hosts this entrypoint is for. See Per-Transport Platforms below. |
 
 ### sse (Server-Sent Events)
 
@@ -244,6 +353,86 @@ Remote endpoint. No local installation.
   "wsUrl": "wss://api.example.com/mcp/ws"
 }
 ```
+
+### Per-Transport Platforms
+
+Any transport entry may carry its own `platforms` array, using the same three
+values as the top-level field: `"linux"`, `"darwin"`, `"windows"`. It says which
+hosts *this entrypoint* is for, so one server entry can launch correctly
+everywhere it is vetted:
+
+| Rule | Behavior |
+|------|----------|
+| Absent | The transport matches every host. This is the default and today's behavior, so every existing manifest stays valid. |
+| Present | The transport matches only the listed hosts. Must be a non-empty array of allowed values — omit the field to mean "all", never write `[]`. |
+| Selection | dmcp picks the **first** transport whose list includes the host, and a transport without the field counts as a match. Order the array most-specific first. |
+| Ordering | Because the first match wins, a transport an earlier one already matches can never be selected. Put every transport carrying `platforms` **before** any transport without the field — appending a Windows transport after a bare one leaves the Windows entry dead, and `scripts/validate_registry.py` rejects it. |
+| No match | Hard error naming the platforms the manifest does offer — dmcp does not fall back to a transport meant for another OS. |
+
+Ordering matters most when a manifest keeps one platform-less transport and adds
+a platform-specific sibling — the specific one goes first:
+
+```json
+"transports": [
+  { "type": "stdio", "command": ".venv\\Scripts\\python.exe", "args": ["server.py"], "platforms": ["windows"] },
+  { "type": "stdio", "command": "python3", "args": ["server.py"] }
+]
+```
+
+Reverse those two and every host, Windows included, gets `python3`.
+
+What usually differs is small — the interpreter's name (`python3` on POSIX,
+`python` on Windows) and the venv layout — and one extra stdio transport covers
+both:
+
+```json
+{
+  "version": "1.4.0",
+  "scope": "user",
+  "platforms": ["linux", "windows"],
+  "homepage": "https://github.com/example/doc-search-mcp",
+  "source": { "type": "git", "url": "https://github.com/example/doc-search-mcp.git" },
+  "setupScript": "setup.sh",
+  "setupScriptWindows": "setup.ps1",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["server.py"],
+      "platforms": ["linux", "darwin"],
+      "description": "POSIX entrypoint"
+    },
+    {
+      "type": "stdio",
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["server.py"],
+      "platforms": ["windows"],
+      "description": "Windows entrypoint"
+    }
+  ],
+  "tools": [{ "name": "search_docs", "description": "Search indexed documentation" }]
+}
+```
+
+One capability, one entry, two launch recipes. A Linux host runs the first
+transport, a Windows host the second; both are the same server with the same ID,
+tools, and embeddings. Note that a Windows path needs its backslashes escaped in
+JSON (`.venv\\Scripts\\python.exe`).
+
+The two `platforms` fields answer different questions and do not have to agree.
+The top-level one is the **vetting gate** — the OSes this registry vouches for,
+enforced by dmcp on install. A per-transport one is a **launch detail**. A
+manifest may therefore carry a Windows transport before `"windows"` joins the
+vetted list; the transport simply goes unused until vetting catches up, which is
+how the format lands ahead of adoption. The reverse is the mistake worth
+catching: if a vetted platform has no transport that matches it, a host on that
+platform passes the install gate and then finds nothing to launch, so
+`scripts/validate_registry.py` warns about it (a warning, not an error — the
+transport may legitimately arrive in a later PR than the platform).
+
+Transport *order* is the harder rule, and it is an error rather than a warning:
+a transport that an earlier one already matches is dead on every host at every
+point in time, so nothing later can rescue it.
 
 ### Legacy Format (unsupported)
 
@@ -387,6 +576,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
       "name": "Calculator MCP",
       "summary": "A simple calculator MCP server",
       "version": "1.0.0",
+      "platforms": ["linux"],
       "transports": [
         {
           "type": "stdio",
@@ -407,6 +597,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
       "name": "Cloud API",
       "summary": "Remote SSE server for cloud API access",
       "version": "1.0.0",
+      "platforms": ["linux", "darwin"],
       "transports": [
         {
           "type": "sse",
@@ -434,7 +625,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
 2. **Embeddings**: `dmcp sync-index` separately downloads registry embeddings into the local vector index for semantic search; registry JSON itself is never cached.
 3. **Parse**: Each server entry in the `servers` object becomes an installable server in the catalogue.
 4. **Merge**: servers already installed (matched by `id`) are flagged as installed in `dmcp browse` output. There is no automatic upgrade detection; rerun `dmcp install <id>` to update in place.
-5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords.
+5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords. Entries whose `platforms` exclude the host are flagged as unsupported in both the table and `--json`, so agent-driven discovery can skip them.
 
 ## What Happens on Install
 
@@ -442,13 +633,18 @@ When a user runs `dmcp install <id>`:
 
 1. If `configurableProperties` exist and any required ones are unset, dmcp prompts for them.
 2. If `scope` is `"system"`, the user authenticates via polkit (password prompt for pkexec).
-3. dmcp checks the entry's `trustStatus` (refuses `removed`, warns on
+3. dmcp checks the entry's `platforms` against the host OS and refuses — before
+   any clone, download, or setup script — when the host is not listed
+   (`--ignore-platform` overrides, which is how someone verifies a new OS so the
+   list can grow). It then checks the entry's `trustStatus` (refuses `removed`, warns on
    `community`/`deprecated`; the autonomous agent path refuses
-   `deprecated`/`removed` outright), then verifies the fetched manifest's raw
+   `deprecated`/`removed` outright) and verifies the fetched manifest's raw
    bytes against `integrity.manifestSha256` — a mismatch aborts the install.
-   Setup scripts are verified against `setupScriptSha256` before running.
+   Setup scripts are verified before running: `setupScriptSha256`, or
+   `setupScriptWindowsSha256` for the PowerShell script dmcp runs on a Windows
+   host.
 4. A dedicated directory is created at `<base>/mcp/installed/<id>/`.
-5. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory.
+5. For **local servers** (stdio): `git clone` fetches the repo, then the project root (`source.path` or repo root) is extracted into the install dir. The transport's `command` + `args` run from that directory — when the manifest lists several transports, dmcp spawns the first one whose `platforms` includes the host (see [Per-Transport Platforms](#per-transport-platforms)).
 6. For **remote servers** (SSE/WebSocket): the manifest with the connection details is written; the endpoint is not probed — connection errors surface on first `dmcp run`/`dmcp call`.
 7. A manifest is written to `<installDir>/manifest.json` with full metadata and config; the `config` map is injected as environment variables when the server is spawned.
 8. The index at `<base>/mcp/installed/index.json` is updated with `{ "<id>": { "location": "<path>/manifest.json", "keywords": ["..."] } }`. The index stores pointers plus keywords for search; full metadata lives in each manifest.
@@ -486,3 +682,5 @@ Removal is a simple `rm -rf <installDir>`. All files are self-contained. For sys
 ## Changelog — corrected claims
 
 *2026-07-22:* setup script is default-on (`--no-setup` to skip), runs with `sh`, and receives `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; config is injected as env vars (no prompting, no auto-defaults, no Configure dialog); trust/integrity gating documented in the install flow; `source.rev` pinning and the index-entry `embeddings` field documented; no registry cache, endpoint probe, upgrade detection, icon fallback, or `bugUrl` handling; legacy single-transport form marked unsupported; sources.list is user-created.
+
+*2026-07-25:* setup scripts run under the interpreter their shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`), superseding the 2026-07-22 "runs with `sh`" note; transport order documented as load-bearing and enforced (a transport an earlier one already matches is rejected); `setupScript` / `setupScriptWindows` in URL form must resolve to the committed script beside the manifest, since dmcp cannot hash-verify anything else.

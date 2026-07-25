@@ -18,6 +18,7 @@ on:
     paths:
       - 'servers/*/manifest.json'
       - 'servers/*/setup.sh'
+      - 'servers/*/setup.ps1'
   workflow_dispatch:
 
 jobs:
@@ -44,8 +45,8 @@ jobs:
             Automated update triggered by a change to one or more server manifests or setup scripts.
 
             Changes applied:
-            - Recomputed `integrity.manifestSha256` and `integrity.setupScriptSha256`
-            - Synced `name`, `summary`, `keywords` from manifests into `registry.json`
+            - Recomputed `integrity.manifestSha256`, `integrity.setupScriptSha256`, and `integrity.setupScriptWindowsSha256`
+            - Synced `name`, `summary`, `keywords`, `platforms` from manifests into `registry.json`
             - Updated top-level `updated` timestamp
 
             Review the diff and merge when ready.

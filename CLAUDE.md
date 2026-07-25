@@ -20,11 +20,13 @@ servers/                   Per-server directories (dir name from the entry's
   <dir>/                   manifest URL — first-party dirs use short names,
     manifest.json          third-party dirs the full reverse-domain id)
     setup.sh               Optional dependency installation script
+    setup.ps1              Optional PowerShell setup script for Windows hosts
 scripts/
   sync_registry.py         Recompute integrity hashes (SHA-256)
   generate_embeddings.py   Generate embedding vectors via Ollama
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
+  selftest_platform_format.py  Temp-dir self-test for the platform-format checks
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -42,14 +44,17 @@ MCP-REGISTRY-GUIDE.md      Full registry and manifest specification
 Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
 - `keywords`, `categories`
+- `platforms` (mirrored from the manifest; the OSes the registry vouches for — dmcp filters by host from this index alone)
 - `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)
-- `integrity` (manifestSha256, setupScriptSha256)
+- `integrity` (manifestSha256, setupScriptSha256, setupScriptWindowsSha256)
 - `manifest` URL pointing to the server's manifest.json
 - `embeddings` (model, version, `server` vector [768d], `tools` per-tool vector map)
 
 ### manifest.json (per server)
 
-- `transports` — how to run: stdio (command + args), SSE (URL), or WebSocket (URL)
+- `platforms` — OSes vetted on (`linux` / `darwin` / `windows`); required in this registry, absent = unrestricted
+- `transports` — how to run: stdio (command + args), SSE (URL), or WebSocket (URL); each entry may carry its own `platforms` (same enum, absent = every host, first match wins, so order most-specific first)
+- `setupScriptWindows` — PowerShell script (`setup.ps1`) run instead of `setupScript` on Windows hosts; like `setupScript`, it must name a committed script in the server directory, never an off-registry URL
 - `source` — git repo to clone for local servers (optional `rev` pin — a full 40-char SHA is binding)
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
 - `tools` — list of tools the server exposes
@@ -58,14 +63,15 @@ Main index. Each server entry contains:
 
 ### CI Workflows
 
-- `sync-registry.yml` — Triggers on manifest/setup.sh changes on `main`;
+- `sync-registry.yml` — Triggers on manifest/setup-script changes on `main`;
   recomputes hashes; opens PRs with updated registry.json
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
-- `validate-pr.yml` — Blocking PR gate; runs `scripts/validate_registry.py`
-  (schema, id/scope/trustStatus enums, integrity hashes, orphan directories)
-  and blocks `trustStatus` promotion to `official` without the maintainer
-  `trust-approved` label
+- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`
+  then `scripts/validate_registry.py` (schema, id/scope/trustStatus/platforms
+  enums incl. per-transport, transport order, integrity hashes for both setup
+  scripts, setup-script locations, orphan directories) and blocks `trustStatus`
+  promotion to `official` without the maintainer `trust-approved` label
 - `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
   runs `scripts/remove_server.py` and opens a **non-auto-merged** removal PR
   for a maintainer to review
@@ -73,20 +79,22 @@ Main index. Each server entry contains:
 ### Scripts
 
 ```bash
-python scripts/sync_registry.py         # Update integrity hashes + sync name/summary/keywords (--check for CI)
+python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
 python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
+python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
 ```
 
 ## Adding a Server
 
-1. Create `servers/<id>/manifest.json`
-2. Optionally add `servers/<id>/setup.sh`
+1. Create `servers/<id>/manifest.json` (one entry per capability — per-OS launch
+   differences go in per-transport `platforms`, never in a second server)
+2. Optionally add `servers/<id>/setup.sh` (plus `setup.ps1` if vetted on Windows)
 3. Add an entry for the server to `registry.json` (id as the map key, plus
    id/name/summary/version/scope/trustStatus and the raw-GitHub manifest URL)
 4. Run `python scripts/sync_registry.py` (fills integrity hashes, syncs
-   name/summary/keywords from the manifest)
+   name/summary/keywords/platforms from the manifest)
 5. Submit PR — `validate-pr.yml` gates it
 
 See `MCP-REGISTRY-GUIDE.md` for format details.
