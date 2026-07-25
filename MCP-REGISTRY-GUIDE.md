@@ -243,7 +243,7 @@ Developers point to a `setupScript` URL in the registry. dmcp **downloads** that
 
 - **Default-on**: `dmcp install` downloads and runs the setup script by default (after SHA-256 verification against the registry's `setupScriptSha256`). Pass `--no-setup` to skip it.
 - **Re-run**: `dmcp setup <id>` re-runs the setup script for an installed server (e.g. after config changes or dependency upgrades).
-- **Execution**: The script runs with `sh` in the install directory (write POSIX-compatible scripts) and receives `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` env vars. For system scope, it runs with elevated privileges.
+- **Execution**: The script runs in the install directory under the interpreter its shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`) and receives `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` env vars. For system scope, it runs with elevated privileges.
 - **Storage**: The installed manifest stores `setupScript`, `setupScriptPath`, `setupScriptVersion`, and `setupScriptRunAt`.
 
 Example (local server):
@@ -263,8 +263,9 @@ Example (local server):
 
 #### Windows: `setupScriptWindows`
 
-`setup.sh` is a bash script and dmcp runs it with `sh`; stock Windows has
-neither. A server that is vetted on Windows therefore ships a PowerShell script
+`setup.sh` is a bash script — dmcp runs it through bash when its shebang asks
+for bash, `sh` otherwise — and stock Windows has neither. A server that is
+vetted on Windows therefore ships a PowerShell script
 alongside its POSIX one and names it in the optional `setupScriptWindows` field:
 
 ```json
@@ -281,11 +282,14 @@ alongside its POSIX one and names it in the optional `setupScriptWindows` field:
   `integrity.setupScriptWindowsSha256` next to `setupScriptSha256`, and dmcp
   verifies whichever script it is about to execute. A per-platform script is
   not a hash-verification hole.
-- **Filename**: for a local server the value must be `"setup.ps1"`, stored next
-  to `manifest.json` in the server directory. That is the only name
-  `scripts/sync_registry.py` hashes, so any other name would ship an unverified
-  script; `scripts/validate_registry.py` rejects it, along with a script that
-  has no recorded hash and a recorded hash whose script is gone.
+- **Filename**: the value must be `"setup.ps1"`, stored next to `manifest.json`
+  in the server directory. That is the only name `scripts/sync_registry.py`
+  hashes, so any other name would ship an unverified script;
+  `scripts/validate_registry.py` rejects it, along with a script that has no
+  recorded hash and a recorded hash whose script is gone. The same holds for
+  `setupScript`: either field may be written as a URL, but only the one that
+  resolves to the committed sibling of the manifest — dmcp fetches an
+  off-registry `https://` script and runs it with nothing to verify it against.
 - **Not required**: a server with no Windows vetting needs neither the field nor
   the file, and existing manifests are unaffected.
 
@@ -362,7 +366,20 @@ everywhere it is vetted:
 | Absent | The transport matches every host. This is the default and today's behavior, so every existing manifest stays valid. |
 | Present | The transport matches only the listed hosts. Must be a non-empty array of allowed values — omit the field to mean "all", never write `[]`. |
 | Selection | dmcp picks the **first** transport whose list includes the host, and a transport without the field counts as a match. Order the array most-specific first. |
+| Ordering | Because the first match wins, a transport an earlier one already matches can never be selected. Put every transport carrying `platforms` **before** any transport without the field — appending a Windows transport after a bare one leaves the Windows entry dead, and `scripts/validate_registry.py` rejects it. |
 | No match | Hard error naming the platforms the manifest does offer — dmcp does not fall back to a transport meant for another OS. |
+
+Ordering matters most when a manifest keeps one platform-less transport and adds
+a platform-specific sibling — the specific one goes first:
+
+```json
+"transports": [
+  { "type": "stdio", "command": ".venv\\Scripts\\python.exe", "args": ["server.py"], "platforms": ["windows"] },
+  { "type": "stdio", "command": "python3", "args": ["server.py"] }
+]
+```
+
+Reverse those two and every host, Windows included, gets `python3`.
 
 What usually differs is small — the interpreter's name (`python3` on POSIX,
 `python` on Windows) and the venv layout — and one extra stdio transport covers
@@ -406,12 +423,16 @@ The two `platforms` fields answer different questions and do not have to agree.
 The top-level one is the **vetting gate** — the OSes this registry vouches for,
 enforced by dmcp on install. A per-transport one is a **launch detail**. A
 manifest may therefore carry a Windows transport before `"windows"` joins the
-vetted list; the transport is simply unreachable until vetting catches up, which
-is how the format lands ahead of adoption. The reverse is the mistake worth
+vetted list; the transport simply goes unused until vetting catches up, which is
+how the format lands ahead of adoption. The reverse is the mistake worth
 catching: if a vetted platform has no transport that matches it, a host on that
 platform passes the install gate and then finds nothing to launch, so
 `scripts/validate_registry.py` warns about it (a warning, not an error — the
 transport may legitimately arrive in a later PR than the platform).
+
+Transport *order* is the harder rule, and it is an error rather than a warning:
+a transport that an earlier one already matches is dead on every host at every
+point in time, so nothing later can rescue it.
 
 ### Legacy Format (unsupported)
 
@@ -661,3 +682,5 @@ Removal is a simple `rm -rf <installDir>`. All files are self-contained. For sys
 ## Changelog — corrected claims
 
 *2026-07-22:* setup script is default-on (`--no-setup` to skip), runs with `sh`, and receives `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; config is injected as env vars (no prompting, no auto-defaults, no Configure dialog); trust/integrity gating documented in the install flow; `source.rev` pinning and the index-entry `embeddings` field documented; no registry cache, endpoint probe, upgrade detection, icon fallback, or `bugUrl` handling; legacy single-transport form marked unsupported; sources.list is user-created.
+
+*2026-07-25:* setup scripts run under the interpreter their shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`), superseding the 2026-07-22 "runs with `sh`" note; transport order documented as load-bearing and enforced (a transport an earlier one already matches is rejected); `setupScript` / `setupScriptWindows` in URL form must resolve to the committed script beside the manifest, since dmcp cannot hash-verify anything else.

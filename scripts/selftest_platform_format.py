@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """selftest_platform_format.py — prove the platform-format checks actually fire.
 
-This repo has no test suite, and the per-transport `platforms` / Windows setup
-script checks are exactly the kind that rot unnoticed: a validator that never
-fires looks identical to a registry with nothing wrong. Each case below builds a
-throwaway registry in a temp directory, runs the real sync and validate entry
-points against it, and asserts on what they report — including the cases that
-must stay silent, so backward compatibility is checked too.
+This repo has no test suite, and the platform checks — the top-level `platforms`
+gate, its mirror into the entry, per-transport `platforms` and their ordering,
+and the setup-script/hash bookkeeping for both `setup.sh` and `setup.ps1` — are
+exactly the kind that rot unnoticed: a validator that never fires looks
+identical to a registry with nothing wrong. Each case below builds a throwaway
+registry in a temp directory, runs the real sync and validate entry points
+against it, and asserts on what they report — including the cases that must stay
+silent, so backward compatibility is checked too.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
@@ -37,6 +39,10 @@ WINDOWS_TRANSPORT = {
     "args": ["server.py"],
     "platforms": ["windows"],
 }
+
+# A transport with no `platforms`: matches every host, so nothing after it can
+# ever be selected.
+BARE_TRANSPORT = {"type": "stdio", "command": "python3", "args": ["server.py"]}
 
 
 def posix_transport(platforms):
@@ -128,8 +134,8 @@ def sync(*args):
     return run(sync_registry.main, ["sync_registry.py", *args])
 
 
-def validate():
-    return run(validate_registry.main, ["validate_registry.py"])
+def validate(*args):
+    return run(validate_registry.main, ["validate_registry.py", *args])
 
 
 def read_entry(root):
@@ -140,6 +146,20 @@ def write_entry(root, entry):
     registry = json.loads((root / "registry.json").read_text())
     registry["servers"][SERVER_ID] = entry
     (root / "registry.json").write_text(json.dumps(registry, indent=2) + "\n")
+
+
+def write_manifest(root, doc):
+    """Rewrite the fixture's manifest, the way an edit in a follow-up PR would."""
+    (root / "servers" / "demo" / "manifest.json").write_text(json.dumps(doc, indent=2) + "\n")
+
+
+def write_base(root, mutate):
+    """Snapshot registry.json as a `--base` file with `mutate` applied to the entry."""
+    base = json.loads((root / "registry.json").read_text())
+    mutate(base["servers"][SERVER_ID])
+    path = root / "base_registry.json"
+    path.write_text(json.dumps(base, indent=2) + "\n")
+    return str(path)
 
 
 CASES = []
@@ -302,6 +322,187 @@ def unservable_vetted_platform_is_a_warning():
             "the warning names the unservable platform",
         )
         check("::error::" not in out, "nothing else is reported as an error")
+
+
+@case
+def a_shadowed_transport_is_an_error():
+    doc = manifest([BARE_TRANSPORT, WINDOWS_TRANSPORT], ["linux", "windows"])
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "a platform transport behind a platform-less one fails the gate")
+        check(
+            "transports[1]" in out and "unreachable" in out,
+            "the error names the transport dmcp can never select",
+        )
+
+    doc = manifest([WINDOWS_TRANSPORT, BARE_TRANSPORT], ["linux", "windows"])
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 0, "the same two transports, most-specific first, pass the gate")
+        check(
+            "::error::" not in out and "::warning::" not in out,
+            "the correct ordering is reported clean",
+        )
+
+    doc = manifest(
+        [posix_transport(["linux", "windows"]), WINDOWS_TRANSPORT],
+        ["linux", "windows"],
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "a transport whose platforms an earlier one claims fails the gate")
+        check("already claimed" in out, "the error says an earlier transport wins")
+
+
+@case
+def entry_platforms_gate_fires():
+    doc = manifest([posix_transport(["linux"])], ["linux"])
+    for mutate, expect in [
+        (lambda e: e.pop("platforms"), "missing 'platforms'"),
+        (lambda e: e.update(platforms=[]), "non-empty array"),
+        (lambda e: e.update(platforms="linux"), "non-empty array"),
+        (lambda e: e.update(platforms=["Linux"]), "not in ['darwin', 'linux', 'windows']"),
+        (lambda e: e.update(platforms=["linux", "darwin", "windows"]), "does not match manifest"),
+    ]:
+        with fixture(doc, {"setup.sh": SETUP_SH}) as root:
+            sync()
+            entry = read_entry(root)
+            mutate(entry)
+            write_entry(root, entry)
+            code, out = validate()
+            check(code == 1 and expect in out, f"entry platforms gate fires: {expect!r}")
+
+
+@case
+def a_nested_platform_value_is_an_error_not_a_traceback():
+    doc = manifest(
+        [{**BARE_TRANSPORT, "platforms": ["linux", {"os": "windows"}]}],
+        ["linux", ["windows"]],
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "an unhashable platform value fails the gate instead of crashing it")
+        check("['windows']" in out, "the nested top-level value is named")
+        check(
+            "transports[0]" in out and "'os'" in out,
+            "the nested per-transport value is named",
+        )
+
+
+@case
+def missing_or_malformed_transports_is_reported():
+    doc = manifest([], ["linux"])
+    del doc["transports"]
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 0, "a manifest with no 'transports' key does not fail the gate")
+        check(
+            "::warning::" in out and "'linux'" in out,
+            "the vetted platform is still reported as unservable",
+        )
+
+    doc = manifest({}, ["linux"])
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "a non-array 'transports' fails the gate")
+        check("must be an array" in out, "the error says dmcp cannot deserialize it")
+
+
+@case
+def an_off_registry_setup_script_url_is_an_error():
+    hosted = MANIFEST_URL.replace("manifest.json", "setup.sh")
+    doc = manifest([posix_transport(["linux"])], ["linux"], setupScript=hosted)
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 0, "the registry-hosted URL form of setupScript stays valid")
+        check("::error::" not in out, "a URL naming the committed sibling is not flagged")
+
+    doc = manifest(
+        [posix_transport(["linux"])],
+        ["linux"],
+        setupScript="https://elsewhere.invalid/install.sh",
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "an off-registry setupScript URL fails the gate")
+        check("run it unverified" in out, "the error says the script would run unverified")
+
+    doc = manifest(
+        [posix_transport(["linux"]), WINDOWS_TRANSPORT],
+        ["linux", "windows"],
+        setupScriptWindows="https://elsewhere.invalid/install.ps1",
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "an off-registry setupScriptWindows URL fails the gate")
+        check(
+            "setupScriptWindowsSha256" in out,
+            "the error names the hash that should have covered it",
+        )
+
+
+@case
+def a_deleted_setup_script_prunes_its_hash():
+    for filename, integrity_key, field in (
+        ("setup.ps1", "setupScriptWindowsSha256", "setupScriptWindows"),
+        ("setup.sh", "setupScriptSha256", "setupScript"),
+    ):
+        doc = manifest([posix_transport(["linux"])], ["linux"], setupScriptWindows="setup.ps1")
+        with fixture(doc, {"setup.sh": SETUP_SH, "setup.ps1": SETUP_PS1}) as root:
+            sync()
+            check(
+                integrity_key in read_entry(root)["integrity"],
+                f"{filename}: the hash is recorded while the script is there",
+            )
+
+            (root / "servers" / "demo" / filename).unlink()
+            write_manifest(root, {k: v for k, v in doc.items() if k != field})
+
+            code, _ = sync("--check")
+            check(code == 1, f"{filename}: --check sees the hash left behind")
+
+            code, out = sync()
+            check(
+                code == 0 and f"{integrity_key} dropped" in out,
+                f"{filename}: sync reports dropping the hash",
+            )
+            check(
+                integrity_key not in read_entry(root)["integrity"],
+                f"{filename}: the hash is gone from the entry",
+            )
+
+            code, out = validate()
+            check(code == 0, f"{filename}: the two gates agree once sync has run")
+
+
+@case
+def a_changed_setup_script_is_flagged_for_review():
+    doc = manifest(
+        [posix_transport(["linux", "darwin"]), WINDOWS_TRANSPORT],
+        ["linux", "windows"],
+        setupScriptWindows="setup.ps1",
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH, "setup.ps1": SETUP_PS1}) as root:
+        sync()
+
+        base = write_base(root, lambda entry: entry["integrity"].clear())
+        code, out = validate("--base", base)
+        check(code == 0, "adding setup scripts does not fail the gate")
+        check("setup.sh added/changed" in out, "a new setup.sh is annotated for review")
+        check("setup.ps1 added/changed" in out, "a new setup.ps1 is annotated for review")
+
+        base = write_base(root, lambda entry: None)
+        code, out = validate("--base", base)
+        check("added/changed" not in out, "an unchanged setup script is not re-flagged")
 
 
 def main() -> int:

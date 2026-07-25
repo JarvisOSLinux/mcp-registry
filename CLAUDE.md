@@ -53,8 +53,8 @@ Main index. Each server entry contains:
 ### manifest.json (per server)
 
 - `platforms` — OSes vetted on (`linux` / `darwin` / `windows`); required in this registry, absent = unrestricted
-- `transports` — how to run: stdio (command + args), SSE (URL), or WebSocket (URL); each entry may carry its own `platforms` (same enum, absent = every host, first match wins)
-- `setupScriptWindows` — PowerShell script (`setup.ps1`) run instead of `setupScript` on Windows hosts
+- `transports` — how to run: stdio (command + args), SSE (URL), or WebSocket (URL); each entry may carry its own `platforms` (same enum, absent = every host, first match wins, so order most-specific first)
+- `setupScriptWindows` — PowerShell script (`setup.ps1`) run instead of `setupScript` on Windows hosts; like `setupScript`, it must name a committed script in the server directory, never an off-registry URL
 - `source` — git repo to clone for local servers (optional `rev` pin — a full 40-char SHA is binding)
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
 - `tools` — list of tools the server exposes
@@ -69,9 +69,9 @@ Main index. Each server entry contains:
   only re-embeds servers with changed canonical text
 - `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`
   then `scripts/validate_registry.py` (schema, id/scope/trustStatus/platforms
-  enums incl. per-transport, integrity hashes for both setup scripts, orphan
-  directories) and blocks `trustStatus` promotion to `official` without the
-  maintainer `trust-approved` label
+  enums incl. per-transport, transport order, integrity hashes for both setup
+  scripts, setup-script locations, orphan directories) and blocks `trustStatus`
+  promotion to `official` without the maintainer `trust-approved` label
 - `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
   runs `scripts/remove_server.py` and opens a **non-auto-merged** removal PR
   for a maintainer to review
@@ -79,7 +79,7 @@ Main index. Each server entry contains:
 ### Scripts
 
 ```bash
-python scripts/sync_registry.py         # Update integrity hashes + sync name/summary/keywords/platforms (--check for CI)
+python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
 python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)

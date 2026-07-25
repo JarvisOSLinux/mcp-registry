@@ -221,7 +221,8 @@ Requirements:
 
 ### Windows: setup.ps1
 
-`setup.sh` is bash and dmcp runs it with `sh`; stock Windows has neither. If your
+`setup.sh` is bash — dmcp runs it through bash when its shebang asks for bash,
+`sh` otherwise — and stock Windows has neither. If your
 `platforms` includes `"windows"`, add a PowerShell script next to `setup.sh`,
 name it exactly `setup.ps1`, and declare it in the manifest:
 
@@ -308,6 +309,8 @@ Beyond the automated check, reviewers verify:
 | Honest `platforms` | Non-empty; `"linux"`, `"darwin"`, `"windows"` only; lists only the platforms the server was actually run on. |
 | Transport fields | stdio requires `command`; SSE requires `url`; WebSocket requires `wsUrl`. |
 | Transport coverage | Every platform in `platforms` is served by some transport (one without `platforms` serves all). |
+| Transport order | Most-specific first: a transport carrying `platforms` must precede any transport without the field, or dmcp's first-match selection makes it unreachable. |
+| Setup script location | `setupScript` / `setupScriptWindows` name a committed `servers/<id>/setup.sh` / `setup.ps1` — an off-registry URL would be fetched and run with no hash to verify it. |
 | Tools list non-empty | At least one tool must be declared. |
 | `setup.sh` is bash | If present, must start with `#!/usr/bin/env bash` or `#!/bin/bash`. |
 | `setup.ps1` if Windows | If `platforms` includes `"windows"`, a bash-only setup script cannot run there. |

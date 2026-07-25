@@ -17,8 +17,8 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `tools` | array | Yes | Tools the server exposes. See [Tools](#tools). |
 | `source` | object | Conditional | Git source for local stdio servers. Omit for remote SSE/WebSocket. See [Source](#source). |
 | `homepage` | string | No | URL to the project homepage or upstream repo. |
-| `setupScript` | string | No | For local servers: filename (e.g. `"setup.sh"`). For remote: full HTTPS URL. See [Setup Script](#setup-script). |
-| `setupScriptWindows` | string | No | PowerShell script run instead of `setupScript` on Windows hosts. For local servers the value must be `"setup.ps1"`. See [Windows Setup Script](#windows-setup-script). |
+| `setupScript` | string | No | For local servers: filename (e.g. `"setup.sh"`). For remote: full HTTPS URL — in this registry, only the one naming the committed `servers/<id>/setup.sh`. See [Setup Script](#setup-script). |
+| `setupScriptWindows` | string | No | PowerShell script run instead of `setupScript` on Windows hosts. The value must be `"setup.ps1"` (or the registry-hosted URL for it). See [Windows Setup Script](#windows-setup-script). |
 | `configurableProperties` | array | No | User-configurable properties (API keys, endpoints). See [Configurable Properties](#configurable-properties). |
 | `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
@@ -173,7 +173,21 @@ is vetted for, instead of splitting into per-OS siblings.
 | Absent | Matches every host — the default, and the behavior of every manifest written before the field existed. |
 | Present | Matches only the listed hosts. Must be a non-empty array of allowed values; omit the field to mean "all", never write `[]`. |
 | Selection | dmcp uses the **first** transport whose list includes the host; a transport without the field counts as a match. Order most-specific first. |
+| Ordering | The first match wins, so a transport an earlier one already matches is never selected. Every transport carrying `platforms` must come **before** any transport without the field; `scripts/validate_registry.py` rejects the shadowed one. |
 | No match | Hard error naming the platforms the manifest does offer. dmcp never falls back to a transport meant for another OS. |
+
+The ordering rule bites when a manifest keeps its platform-less transport and
+adds a specific sibling — the specific one goes first:
+
+```json
+"transports": [
+  { "type": "stdio", "command": ".venv\\Scripts\\python.exe", "args": ["server.py"], "platforms": ["windows"] },
+  { "type": "stdio", "command": "python3", "args": ["server.py"] }
+]
+```
+
+Written the other way round, the bare transport matches Windows too and the
+Windows entry below it is unreachable configuration.
 
 The differences that matter in practice are the interpreter's name (`python3` on
 POSIX, `python` on Windows) and the venv layout (`.venv/bin/…` against
@@ -225,12 +239,16 @@ backslashes escaped: `.venv\\Scripts\\python.exe`.)
 **The two `platforms` fields answer different questions.** The top-level one is
 the vetting gate dmcp enforces on install; a per-transport one is a launch
 detail. They need not agree, and a manifest may carry a Windows transport before
-`"windows"` is vetted — the transport is unreachable until the vetting catches
-up. The reverse is worth catching: a vetted platform with no matching transport
-passes the install gate and then has nothing to launch, so
+`"windows"` is vetted — the transport simply goes unused until the vetting
+catches up. The reverse is worth catching: a vetted platform with no matching
+transport passes the install gate and then has nothing to launch, so
 `scripts/validate_registry.py` warns about it. It is a warning rather than an
 error because the transport may legitimately land in a later PR than the
 platform.
+
+Transport order is the stricter rule and is an error: a transport an earlier one
+already matches is dead on every host at every point in time, so no later PR can
+bring it to life.
 
 ---
 
@@ -290,7 +308,13 @@ After cloning, the transport's `command` + `args` run from the resolved project 
 - **Local server:** value is a filename (e.g. `"setup.sh"`). The script runs in the project root after `git clone`.
 - **Remote server:** value is a full HTTPS URL to a script. The script runs locally in the install directory (which contains only `manifest.json`).
 
-The script is executed via `sh <script>` — write it to be POSIX-sh compatible. For system-scope installs it runs with elevated privileges via pkexec. dmcp exports `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` (uppercased, `-`/`.` → `_`) for each config key.
+In **this** registry the URL form is accepted only when it points back at the
+committed sibling of the manifest — `.../servers/<id>/setup.sh`. dmcp fetches an
+`https://` setup script straight from the network and runs it, and only a
+recorded hash makes it verify first, so a URL nothing in `servers/<id>/` backs
+would execute unverified. `scripts/validate_registry.py` rejects it.
+
+The script is executed under the interpreter its shebang names — bash for `#!/usr/bin/env bash`, `sh` otherwise — so a `#!/usr/bin/env bash` script may use bash features such as `set -o pipefail`. For system-scope installs it runs with elevated privileges via pkexec. dmcp exports `MCP_INSTALL_DIR` plus `MCP_CONFIG_<KEY>` (uppercased, `-`/`.` → `_`) for each config key.
 
 The setup script runs **by default** during install; pass `--no-setup` to `dmcp install` to skip it. It can be re-run at any time with `dmcp setup <id>` (e.g. after changing config). For registry-listed servers, `setup.sh` lives in the registry repo at `servers/<id>/setup.sh` next to the manifest; its SHA-256 is recorded in the registry entry's `integrity.setupScriptSha256` and verified before running.
 
@@ -307,24 +331,26 @@ The setup script runs **by default** during install; pass `--no-setup` to `dmcp 
 "setupScriptWindows": "setup.ps1"
 ```
 
-`setup.sh` is bash and dmcp runs it with `sh`; stock Windows has neither. A
+`setup.sh` is bash — dmcp runs it through bash when its shebang asks for bash,
+`sh` otherwise — and stock Windows has neither. A
 server vetted on Windows ships a PowerShell script beside its POSIX one and
 names it in the optional `setupScriptWindows` field. dmcp runs `setup.ps1`
 through PowerShell on Windows hosts and `setup.sh` on every other host — the two
 are siblings, not alternatives.
 
-- **Filename.** For a local server the value must be `"setup.ps1"`, stored next
-  to `manifest.json` in the server directory. That is the only name
-  `scripts/sync_registry.py` hashes, so any other name would ship an unverified
-  script. (For a remote server it may be a full HTTPS URL, like `setupScript`.)
+- **Filename.** The value must be `"setup.ps1"`, stored next to `manifest.json`
+  in the server directory. That is the only name `scripts/sync_registry.py`
+  hashes, so any other name would ship an unverified script. As with
+  `setupScript`, the URL spelling is accepted only when it resolves to that same
+  committed file — `.../servers/<id>/setup.ps1`.
 - **Integrity.** The registry entry gains
   `integrity.setupScriptWindowsSha256` beside `setupScriptSha256`, recomputed by
   `sync_registry.py` and verified by dmcp before the script runs. A per-platform
   script is not a hash-verification hole.
 - **Validation.** `scripts/validate_registry.py` rejects a `setup.ps1` with no
   recorded hash, a recorded hash whose `setup.ps1` is gone, a stale hash, a
-  local script under any other name, and a declared `setupScriptWindows` that
-  was never committed.
+  script under any other name, an off-registry URL, and a declared
+  `setupScriptWindows` that was never committed.
 - **Optional.** A server with no Windows vetting needs neither the field nor the
   file. Existing manifests are unaffected.
 
@@ -483,3 +509,5 @@ A Python stdio server with one required API key:
 ## Changelog — corrected claims
 
 *2026-07-22:* `sensitive` values are stored in plaintext today (masking is UI-only; encryption planned); setup scripts run by default with `sh` (`--no-setup` to skip, `dmcp setup <id>` to re-run) and receive `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; registry-hosted `setup.sh` location and SHA-256 verification documented; machine-managed `embeddings` field documented; embedding canonical text corrected.
+
+*2026-07-25:* setup scripts run under the interpreter their shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`), superseding the 2026-07-22 "runs with `sh`" note; transport order documented as load-bearing and enforced (a transport an earlier one already matches is rejected); `setupScript` / `setupScriptWindows` in URL form must resolve to the committed script beside the manifest, since dmcp cannot hash-verify anything else.

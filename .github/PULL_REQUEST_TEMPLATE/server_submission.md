@@ -24,6 +24,7 @@
   - SSE: `type`, `url`
   - WebSocket: `type`, `wsUrl`
 - [ ] Every platform in `platforms` has a transport that matches it — either a transport with no `platforms` field, or one listing that platform (a Windows-only spelling of the command belongs in its own transport entry, not in a second server)
+- [ ] `transports` is ordered most-specific first: every transport carrying `platforms` comes **before** any transport without the field. dmcp selects the first match and a transport with no `platforms` matches every host, so anything after it is dead configuration and the PR gate rejects it
 - [ ] `tools` array is non-empty; every tool has `name` and `description`
 - [ ] `source.url` points to a public, reachable Git repository (stdio servers only)
 - [ ] No API keys, tokens, or credentials are hardcoded — secrets use `configurableProperties`

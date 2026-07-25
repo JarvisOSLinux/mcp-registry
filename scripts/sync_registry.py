@@ -3,8 +3,10 @@
 
 For each server entry in registry.json:
   - Recomputes integrity.manifestSha256 from the local manifest file
-  - Recomputes integrity.setupScriptSha256 if setup.sh exists
-  - Recomputes integrity.setupScriptWindowsSha256 if setup.ps1 exists
+  - Recomputes integrity.setupScriptSha256 if setup.sh exists, and drops the
+    recorded hash when the script is gone
+  - Recomputes integrity.setupScriptWindowsSha256 if setup.ps1 exists, and drops
+    the recorded hash when the script is gone
   - Syncs name, summary, keywords, platforms from the manifest into the entry
   - Updates the top-level updated timestamp
 
@@ -110,6 +112,13 @@ def main() -> None:
         for filename, integrity_key in SETUP_SCRIPTS:
             script_path = local_dir / filename
             if not script_path.exists():
+                # A hash whose script is gone verifies nothing and fails
+                # validation, and this is the only tool allowed to touch the
+                # integrity block — so it has to prune in that direction too,
+                # or deleting a setup script leaves an error nothing can clear.
+                if entry.get("integrity", {}).pop(integrity_key, None) is not None:
+                    print(f"  {server_id}: {integrity_key} dropped ({filename} no longer present)")
+                    changed = True
                 continue
             new_script_sha = sha256_file(script_path)
             old_script_sha = entry.get("integrity", {}).get(integrity_key, "")
