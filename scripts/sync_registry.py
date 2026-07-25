@@ -4,6 +4,7 @@
 For each server entry in registry.json:
   - Recomputes integrity.manifestSha256 from the local manifest file
   - Recomputes integrity.setupScriptSha256 if setup.sh exists
+  - Recomputes integrity.setupScriptWindowsSha256 if setup.ps1 exists
   - Syncs name, summary, keywords, platforms from the manifest into the entry
   - Updates the top-level updated timestamp
 
@@ -31,6 +32,20 @@ SYNCED_FIELDS = ("name", "summary", "keywords", "platforms")
 # belongs with instead of after the multi-hundred-float embeddings blob that
 # ends every entry — a registry.json diff is read by a human reviewer.
 FIELD_ANCHOR = {"platforms": "keywords"}
+
+POSIX_SETUP_SCRIPT = "setup.sh"
+WINDOWS_SETUP_SCRIPT = "setup.ps1"
+
+# Setup scripts hashed into the entry's integrity block, as (filename, key).
+# The Windows script is a sibling of setup.sh, not a replacement: dmcp runs
+# setup.ps1 on Windows hosts and setup.sh everywhere else, and verifies the hash
+# of whichever one it runs — a per-platform script must not become a hole in
+# integrity verification. These are the only two filenames hashed, so a server
+# directory has exactly one place to put each script.
+SETUP_SCRIPTS = (
+    (POSIX_SETUP_SCRIPT, "setupScriptSha256"),
+    (WINDOWS_SETUP_SCRIPT, "setupScriptWindowsSha256"),
+)
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -78,7 +93,6 @@ def main() -> None:
 
         local_dir = SERVERS_DIR / dir_name
         manifest_path = local_dir / "manifest.json"
-        setup_path = local_dir / "setup.sh"
 
         if not manifest_path.exists():
             print(f"  SKIP {server_id}: {manifest_path} not found locally")
@@ -92,13 +106,16 @@ def main() -> None:
             entry.setdefault("integrity", {})["manifestSha256"] = new_sha
             changed = True
 
-        # Recompute setupScriptSha256 when setup.sh exists
-        if setup_path.exists():
-            new_setup_sha = sha256_file(setup_path)
-            old_setup_sha = entry.get("integrity", {}).get("setupScriptSha256", "")
-            if new_setup_sha != old_setup_sha:
-                print(f"  {server_id}: setupScriptSha256 updated")
-                entry.setdefault("integrity", {})["setupScriptSha256"] = new_setup_sha
+        # Recompute a hash for each setup script the server directory ships
+        for filename, integrity_key in SETUP_SCRIPTS:
+            script_path = local_dir / filename
+            if not script_path.exists():
+                continue
+            new_script_sha = sha256_file(script_path)
+            old_script_sha = entry.get("integrity", {}).get(integrity_key, "")
+            if new_script_sha != old_script_sha:
+                print(f"  {server_id}: {integrity_key} updated")
+                entry.setdefault("integrity", {})[integrity_key] = new_script_sha
                 changed = True
 
         # Sync descriptive and vetting fields from manifest into registry entry

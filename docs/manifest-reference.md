@@ -18,6 +18,7 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `source` | object | Conditional | Git source for local stdio servers. Omit for remote SSE/WebSocket. See [Source](#source). |
 | `homepage` | string | No | URL to the project homepage or upstream repo. |
 | `setupScript` | string | No | For local servers: filename (e.g. `"setup.sh"`). For remote: full HTTPS URL. See [Setup Script](#setup-script). |
+| `setupScriptWindows` | string | No | PowerShell script run instead of `setupScript` on Windows hosts. For local servers the value must be `"setup.ps1"`. See [Windows Setup Script](#windows-setup-script). |
 | `configurableProperties` | array | No | User-configurable properties (API keys, endpoints). See [Configurable Properties](#configurable-properties). |
 | `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
@@ -78,7 +79,12 @@ support to already-installed users through `dmcp update`.
 **Platform support is coverage, not identity.** One capability, one server: a
 server that gains macOS support extends its `platforms` list; it does not become
 a second `-darwin` entry. Per-OS entries are legitimate only when the capability
-itself is platform-shaped (Linux desktop automation built on AT-SPI, say).
+itself is platform-shaped (Linux desktop automation built on AT-SPI, say). When
+the launch details differ between hosts, that is what
+[per-transport `platforms`](#per-transport-platforms) and
+[`setupScriptWindows`](#windows-setup-script) are for — one entry, one recipe per
+OS. See "One Capability, One Server" in
+[`../MCP-REGISTRY-GUIDE.md`](../MCP-REGISTRY-GUIDE.md) for the full convention.
 
 `setup.sh` environment checks stay as defense in depth. `platforms` records which
 OS was vetted; the setup script still verifies that the dependencies it needs —
@@ -88,7 +94,7 @@ a node version, a python interpreter — are actually present.
 
 ## Transports
 
-The `transports` array lists one or more ways to connect to or launch the server. At least one entry is required.
+The `transports` array lists one or more ways to connect to or launch the server. At least one entry is required. Every transport type also accepts an optional `platforms` array — see [Per-Transport Platforms](#per-transport-platforms).
 
 ### stdio (Local Process)
 
@@ -109,6 +115,7 @@ Runs the server as a local subprocess. Requires a `source` block.
 | `command` | string | Yes | Executable to run (e.g. `"python3"`, `"node"`, `".venv/bin/python3"`). |
 | `args` | array | Yes | Arguments, relative to the project root (the cloned directory). |
 | `description` | string | No | Human-readable label for this entrypoint. |
+| `platforms` | array | No | Hosts this entrypoint is for. Absent = every host. See [Per-Transport Platforms](#per-transport-platforms). |
 
 The command and args run from the project root (the `source.path` directory or the repo root if `path` is omitted). Use a venv-relative path like `.venv/bin/python3` if your `setup.sh` creates a virtual environment.
 
@@ -129,6 +136,7 @@ Connects to a remote HTTP endpoint. No local clone occurs.
 | `type` | string | Yes | Must be `"sse"`. |
 | `url` | string | Yes | Full HTTPS URL of the SSE endpoint. |
 | `description` | string | No | Human-readable label. |
+| `platforms` | array | No | Hosts this endpoint is for. Absent = every host. See [Per-Transport Platforms](#per-transport-platforms). |
 
 ### WebSocket
 
@@ -147,6 +155,82 @@ Connects to a remote WebSocket endpoint.
 | `type` | string | Yes | Must be `"websocket"`. |
 | `wsUrl` | string | Yes | Full WSS URL of the WebSocket endpoint. |
 | `description` | string | No | Human-readable label. |
+| `platforms` | array | No | Hosts this endpoint is for. Absent = every host. See [Per-Transport Platforms](#per-transport-platforms). |
+
+### Per-Transport Platforms
+
+```json
+"platforms": ["linux", "darwin"]
+```
+
+A transport entry may narrow itself to the hosts it can actually launch on,
+using the same three values as the top-level field: `"linux"`, `"darwin"`,
+`"windows"`. This is what lets **one** server entry run correctly on every OS it
+is vetted for, instead of splitting into per-OS siblings.
+
+| Rule | Behavior |
+|------|----------|
+| Absent | Matches every host — the default, and the behavior of every manifest written before the field existed. |
+| Present | Matches only the listed hosts. Must be a non-empty array of allowed values; omit the field to mean "all", never write `[]`. |
+| Selection | dmcp uses the **first** transport whose list includes the host; a transport without the field counts as a match. Order most-specific first. |
+| No match | Hard error naming the platforms the manifest does offer. dmcp never falls back to a transport meant for another OS. |
+
+The differences that matter in practice are the interpreter's name (`python3` on
+POSIX, `python` on Windows) and the venv layout (`.venv/bin/…` against
+`.venv\Scripts\….exe`) — one extra stdio transport covers both:
+
+```json
+{
+  "version": "1.4.0",
+  "scope": "user",
+  "platforms": ["linux", "windows"],
+  "name": "Doc Search MCP",
+  "summary": "Search indexed documentation",
+  "homepage": "https://github.com/example/doc-search-mcp",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/example/doc-search-mcp.git"
+  },
+  "setupScript": "setup.sh",
+  "setupScriptWindows": "setup.ps1",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": ".venv/bin/python3",
+      "args": ["server.py"],
+      "platforms": ["linux", "darwin"],
+      "description": "POSIX entrypoint"
+    },
+    {
+      "type": "stdio",
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["server.py"],
+      "platforms": ["windows"],
+      "description": "Windows entrypoint"
+    }
+  ],
+  "tools": [
+    {
+      "name": "search_docs",
+      "description": "Search indexed documentation for a phrase"
+    }
+  ]
+}
+```
+
+A Linux host spawns the first transport, a Windows host the second. Same ID,
+same tools, same embeddings — one capability, one server. (JSON needs Windows
+backslashes escaped: `.venv\\Scripts\\python.exe`.)
+
+**The two `platforms` fields answer different questions.** The top-level one is
+the vetting gate dmcp enforces on install; a per-transport one is a launch
+detail. They need not agree, and a manifest may carry a Windows transport before
+`"windows"` is vetted — the transport is unreachable until the vetting catches
+up. The reverse is worth catching: a vetted platform with no matching transport
+passes the install gate and then has nothing to launch, so
+`scripts/validate_registry.py` warns about it. It is a warning rather than an
+error because the transport may legitimately land in a later PR than the
+platform.
 
 ---
 
@@ -215,6 +299,38 @@ The setup script runs **by default** during install; pass `--no-setup` to `dmcp 
 - Must be idempotent.
 - Must not prompt for user input.
 - Must exit non-zero on failure.
+
+### Windows Setup Script
+
+```json
+"setupScript": "setup.sh",
+"setupScriptWindows": "setup.ps1"
+```
+
+`setup.sh` is bash and dmcp runs it with `sh`; stock Windows has neither. A
+server vetted on Windows ships a PowerShell script beside its POSIX one and
+names it in the optional `setupScriptWindows` field. dmcp runs `setup.ps1`
+through PowerShell on Windows hosts and `setup.sh` on every other host — the two
+are siblings, not alternatives.
+
+- **Filename.** For a local server the value must be `"setup.ps1"`, stored next
+  to `manifest.json` in the server directory. That is the only name
+  `scripts/sync_registry.py` hashes, so any other name would ship an unverified
+  script. (For a remote server it may be a full HTTPS URL, like `setupScript`.)
+- **Integrity.** The registry entry gains
+  `integrity.setupScriptWindowsSha256` beside `setupScriptSha256`, recomputed by
+  `sync_registry.py` and verified by dmcp before the script runs. A per-platform
+  script is not a hash-verification hole.
+- **Validation.** `scripts/validate_registry.py` rejects a `setup.ps1` with no
+  recorded hash, a recorded hash whose `setup.ps1` is gone, a stale hash, a
+  local script under any other name, and a declared `setupScriptWindows` that
+  was never committed.
+- **Optional.** A server with no Windows vetting needs neither the field nor the
+  file. Existing manifests are unaffected.
+
+Same requirements as `setup.sh`: idempotent, non-interactive, non-zero exit on
+failure. Set `$ErrorActionPreference = 'Stop'` so a failing command actually
+fails the script.
 
 ---
 

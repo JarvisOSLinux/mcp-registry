@@ -23,6 +23,7 @@
   - stdio: `type`, `command`, `args`
   - SSE: `type`, `url`
   - WebSocket: `type`, `wsUrl`
+- [ ] Every platform in `platforms` has a transport that matches it — either a transport with no `platforms` field, or one listing that platform (a Windows-only spelling of the command belongs in its own transport entry, not in a second server)
 - [ ] `tools` array is non-empty; every tool has `name` and `description`
 - [ ] `source.url` points to a public, reachable Git repository (stdio servers only)
 - [ ] No API keys, tokens, or credentials are hardcoded — secrets use `configurableProperties`
@@ -41,6 +42,11 @@
 - [ ] Does not prompt for interactive input
 - [ ] Exits non-zero on error (`set -e` or explicit checks)
 - [ ] Is executable (`chmod +x`)
+
+#### setup.ps1 (only if `platforms` includes `"windows"`)
+
+- [ ] Named exactly `setup.ps1` and declared as `"setupScriptWindows": "setup.ps1"`
+- [ ] Idempotent, non-interactive, and fails loudly (`$ErrorActionPreference = 'Stop'`)
 
 #### Content
 
