@@ -75,6 +75,7 @@ The manifest describes how to install and run your server. Full field reference:
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/alice/git-summary-mcp",
   "transports": [
     {
@@ -105,6 +106,7 @@ The manifest describes how to install and run your server. Full field reference:
 {
   "version": "2.1.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/alice/cloud-search-mcp",
   "transports": [
     {
@@ -131,6 +133,18 @@ The manifest describes how to install and run your server. Full field reference:
   ]
 }
 ```
+
+### Platforms (list only what you ran it on)
+
+`platforms` is required. It is an array of `"linux"`, `"darwin"` (macOS), and/or
+`"windows"` naming the operating systems you actually tested the server on —
+what the registry vouches for, not what upstream advertises. A cross-platform
+server you only exercised on Linux is `["linux"]`.
+
+dmcp refuses to install an entry on a host the list excludes, so an over-broad
+list breaks users instead of helping them. The list grows afterwards by PR: run
+the server on another OS (`dmcp install --ignore-platform` is how you get it
+installed there to check), then submit the added platform.
 
 ### Trust block (fill in honestly)
 
@@ -224,7 +238,8 @@ All new servers start at `community`. The `official` tier is earned through main
 CI runs `python3 scripts/validate_registry.py` on every PR (the `validate-pr.yml` workflow), and `scripts/sync_registry.py --check` keeps derived fields honest. The gate fails if:
 
 - `registry.json` integrity hashes do not match the submitted manifest files.
-- A required field is missing, or `scope`/`trustStatus` uses a value outside the allowed set.
+- A required field is missing, or `scope`/`trustStatus`/`platforms` uses a value outside the allowed set.
+- `platforms` is absent or empty on an entry, or the entry's list disagrees with its manifest (re-run `sync_registry.py`).
 - An entry's `id` does not match its map key, or its `manifest` URL does not resolve locally.
 - `trustStatus` is raised to `official` without a maintainer `trust-approved` label.
 
@@ -237,6 +252,7 @@ Beyond the automated check, reviewers verify:
 | Unique server ID | The directory name must not conflict with an existing entry in `registry.json`. |
 | Stable server ID | The ID (directory name) must not change after submission — it is how dmcp tracks installations. |
 | Valid `scope` | Must be `"user"` or `"system"`. |
+| Honest `platforms` | Non-empty; `"linux"`, `"darwin"`, `"windows"` only; lists only the platforms the server was actually run on. |
 | Transport fields | stdio requires `command`; SSE requires `url`; WebSocket requires `wsUrl`. |
 | Tools list non-empty | At least one tool must be declared. |
 | `setup.sh` is bash | If present, must start with `#!/usr/bin/env bash` or `#!/bin/bash`. |
@@ -270,6 +286,7 @@ Create `servers/com.github.alice.mcp.git-summary/manifest.json`:
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "name": "Git Summary MCP",
   "summary": "Summarize recent git commits for a repository",
   "keywords": ["git", "commits", "summary", "version-control"],
@@ -344,6 +361,7 @@ Expected output:
   com.github.alice.mcp.git-summary: 'name' synced from manifest
   com.github.alice.mcp.git-summary: 'summary' synced from manifest
   com.github.alice.mcp.git-summary: 'keywords' synced from manifest
+  com.github.alice.mcp.git-summary: 'platforms' synced from manifest
 registry.json updated.
 ```
 

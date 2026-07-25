@@ -1,6 +1,9 @@
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "name": "JARVIS Shell",
   "description": "Run programs and shell scripts as the current user. Use for git, python, file operations, and any command that does not require elevated privileges.",
   "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",

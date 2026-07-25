@@ -1,6 +1,9 @@
 {
   "version": "2.0.80",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/brave/brave-search-mcp-server",
   "transports": [
     {

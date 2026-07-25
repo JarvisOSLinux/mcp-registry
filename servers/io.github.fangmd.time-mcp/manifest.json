@@ -1,6 +1,9 @@
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/fangmd/time-mcp",
   "transports": [
     {

@@ -4,7 +4,7 @@
 For each server entry in registry.json:
   - Recomputes integrity.manifestSha256 from the local manifest file
   - Recomputes integrity.setupScriptSha256 if setup.sh exists
-  - Syncs name, summary, keywords from the manifest into the registry entry
+  - Syncs name, summary, keywords, platforms from the manifest into the entry
   - Updates the top-level updated timestamp
 
 Usage:
@@ -21,9 +21,34 @@ import argparse
 REGISTRY = pathlib.Path("registry.json")
 SERVERS_DIR = pathlib.Path("servers")
 
+# Fields copied verbatim from the manifest into the index entry. 'platforms' is
+# mirrored because dmcp filters by host from registry.json alone — browse and
+# the install gate must not have to fetch every manifest to learn which OSes an
+# entry was vetted on.
+SYNCED_FIELDS = ("name", "summary", "keywords", "platforms")
+
+# Where a newly mirrored field is inserted, so it lands next to the metadata it
+# belongs with instead of after the multi-hundred-float embeddings blob that
+# ends every entry — a registry.json diff is read by a human reviewer.
+FIELD_ANCHOR = {"platforms": "keywords"}
+
 
 def sha256_file(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def move_after(entry: dict, field: str, anchor: str) -> None:
+    """Reorder `entry` so `field` sits directly after `anchor`."""
+    if field not in entry or anchor not in entry:
+        return
+    value = entry.pop(field)
+    reordered = {}
+    for key, existing in entry.items():
+        reordered[key] = existing
+        if key == anchor:
+            reordered[field] = value
+    entry.clear()
+    entry.update(reordered)
 
 
 def dir_from_url(url: str) -> str | None:
@@ -76,12 +101,15 @@ def main() -> None:
                 entry.setdefault("integrity", {})["setupScriptSha256"] = new_setup_sha
                 changed = True
 
-        # Sync descriptive fields from manifest into registry entry
+        # Sync descriptive and vetting fields from manifest into registry entry
         manifest = json.loads(manifest_path.read_text())
-        for field in ("name", "summary", "keywords"):
+        for field in SYNCED_FIELDS:
             if field in manifest and manifest[field] != entry.get(field):
                 print(f"  {server_id}: '{field}' synced from manifest")
+                is_new = field not in entry
                 entry[field] = manifest[field]
+                if is_new and field in FIELD_ANCHOR:
+                    move_after(entry, field, FIELD_ANCHOR[field])
                 changed = True
 
     if changed:

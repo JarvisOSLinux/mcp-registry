@@ -1,7 +1,7 @@
 name: Validate PR
 
 # Blocking PR gate for the registry. Validates registry.json and manifests
-# (schema, id/scope/trustStatus, integrity hashes) and enforces that a server
+# (schema, id/scope/trustStatus/platforms, integrity hashes) and enforces that a server
 # cannot be promoted to the `official` tier without a maintainer applying the
 # `trust-approved` label. See docs/TRUST-MODEL.md §4 and
 # docs/REGISTRY-AUTOMATION.md §"PR gate".

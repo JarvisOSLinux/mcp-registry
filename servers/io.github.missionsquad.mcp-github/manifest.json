@@ -1,6 +1,9 @@
 {
   "version": "0.11.0",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/MissionSquad/mcp-github",
   "transports": [
     {

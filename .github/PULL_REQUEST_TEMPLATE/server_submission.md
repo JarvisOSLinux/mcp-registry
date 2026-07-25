@@ -18,6 +18,7 @@
 
 - [ ] `version` field is a valid semver string (e.g. `"1.0.0"`)
 - [ ] `scope` is `"user"` or `"system"`
+- [ ] `platforms` is non-empty and lists only OSes you actually ran the server on (`"linux"`, `"darwin"`, `"windows"`)
 - [ ] `transports` array is non-empty and each entry has the correct required fields:
   - stdio: `type`, `command`, `args`
   - SSE: `type`, `url`

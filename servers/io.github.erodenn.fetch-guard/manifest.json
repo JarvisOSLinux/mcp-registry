@@ -1,6 +1,9 @@
 {
   "version": "1.4.0",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/Erodenn/fetch-guard",
   "transports": [
     {

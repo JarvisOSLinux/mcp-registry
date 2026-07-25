@@ -1,6 +1,9 @@
 {
   "version": "0.1.0",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/uneco/mcp-git-polite",
   "transports": [
     {

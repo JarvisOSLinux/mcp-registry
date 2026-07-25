@@ -42,6 +42,7 @@ MCP-REGISTRY-GUIDE.md      Full registry and manifest specification
 Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
 - `keywords`, `categories`
+- `platforms` (mirrored from the manifest; the OSes the registry vouches for — dmcp filters by host from this index alone)
 - `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)
 - `integrity` (manifestSha256, setupScriptSha256)
 - `manifest` URL pointing to the server's manifest.json
@@ -49,6 +50,7 @@ Main index. Each server entry contains:
 
 ### manifest.json (per server)
 
+- `platforms` — OSes vetted on (`linux` / `darwin` / `windows`); required in this registry, absent = unrestricted
 - `transports` — how to run: stdio (command + args), SSE (URL), or WebSocket (URL)
 - `source` — git repo to clone for local servers (optional `rev` pin — a full 40-char SHA is binding)
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
@@ -63,7 +65,7 @@ Main index. Each server entry contains:
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
 - `validate-pr.yml` — Blocking PR gate; runs `scripts/validate_registry.py`
-  (schema, id/scope/trustStatus enums, integrity hashes, orphan directories)
+  (schema, id/scope/trustStatus/platforms enums, integrity hashes, orphan directories)
   and blocks `trustStatus` promotion to `official` without the maintainer
   `trust-approved` label
 - `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
@@ -73,7 +75,7 @@ Main index. Each server entry contains:
 ### Scripts
 
 ```bash
-python scripts/sync_registry.py         # Update integrity hashes + sync name/summary/keywords (--check for CI)
+python scripts/sync_registry.py         # Update integrity hashes + sync name/summary/keywords/platforms (--check for CI)
 python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
@@ -86,7 +88,7 @@ python scripts/remove_server.py <id>    # Hard-excise a server (--force for live
 3. Add an entry for the server to `registry.json` (id as the map key, plus
    id/name/summary/version/scope/trustStatus and the raw-GitHub manifest URL)
 4. Run `python scripts/sync_registry.py` (fills integrity hashes, syncs
-   name/summary/keywords from the manifest)
+   name/summary/keywords/platforms from the manifest)
 5. Submit PR — `validate-pr.yml` gates it
 
 See `MCP-REGISTRY-GUIDE.md` for format details.

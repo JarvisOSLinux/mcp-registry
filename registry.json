@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-24T21:07:09Z",
+  "updated": "2026-07-25T03:19:00Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -20,13 +20,16 @@
         "arithmetic",
         "typescript"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "61341358adbebbb77cea09e23f2fa412e4680de39c70ebca7ce18dbb9f735c47",
+        "manifestSha256": "44d38e15bffee67cc475d28c95d29674c695d3af9dc9b10772eea005017428fd",
         "setupScriptSha256": "8399e31355b5b5aa98d6d0d5d0e454347abd7f202049ccfeab3140a2cef5060f"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/calculator-ts/manifest.json",
@@ -820,13 +823,16 @@
         "arithmetic",
         "python"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "5b08e171fdef69485cb85eb81e261225f64c15cd2b881b3f5ddaa72a0974b74c",
+        "manifestSha256": "ec8a7fe1ec7f87db5f1c764d76094a70c12e1d4d5401097dbf76b929e9b823db",
         "setupScriptSha256": "3f6cea46553913f1460639864c155fcb12359f89a161374449ab5238493d8e05"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/calculator-py/manifest.json",
@@ -1620,13 +1626,16 @@
         "arithmetic",
         "rust"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "816f16557aba32306dcd16c6277aa2f55fec4ec006287b1f46e523549dfe9ddc",
+        "manifestSha256": "0c90623a5bd4bcfeea1326ba2831854a6600c2046addb730109e883ae082eda7",
         "setupScriptSha256": "af3e39085b0be6924e7dc297c6c1e052bb46b54c27a0af32b07bd3746df6e5d3"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/calculator-rust/manifest.json",
@@ -2419,13 +2428,16 @@
         "test",
         "hello"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "48fc453c790f91700f65bd545c8f7048f19a6f5898b5a807ca0883bf9b00563e",
+        "manifestSha256": "ba39a733d9f7fbe1131290245b6c72f571ea58e804613ecff92a7d7ca61878df",
         "setupScriptSha256": "26fc5c1c5c7120e82fcc08210f049f43f1ef01814a43f6ccb4fc6eb1dbb093f6"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/hello-config/manifest.json",
@@ -3219,6 +3231,9 @@
         "hello",
         "test"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -3226,7 +3241,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "ea24fd3702fbcbddbef74cf42cb6ff2090e97d80291e3b3a8b622c1cdd26ddc5",
+        "manifestSha256": "8801eef27937465352cddd0de83f2b38420c8580aadc6cc09696c4ee63459b8b",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/hello-sse/manifest.json",
@@ -4022,6 +4037,9 @@
         "run",
         "user"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "system"
@@ -4029,7 +4047,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "aad0fd3013a8b739c5719e885bb8d3dd770de7a75a6734f943d1197c304de748",
+        "manifestSha256": "3c5a9486fa1671ce47ebaa0b7311fe27c81afcc355ea061744d0aaaeba806800",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -4830,6 +4848,9 @@
         "systemd",
         "privileged"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "system"
@@ -4837,7 +4858,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
       "integrity": {
-        "manifestSha256": "f38d6bd1a45045b7c5964fe535d794bd44ed5c505580490a20e2fb7506b292bb",
+        "manifestSha256": "875e6fc986e247e641617d46777cdbbd41dcff0dca206dfdffcd1c479519f7a3",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -5630,6 +5651,9 @@
         "hello",
         "test"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -5637,7 +5661,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "e2143333a01716eb92a1edd8f81567a1ccddf43c08a2542430e0707bc857744d",
+        "manifestSha256": "bd3e17247db93f878c594d1c657e1b91eb916d017774de2931835cb192dfeae3",
         "setupScriptSha256": "a2e144fb97b657bf2f189680939425d85593e367dd49b53963a2a2d2a1efe8a5"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/hello-ws/manifest.json",
@@ -6433,6 +6457,9 @@
         "dispatch",
         "slow"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -6440,7 +6467,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "eb2a614a65225fce83cacc574b02598ab30b931f91cb31be4493589dbdd6475f",
+        "manifestSha256": "ba35793cbe7ebc280e14e6fdb012c7405d1907c8f0e8dbc521aafbfe83cc4400",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/slow-mcp/manifest.json",
@@ -7236,6 +7263,9 @@
         "signal",
         "dispatch"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -7243,7 +7273,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "077165f0d8d81770eb757d1cbc44db8dad9e657ab2f0e4c0bb6f2966eafea6ec",
+        "manifestSha256": "706d2a8abdb38420bb8f8d34306d435dec9c30ed3b4eda20b980f6e1c2dd24cf",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/exit-mcp/manifest.json",
@@ -8039,6 +8069,9 @@
         "boundary",
         "dispatch"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -8047,7 +8080,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "7cbd6d72b8fa7b00b26fc23cd96e7e3a5bb7fffcc1771daf912148ff207b84e1",
+        "manifestSha256": "0cf810d1272851267e34f0b533458fc9ad05fee0042ed665c014dbdb5080d2ee",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/poison-mcp/manifest.json",
@@ -8842,6 +8875,9 @@
         "routing",
         "dispatch"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -8849,7 +8885,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "1d2dbeedc0a172ad7de6cf30c5902f1f9ef4e312e676fa36b59dd91764a92438",
+        "manifestSha256": "ad071bd24fb9acbd8a2d7d14591428be6c8c2da3bb5a7249c633ee977a9d98d0",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/identity-mcp/manifest.json",
@@ -9647,6 +9683,9 @@
         "search",
         "grep"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-utilities",
@@ -9654,7 +9693,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "93a8a8ec5e30610756f5896c07fe7350bcf1ecb3189f396f5a4a67fa642a7a34",
+        "manifestSha256": "12a88ee90b3d2220b76300381a902feafb1a57d1a71e2c6fc8c7a0e22edc622c",
         "setupScriptSha256": "b9aac63db591ed8820bf633f6f5ac06480074b2392cb79ca4e6dc8e4aebff16f"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/manifest.json",
@@ -10451,6 +10490,9 @@
         "videos",
         "summarize"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-web",
@@ -10458,7 +10500,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "20d09000419cb3d063b890fd4f5dfb7e74c1e4c8ccd6c2a34caeedab772ef258",
+        "manifestSha256": "6defc7b691dd680b26c340c3391192c9c2475775a782d79a61591e883dbcb554",
         "setupScriptSha256": "932dbf0a77b2b941e27887b835c62e34ded8f67fc9f5a3315ba54acae64ef7f3"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/manifest.json",
@@ -11254,6 +11296,9 @@
         "pull-requests",
         "search"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -11261,7 +11306,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "c4d7533b8716acb80dfbe5d34ed650191da50a1d85c11b5a2f155a79f56d1579",
+        "manifestSha256": "46beee692c7ce8beadc2e27acfc2054de3c1c04bb1be54621a81b91eea36041d",
         "setupScriptSha256": "43c12a871e79aff0eae9bcbbdb587006639cb9c11cc77d42e9f227bb1ce611d9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json",
@@ -12056,13 +12101,16 @@
         "timestamp",
         "timezone"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-utilities"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "5c26bca465685e0c7f2aa8d88d0dac4b17ef651acc6ab91f7b5fb0c7431fbfb1",
+        "manifestSha256": "5bbcbac81f6317e4a46f2b381a7b120b9ceb2229e3b600843b8bf448c595f96c",
         "setupScriptSha256": "a54abef13f787254429fd8b2ab70aaceefcf41808988bef122514b8dd801ee4e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.fangmd.time-mcp/manifest.json",
@@ -12857,6 +12905,9 @@
         "query",
         "schema"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development",
@@ -12864,7 +12915,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "2bea52e704e30d10bd3a5fa28200c5a9521df486f3516aa5bf32dc7bf9c7c8c4",
+        "manifestSha256": "1a4f9afe76ef9e123da3accc315d019dd757491ff56c658965839a5af463105e",
         "setupScriptSha256": "6ba5e015559c65a68f7fc77eee0fa8bb56b85f9a68fb6c05680239c934606557"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/manifest.json",
@@ -13661,6 +13712,9 @@
         "security",
         "prompt-injection"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-web",
@@ -13668,7 +13722,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "2eb750b9d17ef38ca39f2e677e19cbd54295da4e15580171c6afe4d95337c085",
+        "manifestSha256": "5036484d8d1884abcc997bb7ac19c034e312c4a64314bf07e1217db0342d026e",
         "setupScriptSha256": "e5933abeeb449e1312b73dae899ce3ebc99ae997591e88e7773f0a74d5e312da"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json",
@@ -14463,13 +14517,16 @@
         "commit",
         "patch"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "mcp-development"
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "cbdf9b99252a7ad9aa31ee9fe3b0515763363efba39a8a7f53c8bed40d1cd25d",
+        "manifestSha256": "dede6387146f7eb18d123c6d160cf5d2df178d59061b361df48768e210879e1e",
         "setupScriptSha256": "adf44dcca167ae9de02baee6c4f713912eda40d9f7443043a871725752b7caf6"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/manifest.json",
@@ -15269,6 +15326,9 @@
         "screenshot",
         "a11y"
       ],
+      "platforms": [
+        "linux"
+      ],
       "categories": [
         "mcp",
         "browser",
@@ -15276,7 +15336,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "9be8e8e45894c9e967ee5c2c537d1da928fba9e9d4cecfe5521c9aee919031ed",
+        "manifestSha256": "ff79578c4db26994d187f8e9782cf816206bf106f291677671f72e12f2532974",
         "setupScriptSha256": "bda6a4dc766894f065daa41effb99a1f35b591279ff331e712faabd174944d6c"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.microsoft.playwright-mcp/manifest.json",

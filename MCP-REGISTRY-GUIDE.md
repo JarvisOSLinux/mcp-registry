@@ -76,6 +76,7 @@ The index is a single JSON file with this structure:
       "homepage": "https://github.com/example/mcp-registry",
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
+      "platforms": ["linux"],
       "categories": ["mcp", "mcp-development"],
       "trustStatus": "community",
       "integrity": {
@@ -106,6 +107,7 @@ The index is a single JSON file with this structure:
 | `homepage`  | string | Optional. URL to the project homepage.                   |
 | `icon`      | string | Icon for display (Freedesktop name or URL).              |
 | `keywords`  | array  | Search keywords for discovery.                           |
+| `platforms` | array  | Mirrored from the manifest by `sync_registry.py`. Operating systems the registry vouches for; absent = unrestricted. See Platforms below. |
 | `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
 | `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
@@ -142,11 +144,50 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 
 | Field                   | Type   | Description                                                     |
 |-------------------------|--------|-----------------------------------------------------------------|
+| `platforms`             | array  | Operating systems the registry vouches for: `"linux"`, `"darwin"`, `"windows"`. Absent = unrestricted. **Required for entries in this registry.** See Platforms below. |
 | `setupScript`           | string | For local: filename (e.g. `"setup.sh"`). For remote: URL. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
 | `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls. Absent/`false` = stateless. |
 | `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
+
+### Platforms
+
+```json
+"platforms": ["linux"]
+```
+
+`platforms` names the operating systems the registry **vouches for**: the ones an
+entry was actually vetted on. Allowed values are `"linux"`, `"darwin"` (macOS),
+and `"windows"`. dmcp resolves the machine it is running on to one of those three
+strings; a host that matches none of them is treated as unsupported.
+
+- **Absent = unrestricted.** Manifests without the field install anywhere, so
+  registries written before `platforms` existed behave exactly as they did. In
+  this registry the field is mandatory — `scripts/validate_registry.py` rejects a
+  PR whose entry omits it, leaves it empty, or uses a value outside the enum.
+- **Mirrored into the index.** `scripts/sync_registry.py` copies `platforms` from
+  each manifest into its `registry.json` entry, because dmcp filters by host from
+  the index alone: `dmcp browse` marks entries the host cannot run, and
+  `dmcp install` refuses them before any clone or setup script executes, without
+  fetching every manifest to find out.
+- **Trust rides on `trustStatus`.** `platforms` is plain manifest data, no more
+  and no less trustworthy than `transports`, `tools`, or `setup.sh` — `official`
+  means a maintainer confirmed it, `community` means it is the submitter's word
+  pending promotion review.
+- **The list grows by vetting.** Verify a server on another OS (dmcp's
+  `--ignore-platform` flag is the intended path for that), then open a PR adding
+  the platform; the manifest-hash change propagates the wider support to
+  installed users via `dmcp update`.
+
+**One capability, one server.** A server's identity is its capability, not its
+platform. `platforms` is coverage state that grows as vetting grows — never a
+reason to publish per-OS sibling entries for the same capability. Per-OS entries
+are legitimate only when the capability itself is platform-shaped (Linux desktop
+control built on AT-SPI, ydotool, and KWin genuinely *is* Linux desktop
+technology). Keeping it this way means an LLM browsing the registry never has to
+reason about platforms at all: dmcp filters unsupported servers out before the
+results reach the agent.
 
 ### Tools
 
@@ -177,6 +218,7 @@ Example (local server):
 {
   "version": "1.0.0",
   "scope": "user",
+  "platforms": ["linux"],
   "homepage": "https://github.com/example/mcp-registry",
   "setupScript": "setup.sh",
   "source": { "type": "git", "url": "...", "path": "servers/my-server" },
@@ -387,6 +429,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
       "name": "Calculator MCP",
       "summary": "A simple calculator MCP server",
       "version": "1.0.0",
+      "platforms": ["linux"],
       "transports": [
         {
           "type": "stdio",
@@ -407,6 +450,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
       "name": "Cloud API",
       "summary": "Remote SSE server for cloud API access",
       "version": "1.0.0",
+      "platforms": ["linux", "darwin"],
       "transports": [
         {
           "type": "sse",
@@ -434,7 +478,7 @@ Here is a complete minimal registry with one local server (Git) and one remote S
 2. **Embeddings**: `dmcp sync-index` separately downloads registry embeddings into the local vector index for semantic search; registry JSON itself is never cached.
 3. **Parse**: Each server entry in the `servers` object becomes an installable server in the catalogue.
 4. **Merge**: servers already installed (matched by `id`) are flagged as installed in `dmcp browse` output. There is no automatic upgrade detection; rerun `dmcp install <id>` to update in place.
-5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords.
+5. **List**: `dmcp browse` lists the servers, searchable by name, summary, id, and keywords. Entries whose `platforms` exclude the host are flagged as unsupported in both the table and `--json`, so agent-driven discovery can skip them.
 
 ## What Happens on Install
 
@@ -442,9 +486,12 @@ When a user runs `dmcp install <id>`:
 
 1. If `configurableProperties` exist and any required ones are unset, dmcp prompts for them.
 2. If `scope` is `"system"`, the user authenticates via polkit (password prompt for pkexec).
-3. dmcp checks the entry's `trustStatus` (refuses `removed`, warns on
+3. dmcp checks the entry's `platforms` against the host OS and refuses — before
+   any clone, download, or setup script — when the host is not listed
+   (`--ignore-platform` overrides, which is how someone verifies a new OS so the
+   list can grow). It then checks the entry's `trustStatus` (refuses `removed`, warns on
    `community`/`deprecated`; the autonomous agent path refuses
-   `deprecated`/`removed` outright), then verifies the fetched manifest's raw
+   `deprecated`/`removed` outright) and verifies the fetched manifest's raw
    bytes against `integrity.manifestSha256` — a mismatch aborts the install.
    Setup scripts are verified against `setupScriptSha256` before running.
 4. A dedicated directory is created at `<base>/mcp/installed/<id>/`.

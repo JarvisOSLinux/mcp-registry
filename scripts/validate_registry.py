@@ -9,6 +9,8 @@ Static checks (always run):
   - every server entry: map key matches entry.id; required fields present
   - trustStatus is one of the allowed values
   - scope is one of the allowed values
+  - platforms is a non-empty array of allowed values, present on every entry,
+    and agrees with the manifest it was mirrored from
   - the manifest URL resolves to an existing servers/<dir>/manifest.json
   - integrity.manifestSha256 is present and matches the manifest file bytes
   - if a setup.sh exists, integrity.setupScriptSha256 is present and matches
@@ -40,12 +42,40 @@ SERVERS_DIR = pathlib.Path("servers")
 
 ALLOWED_TRUST = {"community", "official", "deprecated", "removed"}
 ALLOWED_SCOPE = {"user", "system"}
+ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 
 def annotate(level: str, msg: str) -> None:
     # GitHub Actions annotation; harmless plain text when run locally.
     print(f"::{level}::{msg}" if level in ("error", "warning") else msg)
+
+
+def validate_platforms(where: str, entry: dict, errors: list) -> None:
+    """Check the entry's mirrored `platforms` list.
+
+    An absent list means 'unrestricted' to dmcp, so a silent omission would
+    offer a server to hosts nobody ever vetted it on. Entries in this registry
+    must therefore say what they were vetted on, explicitly.
+    """
+    platforms = entry.get("platforms")
+    if platforms is None:
+        errors.append(
+            f"{where}: missing 'platforms' — every entry in this registry must "
+            f"declare the platforms it was vetted on (add the field to the "
+            f"manifest and run sync_registry.py)"
+        )
+        return
+
+    if not isinstance(platforms, list) or not platforms:
+        errors.append(f"{where}: 'platforms' must be a non-empty array")
+        return
+
+    for value in platforms:
+        if value not in ALLOWED_PLATFORMS:
+            errors.append(
+                f"{where}: platform '{value}' not in {sorted(ALLOWED_PLATFORMS)}"
+            )
 
 
 def validate_static(registry: dict, errors: list) -> None:
@@ -72,6 +102,8 @@ def validate_static(registry: dict, errors: list) -> None:
         scope = entry.get("scope")
         if scope is not None and scope not in ALLOWED_SCOPE:
             errors.append(f"{where}: scope '{scope}' not in {sorted(ALLOWED_SCOPE)}")
+
+        validate_platforms(where, entry, errors)
 
         dir_name = dir_from_url(entry.get("manifest", ""))
         if not dir_name:
@@ -104,6 +136,25 @@ def validate_static(registry: dict, errors: list) -> None:
                 errors.append(
                     f"{where}: integrity.setupScriptSha256 stale — run sync_registry.py"
                 )
+
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except (OSError, json.JSONDecodeError) as e:
+            errors.append(f"{where}: manifest {manifest_path} failed to parse: {e}")
+            continue
+
+        # The entry's platforms are a mirror, so a hand-edited entry could claim
+        # coverage the vetted manifest never did.
+        declared = manifest.get("platforms")
+        if declared is None:
+            errors.append(
+                f"{where}: manifest {manifest_path} declares no 'platforms'"
+            )
+        elif declared != entry.get("platforms"):
+            errors.append(
+                f"{where}: 'platforms' {entry.get('platforms')} does not match "
+                f"manifest {declared} — run sync_registry.py"
+            )
 
 
 def validate_no_orphan_dirs(registry: dict, errors: list) -> None:

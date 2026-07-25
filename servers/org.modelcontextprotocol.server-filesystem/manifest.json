@@ -1,6 +1,9 @@
 {
   "version": "1.19.1",
   "scope": "user",
+  "platforms": [
+    "linux"
+  ],
   "homepage": "https://github.com/j0hanz/filesystem-mcp",
   "transports": [
     {

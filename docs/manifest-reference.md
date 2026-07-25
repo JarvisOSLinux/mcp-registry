@@ -12,6 +12,7 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 |-------|------|----------|-------------|
 | `version` | string | Yes | Semantic version of the server (e.g. `"1.0.0"`). Used for upgrade detection. |
 | `scope` | string | Yes | `"user"` or `"system"`. See [Scope](#scope). |
+| `platforms` | array | Yes in this registry | Operating systems the registry vouches for: `"linux"`, `"darwin"`, `"windows"`. See [Platforms](#platforms). |
 | `transports` | array | Yes | One or more entrypoints. See [Transports](#transports). |
 | `tools` | array | Yes | Tools the server exposes. See [Tools](#tools). |
 | `source` | object | Conditional | Git source for local stdio servers. Omit for remote SSE/WebSocket. See [Source](#source). |
@@ -36,6 +37,52 @@ Controls where the server is installed and what privileges are required.
 | `"system"` | `/usr/share/mcp/installed/<id>/` | pkexec (root) — requires polkit authentication |
 
 Use `"user"` unless your server genuinely needs system-wide access (e.g. a daemon that must be visible to all users on the machine).
+
+---
+
+## Platforms
+
+```json
+"platforms": ["linux"]
+```
+
+The operating systems **this registry vouches for** — the platforms the entry was
+actually vetted on through the normal review process. Allowed values: `"linux"`,
+`"darwin"` (macOS), `"windows"`.
+
+**Absent means unrestricted.** A manifest with no `platforms` is installable on
+any host, so third-party registries written before the field keep working
+unchanged. Entries in *this* registry must declare it:
+`scripts/validate_registry.py` fails a PR that omits it, is empty, or uses a
+value outside the enum. That is the point of the field — an unvetted host should
+never be silently offered a server.
+
+**It is ordinary manifest data.** There is no claim/verified split and no special
+epistemics: `platforms` is exactly as trustworthy as the entry's `trustStatus`
+tier, the same as `transports`, `tools`, and `setup.sh` already are. `official`
+means a maintainer confirmed it; `community` means it is the submitter's word
+until promotion review.
+
+**`sync_registry.py` mirrors it into `registry.json`.** dmcp filters by host from
+the index alone: `dmcp browse` marks entries that cannot run on the current host,
+and `dmcp install` refuses them *before* any clone or setup script runs. Neither
+path fetches every manifest to work that out, so the mirrored copy is the one the
+client actually reads.
+
+**The list grows by PR.** Every entry here currently reads `["linux"]`, because
+everything in this registry was vetted on Arch. To widen it, verify the server on
+another OS — `dmcp install --ignore-platform` exists for exactly that — then open
+a PR adding the platform. The resulting manifest-hash change propagates the wider
+support to already-installed users through `dmcp update`.
+
+**Platform support is coverage, not identity.** One capability, one server: a
+server that gains macOS support extends its `platforms` list; it does not become
+a second `-darwin` entry. Per-OS entries are legitimate only when the capability
+itself is platform-shaped (Linux desktop automation built on AT-SPI, say).
+
+`setup.sh` environment checks stay as defense in depth. `platforms` records which
+OS was vetted; the setup script still verifies that the dependencies it needs —
+a node version, a python interpreter — are actually present.
 
 ---
 
@@ -267,6 +314,7 @@ A Python stdio server with one required API key:
 {
   "version": "1.2.0",
   "scope": "user",
+  "platforms": ["linux"],
   "name": "Git Summary MCP",
   "summary": "Summarize recent git commits and branch activity",
   "keywords": ["git", "commits", "summary", "version-control"],
