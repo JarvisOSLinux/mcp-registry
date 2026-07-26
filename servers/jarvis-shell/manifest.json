@@ -5,15 +5,19 @@
     "linux"
   ],
   "name": "JARVIS Shell",
-  "description": "Run programs and shell scripts as the current user. Use for git, python, file operations, and any command that does not require elevated privileges.",
-  "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+  "description": "Run programs and shell scripts as the current user, and open files, URLs, or applications with the desktop's default handler. Use for git, python, file operations, launching GUI apps, and any command that does not require elevated privileges.",
+  "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
   "keywords": [
-    "shell",
     "command",
-    "script",
+    "desktop",
     "execute",
+    "launch",
+    "open",
     "run",
-    "user"
+    "script",
+    "shell",
+    "user",
+    "xdg-open"
   ],
   "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
@@ -40,6 +44,10 @@
     {
       "name": "execute_script",
       "description": "Execute a multi-line shell script via /bin/sh and return its output"
+    },
+    {
+      "name": "open_app",
+      "description": "Open a file, URL, or application with the desktop's default handler"
     }
   ],
   "embeddings": {
