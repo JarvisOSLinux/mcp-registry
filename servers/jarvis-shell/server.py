@@ -9,6 +9,7 @@ Uses only Python stdlib; no external dependencies.
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from typing import Any
@@ -73,6 +74,24 @@ TOOLS = [
                 },
             },
             "required": ["script"],
+        },
+    },
+    {
+        "name": "open_app",
+        "description": (
+            "Open a file, URL, or application with the desktop's default handler "
+            "(xdg-open / open / start). Use to launch a GUI app or show something "
+            "to the user — not to run a command and read its output."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "File path, URL, or application name to open",
+                },
+            },
+            "required": ["target"],
         },
     },
 ]
@@ -173,6 +192,67 @@ def _call_execute_script(arguments: dict) -> dict:
         return _run_result(False, -1, "", str(exc))
 
 
+def _display_env() -> dict:
+    """Env with display vars set, detected from XDG_RUNTIME_DIR when missing.
+
+    A server started by dmcp does not always inherit the desktop session's
+    WAYLAND_DISPLAY, and without it the opener has no display to target.
+    """
+    env = os.environ.copy()
+    if "WAYLAND_DISPLAY" not in env:
+        xdg_runtime = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+        for candidate in ("wayland-1", "wayland-0"):
+            if os.path.exists(os.path.join(xdg_runtime, candidate)):
+                env["WAYLAND_DISPLAY"] = candidate
+                env.setdefault("XDG_RUNTIME_DIR", xdg_runtime)
+                break
+    env.setdefault("DISPLAY", ":0")
+    return env
+
+
+def _open_command(target: str) -> str:
+    """Per-OS command to open a file/URL/app (never elevated)."""
+    if sys.platform == "darwin":
+        return f"open {shlex.quote(target)}"
+    if sys.platform == "win32":
+        # `start` needs an explicit empty title argument or it misreads a
+        # quoted target as the window title.
+        return f'cmd /c start "" {shlex.quote(target)}'
+    return f"xdg-open {shlex.quote(target)}"
+
+
+def _call_open_app(arguments: dict) -> dict:
+    target = arguments.get("target")
+    if not isinstance(target, str) or not target.strip():
+        return _run_result(False, -1, "", "open_app requires a non-empty 'target'")
+
+    env = (
+        os.environ.copy()
+        if sys.platform in ("darwin", "win32")
+        else _display_env()
+    )
+
+    try:
+        proc = subprocess.run(
+            _open_command(target),
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            env=env,
+        )
+    except subprocess.TimeoutExpired:
+        # The opener handed off to a GUI app that kept the pipes open; the
+        # launch itself succeeded, so this is not a failure.
+        return _run_result(True, 0, f"Launched: {target}", "")
+    except Exception as exc:
+        return _run_result(False, -1, "", str(exc))
+
+    if proc.returncode != 0:
+        return _run_result(False, proc.returncode, proc.stdout, proc.stderr)
+    return _run_result(True, 0, f"Opened: {target}", proc.stderr)
+
+
 def _handle(request: dict) -> dict | None:
     method = request.get("method", "")
     req_id = request.get("id")
@@ -208,6 +288,8 @@ def _handle(request: dict) -> dict | None:
             return ok(_call_execute_command(arguments))
         if name == "execute_script":
             return ok(_call_execute_script(arguments))
+        if name == "open_app":
+            return ok(_call_open_app(arguments))
         return err(-32601, f"Unknown tool: {name}")
 
     return err(-32601, f"Method not found: {method}")

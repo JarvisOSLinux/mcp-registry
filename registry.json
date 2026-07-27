@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-25T03:19:00Z",
+  "updated": "2026-07-26T10:36:41Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4024,18 +4024,22 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "User-level shell execution for JARVIS. Runs programs and scripts as the logged-in user. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
       "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
       "keywords": [
-        "shell",
         "command",
-        "script",
+        "desktop",
         "execute",
+        "launch",
+        "open",
         "run",
-        "user"
+        "script",
+        "shell",
+        "user",
+        "xdg-open"
       ],
       "platforms": [
         "linux"
@@ -4047,7 +4051,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "3c5a9486fa1671ce47ebaa0b7311fe27c81afcc355ea061744d0aaaeba806800",
+        "manifestSha256": "f92d7b3ad8ca919a564cb6360cb0ab285ff0850732438d7ef930b21d903a7805",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
