@@ -147,6 +147,15 @@ def _call_execute_command(arguments: dict) -> dict:
             cwd=cwd,
             timeout=timeout,
             env=env,
+            # The server's own stdin IS the JSON-RPC channel from dmcp. Without
+            # this, a command that reads stdin (e.g. `pacman -Syu` prompting
+            # [Y/n]) inherits that pipe: it blocks forever waiting on input the
+            # channel will never carry, and can even swallow a later request off
+            # the wire. DEVNULL turns an interactive prompt into an immediate
+            # EOF, so such a command aborts with a legible error instead of
+            # hanging. Non-interactive invocation (`--noconfirm`, `-y`) is the
+            # caller's job — TLA already confirmed the command upstream.
+            stdin=subprocess.DEVNULL,
         )
         return _run_result(
             proc.returncode == 0,
