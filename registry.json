@@ -4024,7 +4024,7 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo — use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -8867,7 +8867,7 @@
     "com.github.yakupatahanov.mcp.identity-mcp": {
       "id": "com.github.yakupatahanov.mcp.identity-mcp",
       "name": "Identity MCP",
-      "summary": "Every response clearly identifies which server responded \u2014 confirms server discovery, routing, and LLM awareness",
+      "summary": "Every response clearly identifies which server responded — confirms server discovery, routing, and LLM awareness",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -9668,6 +9668,40 @@
         ],
         "tools": {}
       }
+    },
+    "com.github.yakupatahanov.mcp.caldav": {
+      "id": "com.github.yakupatahanov.mcp.caldav",
+      "name": "CalDAV Calendar",
+      "summary": "Calendar access over CalDAV: list, create, update and delete events and reminders on any CalDAV server. Provider-neutral and self-hostable; Python standard library only.",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "appointments",
+        "caldav",
+        "calendar",
+        "events",
+        "icalendar",
+        "meetings",
+        "reminders",
+        "schedule",
+        "tasks",
+        "vtodo"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-utilities"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "7bcf7fa417b3b270d71f78c3a91d547e024127700603c3fd7bcc8d424597263d",
+        "setupScriptSha256": "0e818e837aab4d96b312d9e3479e02880ff92d4c28bfa27383c6c4bca61c8134"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/caldav/manifest.json"
     },
     "org.modelcontextprotocol.server-filesystem": {
       "id": "org.modelcontextprotocol.server-filesystem",
@@ -15313,7 +15347,7 @@
     "io.github.microsoft.playwright-mcp": {
       "id": "io.github.microsoft.playwright-mcp",
       "name": "Playwright Browser",
-      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic \u2014 acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
+      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic — acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
       "version": "0.0.78",
       "scope": "user",
       "homepage": "https://github.com/microsoft/playwright-mcp",
