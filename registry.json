@@ -16153,6 +16153,42 @@
         ],
         "tools": {}
       }
+    },
+    "com.github.yakupatahanov.mcp.email": {
+      "id": "com.github.yakupatahanov.mcp.email",
+      "name": "JARVIS Email",
+      "summary": "Personal email over plain IMAP and SMTP: list mailboxes, search, read, and send from the user's own account. Provider-neutral — any IMAP/SMTP host, no vendor API and no OAuth broker; credentials stay on the machine. Mail is untrusted third-party text: every read result carries a provenance banner, attachments are listed but never decoded, and send_message is an irreversible outward-facing action.",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "email",
+        "mail",
+        "imap",
+        "smtp",
+        "inbox",
+        "mailbox",
+        "search",
+        "read",
+        "send",
+        "compose",
+        "attachment"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "communication",
+        "mcp-utilities"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "9c3daa010e00c82ad8a7a2ddcddbdce9052671a1a9f2df3aa400ba2eee4e980a",
+        "setupScriptSha256": "579504d08f168ef87045d5344ad0610c11a4a7b4ae70f355f91871716d291aab"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/email/manifest.json"
     }
   },
   "embedding_spec": {
