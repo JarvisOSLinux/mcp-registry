@@ -9,16 +9,30 @@ Uses only Python stdlib; no external dependencies.
 
 import json
 import os
+import re
 import subprocess
 import sys
 from typing import Any
+
+# Shapes an unanswered interactive prompt leaves at the very end of a command's
+# output. Matched against the last line only (see _detect_unanswered_prompt), so
+# a "[Y/n]" inside a package list printed mid-output is not read as a live
+# prompt.
+_CONFIRM_PROMPT_RE = re.compile(r"(\[[A-Za-z](?:/[A-Za-z])+\]|\(yes/no\))\s*$", re.IGNORECASE)
+_QUESTION_PROMPT_RE = re.compile(r"\?\s*$")
+_PASSWORD_PROMPT_RE = re.compile(r"(?:password|passphrase)[^\n]*:\s*$", re.IGNORECASE)
 
 TOOLS = [
     {
         "name": "execute_command",
         "description": (
             "Execute a program and return its stdout, stderr, and exit code. "
-            "Use for single commands: 'python3', 'git', 'ls', etc."
+            "Use for single commands: 'python3', 'git', 'ls', etc. stdin is "
+            "closed, so an interactive command cannot be answered here; when the "
+            "output ends in an unanswered prompt the result carries a "
+            "'needs_input' object (prompted / prompt / hint) — surface it to the "
+            "user and re-run non-interactively, or for a password prompt let a "
+            "human act."
         ),
         "inputSchema": {
             "type": "object",
@@ -78,24 +92,77 @@ TOOLS = [
 ]
 
 
-def _run_result(success: bool, exit_code: int, stdout: str, stderr: str) -> dict:
+def _run_result(
+    success: bool,
+    exit_code: int,
+    stdout: str,
+    stderr: str,
+    needs_input: dict | None = None,
+) -> dict:
+    payload = {
+        "success": success,
+        "exit_code": exit_code,
+        "stdout": stdout,
+        "stderr": stderr,
+    }
+    # Purely additive: a detected prompt never flips success or exit_code.
+    if needs_input is not None:
+        payload["needs_input"] = needs_input
     return {
         "content": [
             {
                 "type": "text",
-                "text": json.dumps(
-                    {
-                        "success": success,
-                        "exit_code": exit_code,
-                        "stdout": stdout,
-                        "stderr": stderr,
-                    },
-                    indent=2,
-                ),
+                "text": json.dumps(payload, indent=2),
             }
         ],
         "isError": not success,
     }
+
+
+def _detect_unanswered_prompt(tail_text: str) -> dict | None:
+    """Report an interactive prompt the command was left blocked on, or None.
+
+    `tail_text` is the tail (~last 200 bytes) of the finished command's combined
+    stdout+stderr. Detection keys on the SHAPE of the last line — a [Y/n]-style
+    confirmation, a bare '...?' question, or a password/passphrase request — and
+    is independent of the exit code, so it catches a tool that aborted (exit 1),
+    one that silently did nothing (exit 0), and one that took a default and
+    proceeded (exit 0) alike. It only ever adds a report; it never decides
+    success.
+    """
+    if not tail_text:
+        return None
+    stripped = tail_text.rstrip("\r\n")
+    if not stripped:
+        return None
+    last_line = stripped.rsplit("\n", 1)[-1].strip()
+    if not last_line:
+        return None
+
+    if _PASSWORD_PROMPT_RE.search(last_line):
+        return {
+            "prompted": True,
+            "prompt": last_line,
+            "hint": (
+                "The command asked for a password or passphrase — the credential "
+                "boundary. stdin is closed, so it received none. Do NOT re-run "
+                "blindly: a human must supply the secret (or a non-interactive "
+                "credential source must be configured) before this can succeed."
+            ),
+        }
+
+    if _CONFIRM_PROMPT_RE.search(last_line) or _QUESTION_PROMPT_RE.search(last_line):
+        return {
+            "prompted": True,
+            "prompt": last_line,
+            "hint": (
+                "The command asked for input; stdin is closed, so its default was "
+                "used (or it aborted). Re-run with the tool's non-interactive "
+                "flag (e.g. -y / --yes / --noconfirm) to choose explicitly."
+            ),
+        }
+
+    return None
 
 
 def _timeout_seconds(arguments: dict):
@@ -128,12 +195,27 @@ def _call_execute_command(arguments: dict) -> dict:
             cwd=cwd,
             timeout=timeout,
             env=env,
+            # The server's own stdin IS the JSON-RPC channel from dmcp. Without
+            # this, a command that reads stdin (e.g. `pacman -Syu` prompting
+            # [Y/n]) inherits that pipe: it blocks forever waiting on input the
+            # channel will never carry, and can even swallow a later request off
+            # the wire. DEVNULL turns an interactive prompt into an immediate
+            # EOF, so such a command aborts with a legible error instead of
+            # hanging. Non-interactive invocation (`--noconfirm`, `-y`) is the
+            # caller's job — TLA already confirmed the command upstream.
+            stdin=subprocess.DEVNULL,
+        )
+        # Inspect only the tail so a "[Y/n]" mentioned mid-output (a package
+        # list, a changelog) does not read as a live prompt.
+        needs_input = _detect_unanswered_prompt(
+            ((proc.stdout or "") + (proc.stderr or ""))[-200:]
         )
         return _run_result(
             proc.returncode == 0,
             proc.returncode,
             proc.stdout,
             proc.stderr,
+            needs_input,
         )
     except FileNotFoundError:
         return _run_result(False, 127, "", f"Command not found: {command}")
