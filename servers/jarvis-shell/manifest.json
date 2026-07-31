@@ -1,18 +1,21 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scope": "user",
   "platforms": [
     "linux"
   ],
   "name": "JARVIS Shell",
-  "description": "Run programs and shell scripts as the current user, and open files, URLs, or applications with the desktop's default handler. Use for git, python, file operations, launching GUI apps, and any command that does not require elevated privileges.",
-  "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+  "description": "Run programs and shell scripts as the current user, run interactive commands as named PTY jobs (run_job / send_input / read_output / kill_job), and open files, URLs, or applications with the desktop's default handler. Use for git, python, file operations, launching GUI apps, and any command that does not require elevated privileges.",
+  "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
   "keywords": [
     "command",
     "desktop",
     "execute",
+    "interactive",
+    "job",
     "launch",
     "open",
+    "pty",
     "run",
     "script",
     "shell",
@@ -48,6 +51,22 @@
     {
       "name": "open_app",
       "description": "Open a file, URL, or application with the desktop's default handler"
+    },
+    {
+      "name": "run_job",
+      "description": "Run a command that may need interactive input under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the full transcript, exit code, and job name."
+    },
+    {
+      "name": "send_input",
+      "description": "Send text verbatim to a running job's terminal (the caller supplies the trailing newline). Returns immediately with a delivery confirmation. Send only what the job's output actually asked for."
+    },
+    {
+      "name": "read_output",
+      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done."
+    },
+    {
+      "name": "kill_job",
+      "description": "Terminate a running job's whole process group (SIGTERM, escalating to SIGKILL after a short grace) and report what happened."
     }
   ],
   "embeddings": {

@@ -1,12 +1,12 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scope": "system",
   "platforms": [
     "linux"
   ],
   "name": "JARVIS Shell (System)",
-  "description": "Run programs and shell scripts with system-level (sudo) privileges. Use for package management, system updates, systemd, and any command that requires elevated privileges.",
-  "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",
+  "description": "Run programs and shell scripts with system-level (sudo) privileges, including interactive commands as named PTY jobs (run_job / send_input / read_output / kill_job). Use for package management, system updates, systemd, and any command that requires elevated privileges.",
+  "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations; interactive privileged commands run as named PTY jobs answerable mid-run via send_input.",
   "keywords": [
     "shell",
     "command",
@@ -19,7 +19,10 @@
     "pacman",
     "apt",
     "systemd",
-    "privileged"
+    "privileged",
+    "interactive",
+    "job",
+    "pty"
   ],
   "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
   "transports": [
@@ -46,6 +49,22 @@
     {
       "name": "execute_script",
       "description": "Execute a multi-line shell script with system privileges via /bin/sh"
+    },
+    {
+      "name": "run_job",
+      "description": "Run a command that may need interactive input, with system privileges, under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the full transcript, exit code, and job name."
+    },
+    {
+      "name": "send_input",
+      "description": "Send text verbatim to a running job's terminal (the caller supplies the trailing newline). Returns immediately with a delivery confirmation. Send only what the job's output actually asked for."
+    },
+    {
+      "name": "read_output",
+      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done."
+    },
+    {
+      "name": "kill_job",
+      "description": "Terminate a running job's whole process group (SIGTERM, escalating to SIGKILL after a short grace) and report what happened."
     }
   ],
   "embeddings": {

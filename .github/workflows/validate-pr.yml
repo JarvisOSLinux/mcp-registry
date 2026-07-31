@@ -6,9 +6,12 @@ name: Validate PR
 # `trust-approved` label. See docs/TRUST-MODEL.md §4 and
 # docs/REGISTRY-AUTOMATION.md §"PR gate".
 #
-# The self-test runs first: it builds throwaway registries in a temp dir and
-# asserts the validator still rejects what it is supposed to reject, so a gate
-# that has quietly stopped firing fails here instead of passing everything.
+# The self-tests run first: the validation one builds throwaway registries in
+# a temp dir and asserts the validator still rejects what it is supposed to
+# reject, so a gate that has quietly stopped firing fails here instead of
+# passing everything; the job-model one drives the jarvis-shell servers over
+# real stdio JSON-RPC (offline, stdlib only) so a PR cannot silently break the
+# run_job / send_input loop or the two servers' byte-identity.
 #
 # `labeled`/`unlabeled` are included so the run re-evaluates when a maintainer
 # adds or removes the approval label.
@@ -35,6 +38,9 @@ jobs:
 
       - name: Self-test the validation logic
         run: python3 scripts/selftest_platform_format.py
+
+      - name: Self-test the jarvis-shell job model
+        run: python3 scripts/selftest_jobs.py
 
       - name: Fetch base registry.json
         run: |
