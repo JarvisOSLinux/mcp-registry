@@ -42,6 +42,10 @@
       "description": "Execute a program and return its stdout, stderr, and exit code"
     },
     {
+      "name": "execute_interactive",
+      "description": "Execute a program under a PTY and answer its prompts live via MCP elicitation (falls back to a closed-stdin needs_input report when the client cannot answer)"
+    },
+    {
       "name": "execute_script",
       "description": "Execute a multi-line shell script via /bin/sh and return its output"
     },
