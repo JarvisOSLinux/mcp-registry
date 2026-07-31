@@ -379,7 +379,9 @@ def _call_execute_script(arguments: dict) -> dict:
         return _run_result(False, -1, "", str(exc))
 
 
-_JOB_NAME_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+# \Z, not $: $ also matches before a trailing newline, which would admit
+# 'evil\n' as a job name — and '..\n' past the explicit dot-name check.
+_JOB_NAME_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}\Z")
 _JOB_LOG = "out.log"
 _JOB_SOCK = "in.sock"
 _JOB_STATUS = "status"
@@ -391,6 +393,7 @@ _JOB_FINISHED_TTL_SECS = 24 * 60 * 60
 # crashed holder and delete a job that is still being born.
 _JOB_SWEEP_GRACE_SECS = 60
 _JOB_KILL_GRACE_SECS = 2.0
+_JOB_HOLDER_READY_TIMEOUT_SECS = 10
 
 
 def _jobs_unsupported() -> str | None:
@@ -631,7 +634,9 @@ def _spawn_holder(job_dir: str, command: str) -> None:
     time the ready byte arrives, holder.pid, in.sock and child.pid all exist.
     A holder that dies during setup closes the pipe instead, and the caller's
     wait loop reports that as crashed (or exited -1, when the holder got far
-    enough to record status) — no error path is decided here.
+    enough to record status). The one failure decided here is a holder that
+    stays alive but never signals ready: it is killed and startup fails,
+    because falling into the blocking read would hang run_job forever.
     """
     read_fd, write_fd = os.pipe()
     first = os.fork()
@@ -651,7 +656,22 @@ def _spawn_holder(job_dir: str, command: str) -> None:
             os._exit(0)
     os.close(write_fd)
     os.waitpid(first, 0)
-    select.select([read_fd], [], [], 10)
+    ready, _, _ = select.select([read_fd], [], [], _JOB_HOLDER_READY_TIMEOUT_SECS)
+    if not ready:
+        # A dead holder closes the pipe (readable EOF); only a wedged-but-alive
+        # one times out, and the blocking read below would then wait on it
+        # forever. Best-effort kill so it cannot wedge indefinitely off-record.
+        os.close(read_fd)
+        holder = _read_int(_job_file(job_dir, _JOB_HOLDER_PID))
+        if holder is not None:
+            try:
+                os.kill(holder, signal.SIGKILL)
+            except OSError:
+                pass
+        raise RuntimeError(
+            "job holder did not become ready within "
+            f"{_JOB_HOLDER_READY_TIMEOUT_SECS}s and was killed"
+        )
     try:
         os.read(read_fd, 1)
     except OSError:
@@ -748,6 +768,25 @@ def _terminate_job(job_dir: str) -> str:
     return "process group was already gone"
 
 
+def _release_crashed_job(job_dir: str) -> None:
+    """Best-effort SIGTERM to a crashed job's process group, before removal.
+
+    child.pid in this dir is the ONLY handle to the command's session — the
+    holder that would have reaped and signalled it is dead. Removing the dir
+    without signalling first would leave a still-running command as a runaway
+    nothing can ever address again. Alive is checked first, and ESRCH/EPERM
+    are swallowed: the group is already gone, or was never ours to signal —
+    either way removal may proceed.
+    """
+    pgid = _read_int(_job_file(job_dir, _JOB_CHILD_PID))
+    if pgid is None or not _group_alive(pgid):
+        return
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+    except OSError:
+        pass
+
+
 def _call_run_job(arguments: dict) -> dict:
     unsupported = _jobs_unsupported()
     if unsupported is not None:
@@ -773,6 +812,8 @@ def _call_run_job(arguments: dict) -> dict:
                     "to interact with the live job.",
                     job,
                 )
+            if state == "crashed":
+                _release_crashed_job(job_dir)
             shutil.rmtree(job_dir, ignore_errors=True)
         os.mkdir(job_dir, 0o700)
         _spawn_holder(job_dir, command)
@@ -1009,6 +1050,7 @@ def _sweep_stale_jobs() -> None:
         holder = _read_int(_job_file(job_dir, _JOB_HOLDER_PID))
         if holder is not None and _pid_alive(holder):
             continue
+        _release_crashed_job(job_dir)
         shutil.rmtree(job_dir, ignore_errors=True)
 
 

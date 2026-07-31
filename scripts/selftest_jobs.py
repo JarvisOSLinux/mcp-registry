@@ -20,12 +20,19 @@ command, real Unix sockets, real signals.
      prompt text — the live stream a dispatch REMIND tail would surface.
   3. read_output works mid-run and after exit; exit codes propagate; kill_job
      tears down a sleeping command's whole process group.
-  4. Job names that are not a clean path component are rejected; a duplicate
-     live job is refused; send_input to an unknown or finished job errors
-     legibly; run_job's timeout kills and reports.
+  4. Job names that are not a clean path component are rejected — including
+     a newline-suffixed name, which a $-anchored regex would admit; a
+     duplicate live job is refused; send_input to an unknown or finished job
+     errors legibly; run_job's timeout kills and reports.
   5. The startup sweep removes crashed-holder residue and >24h-old finished
-     jobs, and leaves young or live job dirs alone.
-  6. The two server.py files keep their on-main relationship: the system
+     jobs, and leaves young or live job dirs alone. Before a crashed job's
+     dir is removed — by the sweep or by run_job name reuse — its
+     still-running process group is signalled: child.pid in that dir was the
+     only handle left to it.
+  6. A holder that comes up wedged — alive but never signalling ready —
+     fails run_job startup within the ready timeout and is killed, instead
+     of blocking the call forever on the ready pipe.
+  7. The two server.py files keep their on-main relationship: the system
      server is the user server minus the open_app feature (plus its own
      serverInfo name line), and every job-model block is byte-identical in
      both.
@@ -284,7 +291,7 @@ def validation_tests(env):
     print("  validation")
     srv = Server(env)
     srv.initialize()
-    bad_names = ["../evil", "a/b", "..", ".", "", "a b", "a" * 65, "jäb"]
+    bad_names = ["../evil", "a/b", "..", ".", "", "a b", "a" * 65, "jäb", "evil\n", "..\n"]
     for i, name in enumerate(bad_names, start=1):
         is_err, payload = srv.call(i, "run_job", {"command": "echo x", "job": name})
         check(
@@ -355,7 +362,113 @@ def sweep_tests(env, root):
 
 
 # ---------------------------------------------------------------------------
-# 6: the two server files keep their relationship
+# 5b: a crashed holder's process group is signalled before its dir is removed
+# ---------------------------------------------------------------------------
+
+def crashed_holder_tests(env, root):
+    print("  crashed_holder_release")
+    jobs_root = pathlib.Path(root) / "jarvis-shell"
+
+    def group_alive(pgid):
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        return True
+
+    def start_and_crash(server, job):
+        """run_job a sleeper, SIGKILL its holder, return (job_dir, pgid).
+
+        The sleeper ignores HUP: a dead holder closes the PTY master, whose
+        hangup kills a well-behaved command — the runaway case is precisely a
+        command that survives it, like anything daemonizing.
+        """
+        server.send_call(2, "run_job", {"command": "trap '' HUP; sleep 300", "job": job})
+        job_dir = jobs_root / job
+        check(wait_until((job_dir / "child.pid").exists), f"job '{job}' recorded its process group")
+        pgid = int((job_dir / "child.pid").read_text())
+        os.kill(int((job_dir / "holder.pid").read_text()), signal.SIGKILL)
+        msg = server.wait(2)
+        payload = json.loads(msg["result"]["content"][0]["text"])
+        check(payload.get("success") is False, f"run_job of '{job}' reports the crashed holder")
+        check("holder died" in payload.get("error", ""), f"crashed-holder error for '{job}' is legible")
+        check(group_alive(pgid), f"the command of '{job}' outlives its dead holder")
+        return job_dir, pgid
+
+    first = Server(env)
+    first.initialize()
+    job_dir, pgid = start_and_crash(first, "orphan")
+    first.close()
+    # Backdate past the sweep grace so a fresh server start sweeps the dir.
+    old = time.time() - 3600
+    os.utime(job_dir, (old, old))
+    sweeper = Server(env)
+    sweeper.initialize()
+    check(not job_dir.exists(), "sweep removes the crashed job's dir")
+    check(
+        wait_until(lambda: not group_alive(pgid), timeout=5),
+        "sweep kills the crashed job's process group before dropping child.pid",
+    )
+    sweeper.close()
+
+    second = Server(env)
+    second.initialize()
+    job_dir, pgid = start_and_crash(second, "reuse")
+    is_err, payload = second.call(3, "run_job", {"command": "echo fresh", "job": "reuse"})
+    check(not is_err and payload.get("exit_code") == 0, "a crashed job's name can be reused")
+    check("fresh" in payload.get("transcript", ""), "the reused name runs the new command")
+    check(
+        wait_until(lambda: not group_alive(pgid), timeout=5),
+        "name reuse kills the crashed job's old process group before dropping child.pid",
+    )
+    second.close()
+
+
+# ---------------------------------------------------------------------------
+# 6: a wedged holder cannot block run_job startup forever
+# ---------------------------------------------------------------------------
+
+def spawn_timeout_tests(root):
+    print("  spawn_holder_timeout")
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("jarvis_shell_under_test", USER_SERVER)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    job_dir = pathlib.Path(root) / "jarvis-shell" / "wedged"
+    job_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+
+    def wedged_holder(holder_dir, command, ready_fd):
+        # Alive but wedged mid-setup: records its pid (real startup order),
+        # then hangs without ever touching the ready pipe.
+        mod._write_file(mod._job_file(holder_dir, mod._JOB_HOLDER_PID), str(os.getpid()))
+        time.sleep(30)
+
+    mod._holder_main = wedged_holder
+    mod._JOB_HOLDER_READY_TIMEOUT_SECS = 1
+
+    started = time.monotonic()
+    err_text = None
+    try:
+        mod._spawn_holder(str(job_dir), "true")
+    except RuntimeError as exc:
+        err_text = str(exc)
+    elapsed = time.monotonic() - started
+
+    check(err_text is not None, "a holder that never signals ready fails startup")
+    check(elapsed < 5, "the ready timeout is honored instead of a blocking read")
+    check("did not become ready" in (err_text or ""), "the startup error is legible")
+    holder_pid = int((job_dir / "holder.pid").read_text())
+    check(
+        wait_until(lambda: not mod._pid_alive(holder_pid), timeout=5),
+        "the wedged holder is killed, not left running",
+    )
+    shutil.rmtree(job_dir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# 7: the two server files keep their relationship
 # ---------------------------------------------------------------------------
 
 def extract_block(text, header):
@@ -402,6 +515,7 @@ JOB_FUNCTION_HEADERS = [
     "def _job_error(",
     "def _group_alive(",
     "def _terminate_job(",
+    "def _release_crashed_job(",
     "def _call_run_job(",
     "def _call_send_input(",
     "def _call_read_output(",
@@ -508,6 +622,8 @@ def main():
         kill_tests(env, root)
         validation_tests(env)
         sweep_tests(env, root)
+        crashed_holder_tests(env, root)
+        spawn_timeout_tests(root)
         identity_tests(env)
     finally:
         cleanup_jobs(root)
