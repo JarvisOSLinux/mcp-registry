@@ -170,6 +170,7 @@ def unit_tests():
 # execute_command already shared — all must be byte-identical in both files.
 SHARED_DEFS = (
     "def _detect_unanswered_prompt(",
+    "def _prompt_message(",
     "def _call_execute_command(",
     "def _call_execute_interactive(",
     "def _execute_interactive_fallback(",
@@ -570,8 +571,79 @@ def e2e_tests():
         shutil.rmtree(root, ignore_errors=True)
 
 
+
+def context_tests():
+    """The question carries the block it belongs to, bounded by characters."""
+    print("  prompt_context")
+    user = load_module(USER_SERVER, "shell_user_ctx")
+    system = load_module(SYSTEM_SERVER, "shell_system_ctx")
+    msg = user._prompt_message
+
+    agreement = (
+        b"=== LICENSE ===\r\n"
+        b"1. You grant access to /home.\r\n"
+        b"2. Data is retained for 7 years.\r\n"
+        b"Do you accept? [yes/no] "
+    )
+    out = msg(bytearray(agreement))
+    check("1. You grant access to /home." in out, "the terms travel with the question")
+    check("2. Data is retained for 7 years." in out, "every term travels, not just the last")
+    check(out.splitlines()[-1] == "Do you accept? [yes/no]", "the prompt line stays last")
+    check("\r" not in out, "pty carriage returns are normalized away")
+
+    # Control sequences are stripped: this text is rendered into a human's UI and
+    # is the command's own untrusted output, so cursor/colour codes are a
+    # spoofing surface rather than information.
+    ansi = bytearray(b"\x1b[2J\x1b[31mDANGER\x1b[0m\r\nProceed? [y/N] ")
+    out = msg(ansi)
+    check("\x1b" not in out, "escape sequences are stripped from the question")
+    check("DANGER" in out, "the words survive the stripping")
+
+    # Characters govern, not lines: the cap is what the reader must read.
+    big = bytearray(("x" * 100 + "\n").encode() * 200 + b"Accept? [y/N] ")
+    out = msg(big)
+    check(len(out) <= 4200, "the default window is bounded by characters")
+    check("truncated" in out, "a truncated window says so")
+    wide = msg(big, 20000)
+    check(len(wide) > len(out), "an explicit budget widens the window")
+
+    check(msg(bytearray()) == "", "an empty buffer yields no question")
+    for fixture in (agreement, ansi, b"Accept? [y/N] "):
+        check(
+            user._prompt_message(bytearray(fixture))
+            == system._prompt_message(bytearray(fixture)),
+            "both servers build the same question",
+        )
+
+
+def escalation_tests():
+    """A reader that cannot decide can ask for more instead of guessing."""
+    print("  need_more_context")
+    user = load_module(USER_SERVER, "shell_user_esc")
+    decode = user._decode_elicit_reply
+
+    reply = {"result": {"action": "accept", "content": {"need_more_context": 8000}}}
+    check(decode(reply) == ("more", 8000), "a request for more context is its own outcome")
+
+    # A reader that fills both must not be read as having answered: it said it
+    # could not decide yet.
+    both = {"result": {"action": "accept", "content": {"answer": "yes", "need_more_context": 500}}}
+    check(decode(both)[0] == "more", "asking for more wins over a half-formed answer")
+
+    # Only a positive integer means it; a bool is not a count.
+    for bad in (0, -5, True, "20", None):
+        r = {"result": {"action": "accept", "content": {"answer": "y", "need_more_context": bad}}}
+        check(decode(r) == ("accept", "y"), f"need_more_context={bad!r} is not a request")
+    check(
+        decode({"result": {"action": "accept", "content": {"answer": "y"}}}) == ("accept", "y"),
+        "an ordinary answer is unaffected",
+    )
+
+
 def main():
     unit_tests()
+    context_tests()
+    escalation_tests()
     identity_tests()
     read_state_tests()
     e2e_tests()

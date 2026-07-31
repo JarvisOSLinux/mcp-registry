@@ -532,6 +532,60 @@ User-provided values are stored in the per-server manifest at `<installDir>/mani
 Use `keywords` to make your server discoverable via `dmcp browse -k <keyword>` and semantic search.
 
 
+## Asking the User Mid-Call (Elicitation)
+
+A server may need input *while* a tool call is running — a package manager at
+`[Y/n]`, an installer's wizard, a partitioner's menu. MCP's `elicitation/create`
+carries that question: the tool call does not return while it is outstanding, so
+the process stays alive and blocked until it is answered. dmcp relays it, dispatch
+parks the task and raises `NEEDS_ACTION`, and the daemon decides whether the model
+or a human answers.
+
+**If your server elicits, its question must be self-sufficient.** This is not a
+style preference — it follows from what your server is doing at that moment. While
+you are parked on an elicitation you are blocked reading the reply, so you cannot
+serve anything else; the correct behavior is to answer any other inbound request
+with a JSON-RPC error rather than drop it. So a *separate* tool ("fetch the last N
+lines", "show me the options") **cannot be called at the one moment it would be
+needed.** The elicitation is the only open channel.
+
+Two consequences:
+
+1. **Put the context in the `message`.** MCP specifies `message` as the text that
+   lets the reader understand what they are being asked. If the real question is a
+   license agreement, a package list, or a numbered menu, then *that block* is the
+   question — the trailing `Accept? [y/N]` is only where it ends. Sending the last
+   line alone asks someone to approve terms they cannot see, which is the one
+   thing a confirmation must never do. Bound it by **characters**, not lines: what
+   costs the reader is the text, and 40 lines of package names and 40 lines of log
+   output are wildly different amounts of it.
+
+2. **Let the reader ask for more, inside the round-trip.** Any fixed window is a
+   guess. Add an optional field to your `requestedSchema` (`jarvis-shell` uses
+   `need_more_context`: an integer of additional characters) and, when it comes
+   back, re-ask the *same* question with a wider window instead of forcing a blind
+   decision. Bound it: each round should cost a prompt from your budget, the window
+   should stop growing at a ceiling, and a reader still asking at the ceiling
+   should get a decline rather than a loop.
+
+Also:
+
+* **Only elicit if the client said it can answer.** Check the client's declared
+  capabilities at `initialize`; if elicitation was not offered, degrade to
+  non-interactive behavior rather than asking a question nothing can answer.
+* **Bound the number of questions per call**, so a program looping on a prompt
+  cannot hold a session — or the user's attention — hostage.
+* **Pass the underlying tool's wording through verbatim**, minus terminal control
+  sequences (they are a spoofing surface once rendered into a human's UI, not
+  information). The text is *your program's*, and the daemon attributes it to
+  your server and gates it. Never phrase it as the assistant asking.
+* **Never invent a credential.** A password-shaped prompt is a human's decision;
+  the daemon enforces this too, but a server should not be asking a model for a
+  secret in the first place.
+
+See `servers/jarvis-shell/server.py` (`execute_interactive`) for a worked
+implementation.
+
 ## Hosting Your Registry
 
 ### Option 1: GitHub Raw URL (Simplest)

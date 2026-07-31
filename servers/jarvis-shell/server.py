@@ -541,8 +541,44 @@ def _execute_interactive_pty(command, args, cwd, timeout, env):
                 _drain_after_eof(master_fd, output, idle, proc)
                 break
 
-            action, answer = _decode_elicit_reply(_elicit(prompt_line, state))
-            prompts_answered += 1
+            # The prompt LINE is what detection found and what the answer is
+            # typed at; the MESSAGE is everything visible since the last prompt,
+            # so whoever decides can see the agreement or list they are approving.
+            #
+            # Any fixed window is a guess, so the reader can widen it instead of
+            # deciding blind: `need_more_context` re-asks the SAME question with
+            # more of the command's earlier output, drawn from the full
+            # transcript rather than only the block since the last prompt. This
+            # has to live inside the elicitation round-trip — while the command
+            # is parked this server is blocked answering it and refuses every
+            # other request, so a separate "fetch more output" tool could not be
+            # served at the one moment it would be needed. Each round costs a
+            # prompt from the budget, and the window stops growing at the
+            # ceiling, so a reader that keeps asking still terminates.
+            budget = _PROMPT_CONTEXT_MAX_CHARS
+            while True:
+                source = unconsumed if budget <= _PROMPT_CONTEXT_MAX_CHARS else output
+                action, answer = _decode_elicit_reply(
+                    _elicit(_prompt_message(source, budget) or prompt_line, state)
+                )
+                prompts_answered += 1
+                if action != "more":
+                    break
+                if budget >= _PROMPT_CONTEXT_CEILING_CHARS or prompts_answered >= max_prompts:
+                    # Nothing more to give: ask once more at the ceiling and take
+                    # whatever comes back as the decision.
+                    action, answer = _decode_elicit_reply(
+                        _elicit(
+                            _prompt_message(output, _PROMPT_CONTEXT_CEILING_CHARS)
+                            or prompt_line,
+                            state,
+                        )
+                    )
+                    prompts_answered += 1
+                    if action == "more":
+                        action, answer = ("decline", None)
+                    break
+                budget = min(budget + max(int(answer), 1000), _PROMPT_CONTEXT_CEILING_CHARS)
 
             if action == "accept":
                 try:
@@ -739,8 +775,15 @@ def _decode_elicit_reply(reply):
     action = result.get("action")
     if action == "accept":
         content = result.get("content")
-        if isinstance(content, dict) and isinstance(content.get("answer"), str):
-            return ("accept", content["answer"])
+        if isinstance(content, dict):
+            # A request for more context is not an answer: the reader is saying
+            # it cannot decide yet. Honoured before `answer` so a model that
+            # fills both does not accidentally act on a half-understood prompt.
+            more = content.get("need_more_context")
+            if isinstance(more, int) and not isinstance(more, bool) and more > 0:
+                return ("more", more)
+            if isinstance(content.get("answer"), str):
+                return ("accept", content["answer"])
         return ("decline", None)
     if action == "cancel":
         return ("cancel", None)
@@ -780,6 +823,60 @@ def _read_elicit_reply(want_id):
     return None
 
 
+# How much of the output above a prompt travels with it. A license agreement,
+# a package list, or a menu IS the question; the last line is only where it ends.
+# Bounded so a 500-package upgrade does not flood the channel.
+# Characters, not lines, is the honest governor: 40 lines of package names is
+# tiny and 40 lines of log output is not, and what costs the reader is the text.
+# Lines stay generous so an ordinary block arrives whole.
+_PROMPT_CONTEXT_MAX_LINES = 200
+_PROMPT_CONTEXT_MAX_CHARS = 4000
+# The ceiling when the reader explicitly asks for more (see `need_more_context`).
+_PROMPT_CONTEXT_CEILING_CHARS = 24000
+
+# Terminal control sequences: CSI (cursor moves, colour), OSC (window title),
+# and lone carriage returns from the pty's line endings.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]")
+
+
+def _prompt_context_lines() -> int:
+    try:
+        n = int(os.environ.get("JARVIS_INTERACTIVE_CONTEXT_LINES", ""))
+    except ValueError:
+        return _PROMPT_CONTEXT_MAX_LINES
+    return n if n > 0 else _PROMPT_CONTEXT_MAX_LINES
+
+
+def _prompt_message(unconsumed, max_chars: int = _PROMPT_CONTEXT_MAX_CHARS) -> str:
+    """The question to put to a human: everything visible since the last prompt.
+
+    MCP specifies `message` as the text that lets the reader understand what
+    they are being asked, and for an agreement, a package list, or a menu the
+    question is the whole block — the trailing line is only where it ends.
+    Sending that line alone asks someone to accept terms they cannot see, which
+    is the one thing a confirmation must never do.
+
+    Control sequences are stripped: this text is rendered into a human's UI, and
+    it is the command's own untrusted output, so cursor and colour codes in it
+    are a spoofing surface rather than information. The words are passed through
+    verbatim — only the escape codes go.
+    """
+    text = bytes(unconsumed).decode("utf-8", "replace")
+    text = _ANSI_RE.sub("", text).replace("\r\n", "\n").replace("\r", "\n")
+    lines = [ln.rstrip() for ln in text.split("\n")]
+    while lines and not lines[-1]:
+        lines.pop()
+    while lines and not lines[0]:
+        lines.pop(0)
+    if not lines:
+        return ""
+    lines = lines[-_prompt_context_lines():]
+    message = "\n".join(lines)
+    if len(message) > max_chars:
+        message = "[earlier output truncated]\n" + message[-max_chars:]
+    return message
+
+
 def _elicit(prompt_line: str, state: dict):
     """Ask the client to answer `prompt_line`; return dmcp's raw reply (or None).
 
@@ -800,7 +897,17 @@ def _elicit(prompt_line: str, state: dict):
                     "answer": {
                         "type": "string",
                         "description": "The line of input to type at the command's prompt.",
-                    }
+                    },
+                    "need_more_context": {
+                        "type": "integer",
+                        "description": (
+                            "Only if the output shown is not enough to decide: the "
+                            "number of additional characters of the command's earlier "
+                            "output you need. You will be asked the same question again "
+                            "with more context, and 'answer' is ignored this round. "
+                            "Do not use this to browse output — only to decide."
+                        ),
+                    },
                 },
                 "required": ["answer"],
             },
