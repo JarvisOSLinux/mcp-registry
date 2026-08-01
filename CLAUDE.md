@@ -27,6 +27,8 @@ scripts/
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   selftest_platform_format.py  Temp-dir self-test for the platform-format checks
+  selftest_needs_input.py  Self-test of the shell servers' needs_input report
+  selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -68,7 +70,8 @@ Main index. Each server entry contains:
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
 - `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`
-  then `scripts/validate_registry.py` (schema, id/scope/trustStatus/platforms
+  and `scripts/selftest_jobs.py`, then `scripts/validate_registry.py` (schema,
+  id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
   scripts, setup-script locations, orphan directories) and blocks `trustStatus`
   promotion to `official` without the maintainer `trust-approved` label
@@ -84,6 +87,8 @@ python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; 
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
+python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
+python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 ```
 
 ## Adding a Server

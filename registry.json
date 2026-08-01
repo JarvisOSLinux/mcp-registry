@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-07-26T10:36:41Z",
+  "updated": "2026-07-31T22:13:30Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4024,8 +4024,8 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user and launches files/URLs/apps in the desktop session. No sudo — use jarvis-shell-system-mcp for privileged commands.",
-      "version": "1.0.0",
+      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+      "version": "1.1.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
       "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
@@ -4033,8 +4033,11 @@
         "command",
         "desktop",
         "execute",
+        "interactive",
+        "job",
         "launch",
         "open",
+        "pty",
         "run",
         "script",
         "shell",
@@ -4051,7 +4054,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "f92d7b3ad8ca919a564cb6360cb0ab285ff0850732438d7ef930b21d903a7805",
+        "manifestSha256": "b48343652c289f97b08fb05c9c9aac8cdd6502bc38d33e5f83d4ae9a5ffd16e5",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -4833,8 +4836,8 @@
     "com.github.yakupatahanov.jarvis-shell-system-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-system-mcp",
       "name": "JARVIS Shell (System)",
-      "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations.",
-      "version": "1.0.0",
+      "summary": "System-level shell execution for JARVIS. Installed to /usr/share/mcp and runs with sudo access. Use for pacman, apt, systemctl, and other privileged operations; interactive privileged commands run as named PTY jobs answerable mid-run via send_input.",
+      "version": "1.1.0",
       "scope": "system",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
       "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
@@ -4850,7 +4853,10 @@
         "pacman",
         "apt",
         "systemd",
-        "privileged"
+        "privileged",
+        "interactive",
+        "job",
+        "pty"
       ],
       "platforms": [
         "linux"
@@ -4862,7 +4868,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
       "integrity": {
-        "manifestSha256": "875e6fc986e247e641617d46777cdbbd41dcff0dca206dfdffcd1c479519f7a3",
+        "manifestSha256": "3591745e4a62c86dc70136d1be921d61e14b55185d6b6176bc81c1155cc079cc",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -8867,7 +8873,7 @@
     "com.github.yakupatahanov.mcp.identity-mcp": {
       "id": "com.github.yakupatahanov.mcp.identity-mcp",
       "name": "Identity MCP",
-      "summary": "Every response clearly identifies which server responded — confirms server discovery, routing, and LLM awareness",
+      "summary": "Every response clearly identifies which server responded \u2014 confirms server discovery, routing, and LLM awareness",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -15347,7 +15353,7 @@
     "io.github.microsoft.playwright-mcp": {
       "id": "io.github.microsoft.playwright-mcp",
       "name": "Playwright Browser",
-      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic — acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
+      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic \u2014 acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
       "version": "0.0.78",
       "scope": "user",
       "homepage": "https://github.com/microsoft/playwright-mcp",
@@ -16157,7 +16163,7 @@
     "com.github.yakupatahanov.mcp.email": {
       "id": "com.github.yakupatahanov.mcp.email",
       "name": "JARVIS Email",
-      "summary": "Personal email over plain IMAP and SMTP: list mailboxes, search, read, and send from the user's own account. Provider-neutral — any IMAP/SMTP host, no vendor API and no OAuth broker; credentials stay on the machine. Mail is untrusted third-party text: every read result carries a provenance banner, attachments are listed but never decoded, and send_message is an irreversible outward-facing action.",
+      "summary": "Personal email over plain IMAP and SMTP: list mailboxes, search, read, and send from the user's own account. Provider-neutral \u2014 any IMAP/SMTP host, no vendor API and no OAuth broker; credentials stay on the machine. Mail is untrusted third-party text: every read result carries a provenance banner, attachments are listed but never decoded, and send_message is an irreversible outward-facing action.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
