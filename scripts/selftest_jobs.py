@@ -36,6 +36,10 @@ command, real Unix sockets, real signals.
      server is the user server minus the open_app feature (plus its own
      serverInfo name line), and every job-model block is byte-identical in
      both.
+  8. Both manifests declare run_job's reminder need (issue #68): `blocking`
+     and `suggestedRemindAfter` on the run_job tool entry only, agreeing
+     across the two manifests, with the tool descriptions telling a caller to
+     set remind_after even if it never reads the fields.
 
 Offline, stdlib only.
 
@@ -58,6 +62,8 @@ import time
 REPO = pathlib.Path(__file__).resolve().parent.parent
 USER_SERVER = REPO / "servers" / "jarvis-shell" / "server.py"
 SYSTEM_SERVER = REPO / "servers" / "jarvis-shell-system" / "server.py"
+USER_MANIFEST = REPO / "servers" / "jarvis-shell" / "manifest.json"
+SYSTEM_MANIFEST = REPO / "servers" / "jarvis-shell-system" / "manifest.json"
 
 FAILURES = []
 
@@ -590,6 +596,55 @@ def identity_tests(env):
     run_desc = user_tools.get("run_job", {}).get("description", "")
     check("send_input" in run_desc, "run_job description spells out the send_input loop")
     check("never guess" in run_desc, "run_job description forbids guessing input")
+    check("remind_after" in run_desc, "run_job description tells the caller to set remind_after")
+
+
+# ---------------------------------------------------------------------------
+# 8: the manifests declare run_job's reminder need
+# ---------------------------------------------------------------------------
+
+def manifest_blocking_tests():
+    """run_job carries `blocking` + `suggestedRemindAfter` in both manifests.
+
+    run_job parks for as long as the command waits on input, so a task
+    dispatched without a reminder never reports that a prompt is up. The two
+    manifest keys are how the tool says that to an orchestrator that reads
+    manifests; the description says it to a model that does not.
+    """
+    print("  manifest_blocking_fields")
+    manifests = {
+        "jarvis-shell": json.loads(USER_MANIFEST.read_text()),
+        "jarvis-shell-system": json.loads(SYSTEM_MANIFEST.read_text()),
+    }
+    values = {}
+    for tag, doc in manifests.items():
+        tools = {t["name"]: t for t in doc.get("tools", [])}
+        run_job = tools.get("run_job", {})
+        check(run_job.get("blocking") is True, f"{tag}: run_job declares blocking: true")
+        interval = run_job.get("suggestedRemindAfter")
+        check(
+            isinstance(interval, int) and not isinstance(interval, bool) and interval > 0,
+            f"{tag}: run_job's suggestedRemindAfter is a positive integer",
+        )
+        values[tag] = (run_job.get("blocking"), interval)
+        check(
+            "remind_after" in run_job.get("description", ""),
+            f"{tag}: run_job's manifest description tells the caller to set remind_after",
+        )
+        # Only run_job blocks. send_input / read_output / kill_job all return
+        # at once, and marking them would have an orchestrator schedule
+        # reminders for calls that were never going to wait.
+        for name, tool in tools.items():
+            if name == "run_job":
+                continue
+            check(
+                "blocking" not in tool,
+                f"{tag}: {name} does not claim to block",
+            )
+    check(
+        values["jarvis-shell"] == values["jarvis-shell-system"],
+        "both manifests declare the same blocking / suggestedRemindAfter values",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -625,6 +680,7 @@ def main():
         crashed_holder_tests(env, root)
         spawn_timeout_tests(root)
         identity_tests(env)
+        manifest_blocking_tests()
     finally:
         cleanup_jobs(root)
         shutil.rmtree(root, ignore_errors=True)

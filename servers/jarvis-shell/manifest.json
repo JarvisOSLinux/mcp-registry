@@ -54,7 +54,9 @@
     },
     {
       "name": "run_job",
-      "description": "Run a command that may need interactive input under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the full transcript, exit code, and job name."
+      "description": "Run a command that may need interactive input under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. ALWAYS dispatch this as a concurrent task WITH a remind_after (30s is the suggested interval): the call parks for as long as the command waits on input, so without a reminder nothing ever reports that a prompt is up. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the full transcript, exit code, and job name.",
+      "blocking": true,
+      "suggestedRemindAfter": 30
     },
     {
       "name": "send_input",

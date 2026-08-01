@@ -234,6 +234,52 @@ Define each tool the MCP server provides. Required for tooling and validation.
 ]
 ```
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | **Required.** Tool identifier. |
+| `description` | string | **Required.** What the tool does. Feeds semantic search. |
+| `blocking` | boolean | Optional. `true` if this tool can park indefinitely awaiting input. See Blocking Tools below. |
+| `suggestedRemindAfter` | integer | Optional. Seconds; the reminder interval the server recommends for this tool. See Blocking Tools below. |
+
+#### Blocking Tools
+
+```json
+{
+  "name": "run_job",
+  "description": "Run a command that may need interactive input …",
+  "blocking": true,
+  "suggestedRemindAfter": 30
+}
+```
+
+Some tools cannot answer promptly by design: they run something that stops and
+waits for a human decision — an installer with no `-y`, a partitioning wizard, a
+REPL — so the tool call stays outstanding for as long as the wait lasts. To an
+orchestrator that dispatched it concurrently and scheduled nothing to look at it,
+that is indistinguishable from a hang, and the question at the far end goes
+unanswered.
+
+`blocking: true` is the tool saying so up front, and `suggestedRemindAfter` is
+the server author's recommended reminder interval in seconds — they know how long
+the tool's normal quiet stretches run.
+
+- **Optional and opt-in.** A tool without `blocking` behaves exactly as it does
+  today. Every manifest written before these fields existed stays valid.
+- **`suggestedRemindAfter` alone is inert.** Without `blocking: true` it means
+  nothing, but it is not an error.
+- **Consumer rule.** When a dispatched task targets a `blocking: true` tool **and
+  the caller supplied no reminder interval**, the orchestrator applies the tool's
+  `suggestedRemindAfter` (or its own default if the manifest gives none). A
+  caller-supplied interval **always** wins, including an explicit opt-out of
+  reminders — the manifest supplies a default for callers that did not think
+  about it, never an override for callers that did.
+- **These are declarations, not enforcement.** Like `tools` and `platforms`, they
+  are ordinary manifest data whose trustworthiness rides on `trustStatus`. A
+  server cannot make a caller set a reminder; it can only say that it needs one.
+
+Any server author may use both fields — they are a general manifest facility, not
+a convention private to any one server.
+
 ### Setup Script
 
 Developers point to a `setupScript` URL in the registry. dmcp **downloads** that script and runs it in the server’s **install directory** (where `manifest.json` lives), so the script can read the user’s config from the manifest and set up the environment.
