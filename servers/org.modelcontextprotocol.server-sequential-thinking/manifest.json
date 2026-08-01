@@ -1,0 +1,69 @@
+{
+  "version": "0.6.2",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "name": "Sequential Thinking MCP",
+  "summary": "Structured step-by-step reasoning scaffold. The calling model records one thought at a time -- with running thoughtNumber/totalThoughts and optional revision and branching -- and the tool echoes each step back with progress counters. A pure reasoning aid: it operates only on thoughts the caller supplies and has no filesystem, network, or code-execution surface.",
+  "keywords": [
+    "reasoning",
+    "thinking",
+    "chain-of-thought",
+    "planning",
+    "problem-solving",
+    "step-by-step",
+    "sequential",
+    "reflection",
+    "analysis"
+  ],
+  "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "src/sequentialthinking/dist/index.js"
+      ],
+      "description": "Sequential Thinking MCP server (stdio). Emits only JSON-RPC on stdout; thought logging goes to stderr and can be disabled with DISABLE_THOUGHT_LOGGING=true. Run from the cloned monorepo root so the package's tsconfig can resolve the repo-root base config."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/modelcontextprotocol/servers.git",
+    "rev": "fd8248e56b822cc16a74b6610a88141fdfa09bd6"
+  },
+  "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/org.modelcontextprotocol.server-sequential-thinking/setup.sh",
+  "tools": [
+    {
+      "name": "sequentialthinking",
+      "description": "Record and reflect on one reasoning step at a time. Takes the current thought plus thoughtNumber, totalThoughts and nextThoughtNeeded, with optional isRevision/revisesThought and branchFromThought/branchId to revise or branch earlier reasoning; returns the step with progress counters and no persisted content. Operates solely on the thoughts the caller supplies -- it fetches nothing, reads no files and runs no commands."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "DISABLE_THOUGHT_LOGGING",
+      "label": "Disable Thought Logging",
+      "description": "Set to 'true' to stop the server pretty-printing each thought to stderr. When unset, thoughts are logged to stderr only; stdout is always pure JSON-RPC either way.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+      "https://github.com/modelcontextprotocol/servers/blob/main/LICENSE"
+    ],
+    "checks": [
+      "license: MIT (upstream, modelcontextprotocol/servers)",
+      "source: git clone https://github.com/modelcontextprotocol/servers.git, pinned rev fd8248e56b822cc16a74b6610a88141fdfa09bd6 (2026-07-29)",
+      "build: npm ci --ignore-scripts && npm run build --workspace=@modelcontextprotocol/server-sequential-thinking (produces src/sequentialthinking/dist/index.js)",
+      "runtime dependencies: @modelcontextprotocol/sdk, chalk, yargs only -- none perform filesystem or network I/O",
+      "no outbound network calls; no filesystem writes; no subprocesses",
+      "official MCP reference server, one of the seven still actively maintained in modelcontextprotocol/servers (the rest were moved to servers-archived)"
+    ],
+    "notes": "Pure in-memory reasoning scaffold. The server keeps a thought-history array in process only, used for the optional stderr log and a length counter; each tool call carries its own thoughtNumber/totalThoughts, so it functions correctly under dmcp's one-shot per-call lifecycle without being declared stateful.",
+    "securityNotes": "Lowest-surface class of server: no filesystem, network or subprocess access. The tool's input is the caller's own model-authored thoughts, so it introduces no third-party or otherwise untrusted content into the model's context -- there is no prompt-injection channel here. The result is a small bounded JSON status (a few integer counters plus any branch ids), not an unbounded dump. Thought logging is written to stderr only and never to stdout, and can be turned off entirely with DISABLE_THOUGHT_LOGGING=true. User scope; requires no elevation."
+  }
+}

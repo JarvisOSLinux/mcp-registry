@@ -1,11 +1,45 @@
 {
   "version": "1.0",
-  "updated": "2026-08-01T02:57:10Z",
+  "updated": "2026-08-01T07:22:14Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
   },
   "servers": {
+    "org.modelcontextprotocol.server-sequential-thinking": {
+      "id": "org.modelcontextprotocol.server-sequential-thinking",
+      "name": "Sequential Thinking MCP",
+      "summary": "Structured step-by-step reasoning scaffold. The calling model records one thought at a time -- with running thoughtNumber/totalThoughts and optional revision and branching -- and the tool echoes each step back with progress counters. A pure reasoning aid: it operates only on thoughts the caller supplies and has no filesystem, network, or code-execution surface.",
+      "version": "0.6.2",
+      "scope": "user",
+      "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+      "icon": "applications-science",
+      "keywords": [
+        "reasoning",
+        "thinking",
+        "chain-of-thought",
+        "planning",
+        "problem-solving",
+        "step-by-step",
+        "sequential",
+        "reflection",
+        "analysis"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "mcp-utilities"
+      ],
+      "trustStatus": "community",
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/org.modelcontextprotocol.server-sequential-thinking/manifest.json",
+      "integrity": {
+        "manifestSha256": "d114b4739fff537d6fc17d01ab7ab739ffdba7ab45dd93540cecaf403818aec9",
+        "setupScriptSha256": "a8739751e1542fce674dde310c5c994dd55f4ffc087a3ec11b7c9d230eac3980"
+      }
+    },
     "com.github.yakupatahanov.mcp.calculator-ts": {
       "id": "com.github.yakupatahanov.mcp.calculator-ts",
       "name": "Calculator (TypeScript)",
@@ -16160,6 +16194,42 @@
         "tools": {}
       }
     },
+    "io.github.ahujasid.blender-mcp": {
+      "id": "io.github.ahujasid.blender-mcp",
+      "name": "Blender MCP",
+      "summary": "Drive Blender from an LLM: inspect the scene and objects, capture a viewport screenshot, run arbitrary Python inside Blender, and pull assets from PolyHaven, Sketchfab, Hyper3D Rodin and Hunyuan3D. The server talks over a local socket (localhost:9876) to a companion addon that must be installed and started inside a running Blender.",
+      "version": "1.6.5",
+      "scope": "user",
+      "homepage": "https://github.com/ahujasid/blender-mcp",
+      "icon": "applications-graphics",
+      "keywords": [
+        "blender",
+        "3d",
+        "modeling",
+        "scene",
+        "render",
+        "viewport",
+        "material",
+        "asset",
+        "polyhaven",
+        "sketchfab",
+        "hyper3d",
+        "hunyuan3d"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "automation"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "a31352ffbfc3483da0358dd5de4c2bba7fb30fbd8aceb3f44e97a35a5f70261d",
+        "setupScriptSha256": "b722e1ef4307a736fe0fb89450d12499e497e2bfd83806088ea54d59eb35761f"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.ahujasid.blender-mcp/manifest.json"
+    },
     "com.github.yakupatahanov.mcp.email": {
       "id": "com.github.yakupatahanov.mcp.email",
       "name": "JARVIS Email",
@@ -16195,6 +16265,40 @@
         "setupScriptSha256": "579504d08f168ef87045d5344ad0610c11a4a7b4ae70f355f91871716d291aab"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/email/manifest.json"
+    },
+    "io.github.czlonkowski.n8n-mcp": {
+      "id": "io.github.czlonkowski.n8n-mcp",
+      "name": "n8n-MCP",
+      "summary": "Build and manage n8n workflow automations: search 500+ n8n nodes, validate workflow JSON, and (with an API URL + key) create, update, delete, test and inspect workflows, executions and credentials on the user's own n8n instance. Node documentation is served from a bundled SQLite database; the management tools talk to a live n8n instance whose workflow definitions, execution data and community templates are untrusted third-party content.",
+      "version": "2.67.2",
+      "scope": "user",
+      "homepage": "https://github.com/czlonkowski/n8n-mcp",
+      "icon": "applications-graphics",
+      "keywords": [
+        "n8n",
+        "workflow",
+        "automation",
+        "nodes",
+        "integration",
+        "no-code",
+        "orchestration",
+        "templates",
+        "pipeline"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "mcp-development",
+        "automation"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "bd8bbf97ca7ea4759d289c5362931c2cb1a04977805b2319fb22efdb3cd1d4ff",
+        "setupScriptSha256": "844e8db797b803d74148decdf40ae6b4447359a5e48ba0078743d135643af1af"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.czlonkowski.n8n-mcp/manifest.json"
     }
   },
   "embedding_spec": {
