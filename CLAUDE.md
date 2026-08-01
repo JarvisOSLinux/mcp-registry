@@ -27,6 +27,7 @@ scripts/
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   selftest_platform_format.py  Temp-dir self-test for the platform-format checks
+  selftest_embedding_drift.py  Temp-dir self-test for the embedding-drift checks
   selftest_needs_input.py  Self-test of the shell servers' needs_input report
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
 docs/
@@ -69,12 +70,17 @@ Main index. Each server entry contains:
   recomputes hashes; opens PRs with updated registry.json
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
-- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`
-  and `scripts/selftest_jobs.py`, then `scripts/validate_registry.py` (schema,
+- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`,
+  `scripts/selftest_embedding_drift.py` and `scripts/selftest_jobs.py`, then
+  `scripts/validate_registry.py` (schema,
   id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
   scripts, setup-script locations, orphan directories) and blocks `trustStatus`
-  promotion to `official` without the maintainer `trust-approved` label
+  promotion to `official` without the maintainer `trust-approved` label.
+  Embedding drift is checked on every entry but reported as a **warning**:
+  vectors need Ollama, which only the manual `generate-embeddings.yml` has, so
+  failing would block a manifest edit until vectors were regenerated for text
+  that has not merged. `--strict-embeddings` promotes them to errors
 - `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
   runs `scripts/remove_server.py` and opens a **non-auto-merged** removal PR
   for a maintainer to review
@@ -84,9 +90,11 @@ Main index. Each server entry contains:
 ```bash
 python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
 python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
-python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
+python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs, embedding drift (PR gate)
+python scripts/validate_registry.py --strict-embeddings  # ...failing on stale/missing embeddings instead of warning
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
+python scripts/selftest_embedding_drift.py  # Offline self-test: stale/missing embedding detection + severity
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 ```

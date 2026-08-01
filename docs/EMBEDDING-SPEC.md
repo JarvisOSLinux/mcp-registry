@@ -195,6 +195,43 @@ writes both the per-manifest `{"v": ..., "hash": ...}` form and the inline
 `registry.json` `embeddings` objects (server + per-tool vectors), and updates
 `embedding_spec`.
 
+### Drift, and what the PR gate does about it
+
+`hash` is what makes drift detectable. It records the canonical text the stored
+vector was actually produced from, so recomputing `canonical_hash(canonical_text(manifest))`
+and comparing is enough to tell whether the vector still describes this server.
+
+`scripts/validate_registry.py` does exactly that on every entry, importing
+`canonical_text` / `canonical_hash` from `generate_embeddings.py` rather than
+restating them — two definitions of "the text that was embedded" would drift
+apart, and the drift would show up as a gate that passes stale data. It reports
+three distinct problems:
+
+| Finding | Meaning |
+|---------|---------|
+| manifest carries no vector for the model | the server cannot be reached by semantic search at all |
+| manifest embedding is **stale** | the recorded hash no longer matches the manifest's own text: the vector describes an earlier edition of the server |
+| inline embedding out of step | `registry.json`'s copy disagrees with the manifest — and the inline copy is what `dmcp sync-index` loads, so it is the one users get |
+
+Plus a width check against `embedding_spec.dimensions`, because every vector in
+one index is scored against one query.
+
+These are **warnings**, not errors, and `--strict-embeddings` promotes them.
+The reasoning: a vector can only be produced by Ollama, which in this repo lives
+solely inside the manually dispatched **Generate Embeddings** workflow, and that
+workflow embeds what is on `main`. Failing the gate would therefore block a
+one-word tool-description fix until someone regenerated vectors for text that
+has not merged yet — the gate blocking the change it is asking for. It is also
+the wrong severity: every *error* in that script guards something a client
+executes or trusts, whereas a stale vector degrades ranking while the server is
+still described, still installed from a hash-verified manifest, and still gated
+by `trustStatus`.
+
+Editing a manifest and drifting its embedding is therefore expected and allowed.
+The fix is a separate pass: run **Actions → Generate Embeddings** and merge the
+PR it opens. `scripts/selftest_embedding_drift.py` covers the checks, both
+severities, and the exemption for `removed` entries.
+
 ## Full Example
 
 ### `registry.json` (excerpt)

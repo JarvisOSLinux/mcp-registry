@@ -25,6 +25,9 @@ Static checks (always run):
 
 Warnings (reported, never fatal):
   - a vetted top-level platform that no transport can serve
+  - embeddings that are missing, or stale against the manifest they claim to
+    describe (see validate_embeddings / report_embeddings for why these are
+    warnings, and --strict-embeddings to make them errors)
 
 Trust-promotion gate (when --base is given):
   - compares trustStatus per entry against the base registry.json
@@ -37,6 +40,7 @@ Trust-promotion gate (when --base is given):
 
 Usage:
   python3 scripts/validate_registry.py
+  python3 scripts/validate_registry.py --strict-embeddings
   python3 scripts/validate_registry.py --base base_registry.json
   python3 scripts/validate_registry.py --base base_registry.json --approval-label-present
 """
@@ -45,6 +49,10 @@ import json
 import pathlib
 import sys
 
+# Imported, never re-derived: canonical_text is the definition of "the text that
+# was embedded", and a second copy of it here would drift from the generator's
+# — leaving a gate that passes stale vectors while looking like it checked them.
+from generate_embeddings import DEFAULT_MODEL, canonical_hash, canonical_text
 from sync_registry import (
     POSIX_SETUP_SCRIPT,
     SETUP_SCRIPTS,
@@ -70,6 +78,19 @@ SETUP_SCRIPT_FIELDS = (
     ("setupScriptWindows", WINDOWS_SETUP_SCRIPT),
 )
 INTEGRITY_KEY = dict(SETUP_SCRIPTS)
+
+# A revoked entry is a tombstone: dmcp refuses to install it, so what its
+# vectors would rank is moot. Everything else in the catalogue is discoverable
+# and must therefore be discoverable from what it actually says today.
+EMBEDDING_EXEMPT_TRUST = {"removed"}
+
+EMBEDDING_SUMMARY = (
+    "{count} embedding problem(s) above: semantic search ranks these servers "
+    "from text they no longer carry, or cannot rank them at all. Regenerate "
+    "with the 'Generate Embeddings' workflow (Actions -> Generate Embeddings) "
+    "and merge the PR it opens. Vectors need Ollama, so this cannot be fixed "
+    "from an ordinary PR checkout."
+)
 
 
 def annotate(level: str, msg: str) -> None:
@@ -266,10 +287,117 @@ def validate_setup_scripts(
             )
 
 
-def validate_static(registry: dict, errors: list, warnings: list) -> None:
+def validate_embeddings(where: str, entry: dict, manifest: dict, spec: dict, notes: list) -> None:
+    """Check that the stored vectors were computed from the manifest as it is now.
+
+    An embedding is a claim about text: this vector is what the model produced
+    for THIS name, summary, keywords and tool descriptions. Edit any of them and
+    the claim goes quietly false — dmcp keeps ranking the server, just from a
+    description it no longer has, and nothing in the rest of this gate can see
+    it. The integrity hashes cover the file's bytes; they say nothing about
+    whether the meaning those bytes carry is the meaning the vectors encode.
+
+    Three separate ways it breaks, so three separate findings:
+      - the manifest has no vector for the model at all (nothing to rank with);
+      - the manifest's recorded canonical hash no longer matches its own text
+        (the vector describes a previous edition of this server);
+      - registry.json's inline copy is out of step with the manifest (dmcp
+        sync-index reads the inline copy, so this is the one users get).
+    """
+    model = spec.get("model") or DEFAULT_MODEL
+    text = canonical_text(manifest)
+    if not text.strip():
+        # Nothing embeddable; generate_embeddings.py skips these too, so
+        # demanding a vector here would demand one nothing can produce.
+        return
+    expected = canonical_hash(text)
+
+    manifest_block = (manifest.get("embeddings") or {}).get(model)
+    if not isinstance(manifest_block, dict) or not manifest_block.get("v"):
+        notes.append(
+            f"{where}: manifest carries no '{model}' embedding — the server "
+            f"cannot be found by semantic search at all"
+        )
+    elif manifest_block.get("hash") != expected:
+        recorded = str(manifest_block.get("hash"))
+        notes.append(
+            f"{where}: manifest embedding is STALE — recorded for canonical text "
+            f"{recorded[:12]}…, but the manifest's text now hashes to "
+            f"{expected[:12]}…, so the stored vector describes an older edition "
+            f"of this server"
+        )
+
+    inline = entry.get("embeddings")
+    if not isinstance(inline, dict) or not inline.get("server"):
+        notes.append(
+            f"{where}: registry entry has no inline embedding — 'dmcp sync-index' "
+            f"loads vectors from this index, so there is nothing for it to load"
+        )
+        return
+
+    if inline.get("model") != model:
+        notes.append(
+            f"{where}: inline embedding model {inline.get('model')!r} is not the "
+            f"registry's {model!r}"
+        )
+    if inline.get("version") != expected[:16]:
+        notes.append(
+            f"{where}: inline embedding version {inline.get('version')!r} does not "
+            f"match the manifest's canonical hash {expected[:16]!r} — registry.json "
+            f"and the manifest disagree about what was embedded"
+        )
+
+    dimensions = spec.get("dimensions")
+    vector = inline.get("server")
+    if isinstance(dimensions, int) and isinstance(vector, list) and len(vector) != dimensions:
+        notes.append(
+            f"{where}: inline embedding has {len(vector)} dimensions, but "
+            f"embedding_spec declares {dimensions} — dmcp scores every vector in "
+            f"one index against one query"
+        )
+
+
+def report_embeddings(notes: list, strict: bool, errors: list, warnings: list) -> None:
+    """Fold the embedding findings into the run at the chosen severity.
+
+    Warnings by default, and that is a judgement, not timidity.
+
+    Failing would deadlock the workflow. A vector can only be produced by
+    Ollama, which exists in this repo solely inside the manually dispatched
+    Generate Embeddings workflow — and that workflow embeds what is on `main`.
+    So a PR that fixes a typo in a tool description would be unmergeable until
+    someone regenerated vectors for text that has not merged yet. The gate would
+    block the very change it is asking for.
+
+    It is also the wrong severity. Every error in this file guards something a
+    client executes or trusts: an unverified setup script, a hash that covers
+    nothing, an entry offered to a host nobody vetted. A stale vector degrades
+    *ranking* — the server is still described, still installed from a
+    hash-verified manifest, still gated by trustStatus. The unservable-platform
+    warning already draws this line for the same reason: real, worth saying,
+    fixable in a later PR.
+
+    What the gate must not do is what it did before this check existed: print
+    "registry validation passed" over four drifted servers and say nothing. Each
+    finding is now annotated against its server on every run, with a summary
+    naming the count and the one workflow that clears it. --strict-embeddings
+    promotes the lot to errors for anyone who wants the harder rule — a
+    maintainer sweeping the catalogue, or a scheduled job that should fail loudly.
+    """
+    if not notes:
+        return
+    (errors if strict else warnings).extend(notes)
+    annotate("error" if strict else "warning", EMBEDDING_SUMMARY.format(count=len(notes)))
+
+
+def validate_static(registry: dict, errors: list, warnings: list, embeddings: list) -> None:
     if "servers" not in registry or not isinstance(registry["servers"], dict):
         errors.append("registry.json: missing or malformed 'servers' object")
         return
+
+    spec = registry.get("embedding_spec")
+    if not isinstance(spec, dict):
+        spec = {}
 
     for server_id, entry in registry["servers"].items():
         where = f"servers['{server_id}']"
@@ -323,6 +451,8 @@ def validate_static(registry: dict, errors: list, warnings: list) -> None:
 
         validate_setup_scripts(where, dir_name, manifest_url, manifest, integrity, errors)
         validate_transports(where, manifest, entry, errors, warnings)
+        if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:
+            validate_embeddings(where, entry, manifest, spec, embeddings)
 
         # The entry's platforms are a mirror, so a hand-edited entry could claim
         # coverage the vetted manifest never did.
@@ -406,10 +536,16 @@ def main() -> int:
         action="store_true",
         help="Set when the PR carries the maintainer 'trust-approved' label",
     )
+    parser.add_argument(
+        "--strict-embeddings",
+        action="store_true",
+        help="Fail on stale or missing embeddings instead of warning about them",
+    )
     args = parser.parse_args()
 
     errors: list = []
     warnings: list = []
+    embeddings: list = []
 
     try:
         registry = json.loads(REGISTRY.read_text())
@@ -417,7 +553,7 @@ def main() -> int:
         annotate("error", f"registry.json failed to parse: {e}")
         return 1
 
-    validate_static(registry, errors, warnings)
+    validate_static(registry, errors, warnings, embeddings)
     validate_no_orphan_dirs(registry, errors)
 
     if args.base:
@@ -426,6 +562,8 @@ def main() -> int:
         except (OSError, json.JSONDecodeError):
             base = {}
         validate_promotions(registry, base, args.approval_label_present, errors)
+
+    report_embeddings(embeddings, args.strict_embeddings, errors, warnings)
 
     for warn in warnings:
         annotate("warning", warn)
@@ -436,6 +574,11 @@ def main() -> int:
     if errors:
         print(f"\nFAIL: {len(errors)} validation error(s).")
         return 1
+    if warnings:
+        # Never "passed" full stop while something is outstanding: a clean line
+        # over a known-drifted registry is how the drift stayed invisible.
+        print(f"\nOK: registry validation passed, with {len(warnings)} warning(s).")
+        return 0
     print("OK: registry validation passed.")
     return 0
 

@@ -6,12 +6,17 @@ name: Validate PR
 # `trust-approved` label. See docs/TRUST-MODEL.md §4 and
 # docs/REGISTRY-AUTOMATION.md §"PR gate".
 #
-# The self-tests run first: the validation one builds throwaway registries in
-# a temp dir and asserts the validator still rejects what it is supposed to
+# The self-tests run first: the validation ones build throwaway registries in
+# a temp dir and assert the validator still rejects what it is supposed to
 # reject, so a gate that has quietly stopped firing fails here instead of
 # passing everything; the job-model one drives the jarvis-shell servers over
 # real stdio JSON-RPC (offline, stdlib only) so a PR cannot silently break the
 # run_job / send_input loop or the two servers' byte-identity.
+#
+# Embedding drift is reported as a warning, never a failure: vectors need
+# Ollama, which only the manual Generate Embeddings workflow has, so failing
+# here would block a manifest edit until vectors were regenerated for text that
+# has not merged yet. The annotations are the point — see EMBEDDING-SPEC.md.
 #
 # `labeled`/`unlabeled` are included so the run re-evaluates when a maintainer
 # adds or removes the approval label.
@@ -38,6 +43,9 @@ jobs:
 
       - name: Self-test the validation logic
         run: python3 scripts/selftest_platform_format.py
+
+      - name: Self-test the embedding-drift checks
+        run: python3 scripts/selftest_embedding_drift.py
 
       - name: Self-test the jarvis-shell job model
         run: python3 scripts/selftest_jobs.py

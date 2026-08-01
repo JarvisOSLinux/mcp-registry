@@ -44,6 +44,11 @@ REGISTRY = pathlib.Path("registry.json")
 SERVERS_DIR = pathlib.Path("servers")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/embeddings")
 
+# The model a registry is assumed to use when its embedding_spec does not say.
+# Named here rather than only in the argument parser so validate_registry.py can
+# ask the same question this script answers.
+DEFAULT_MODEL = "nomic-embed-text"
+
 
 def canonical_text(manifest: dict) -> str:
     parts = []
@@ -86,7 +91,7 @@ def dir_from_url(url: str) -> str | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="nomic-embed-text", help="Ollama model name")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Ollama model name")
     parser.add_argument(
         "--force", action="store_true", help="Re-embed even if canonical hash matches"
     )
