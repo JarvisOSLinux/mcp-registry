@@ -439,6 +439,22 @@ _ESC_STRING_OPENERS = "]PX^_"
 # A malformed or killed writer can leave such a sequence unterminated forever;
 # without a bound the buffer would swallow the rest of the log.
 _ESC_MAX_LEN = 4096
+# Openers of an ECMA-48 nF sequence: ESC + intermediate byte(s) + one FINAL
+# byte, so ESC and the opener alone are not the whole sequence. `ESC ( B` is
+# terminfo's own sgr0 prefix for xterm/screen/tmux, which every `tput sgr0`
+# and every ncurses program emits under a PTY, and `ESC ( 0` starts the line
+# drawing dialog/whiptail box prompts are made of — reading either as two
+# characters would leave its final byte behind as text, welded onto the front
+# of whatever came next. That next thing is often the prompt line.
+_ESC_INTERMEDIATES = "".join(chr(code) for code in range(0x20, 0x30))
+# A terminal stops the cursor at its right margin. This renderer has no width,
+# so an unbounded column lets `ESC[200000000C` — a dozen bytes a command chose
+# to write — materialize hundreds of megabytes of padding, in memory, on the
+# live stream, and again on every re-read. The transcript cap cannot save it:
+# that is applied to text already rendered. Wider than any terminal a human
+# reads, and only motion into cells nobody wrote is bounded — a long line of
+# real output is never cut.
+_RENDER_MAX_COLS = 1024
 _NEEDS_RENDER_RE = re.compile("[\r\b\a\x00\x1b]")
 # BEL is an audible alert and NUL is padding: neither is content.
 _DROPPED_CONTROLS = "\a\x00"
@@ -615,8 +631,15 @@ class _TerminalLines:
         elif kind in _ESC_STRING_OPENERS:
             if seq.endswith("\a") or seq.endswith(_ESC + "\\") or len(seq) > _ESC_MAX_LEN:
                 self._esc = ""
+        elif kind in _ESC_INTERMEDIATES:
+            if seq[-1] not in _ESC_INTERMEDIATES or len(seq) > _ESC_MAX_LEN:
+                self._esc = ""
         else:
             self._esc = ""
+
+    def _seek(self, col: int) -> None:
+        """Move the cursor, stopping at a right margin the way a terminal does."""
+        self._col = max(0, min(col, max(_RENDER_MAX_COLS, len(self._cells))))
 
     def _csi(self, body: str) -> None:
         """Apply a CSI sequence's effect on THIS line; drop everything else.
@@ -634,7 +657,9 @@ class _TerminalLines:
         if params.startswith("?"):
             return
         head = params.split(";")[0]
-        value = int(head) if head.isdigit() else None
+        # isdecimal, not isdigit: isdigit admits '²' and friends, which
+        # int() then refuses — and this parses bytes a command chose to write.
+        value = int(head) if head.isdecimal() else None
         if final == "K":
             mode = value or 0
             if mode == 0:
@@ -645,11 +670,11 @@ class _TerminalLines:
             elif mode == 2:
                 self._cells = []
         elif final == "G":
-            self._col = max(0, (value or 1) - 1)
+            self._seek((value or 1) - 1)
         elif final == "D":
-            self._col = max(0, self._col - (value or 1))
+            self._seek(self._col - (value or 1))
         elif final == "C":
-            self._col += value or 1
+            self._seek(self._col + (value or 1))
 
 
 def _render_lines(text: str) -> tuple:

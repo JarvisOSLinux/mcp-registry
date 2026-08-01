@@ -47,7 +47,11 @@ command, real Unix sockets, real signals.
      tail/offset window clamps instead of erroring, run_job's transcript is
      capped with a truncation marker naming the read_output call that
      fetches the omitted head, and the live stderr stream gets the same
-     treatment (it is the same flood one hop later).
+     treatment (it is the same flood one hop later). An escape sequence is
+     consumed whole — including the charset designations every ncurses
+     program emits, whose final byte would otherwise land on the prompt line
+     as text — and cursor motion stops at a right margin, so naming a column
+     cannot turn a dozen bytes into hundreds of megabytes of padding.
 
 Offline, stdlib only.
 
@@ -55,6 +59,7 @@ Usage:
   python3 scripts/selftest_jobs.py
 """
 import difflib
+import io
 import json
 import os
 import pathlib
@@ -691,6 +696,23 @@ STERILIZE_CASES = [
     ("BEL is dropped and backspace erases", "abc\x07\bX\n", "abX\n"),
     ("cursor-left is honoured like a backspace", "abcdef\x1b[3DXYZ\n", "abcXYZ\n"),
     ("column-absolute is honoured", "abcdef\x1b[1GZ\n", "Zbcdef\n"),
+    ("cursor-forward pads the gap it skips", "ab\x1b[3Cx\n", "ab   x\n"),
+    # ESC + intermediate + FINAL byte. `\x1b(B\x1b[m` is verbatim what terminfo
+    # gives for xterm/screen/tmux sgr0, so `tput sgr0` and every ncurses
+    # program put one of these directly in front of the next thing written —
+    # which, for a job waiting on an answer, is the prompt the model must read.
+    ("terminfo's sgr0 prefix leaves nothing behind", "\x1b(B\x1b[mPassword: ", "Password: "),
+    ("a charset designation is consumed whole", "\x1b(0qq\x1b(Bdone\n", "qqdone\n"),
+    ("DEC screen alignment is not a two-byte sequence", "\x1b#8abc\n", "abc\n"),
+    ("selecting UTF-8 is not a two-byte sequence", "\x1b%Gabc\n", "abc\n"),
+    ("a multi-intermediate designation is consumed whole", "\x1b$(Cwide\n", "wide\n"),
+    # ...while the two-byte forms must still be exactly two bytes: over-eager
+    # consumption would eat the text after a save/restore-cursor pair.
+    ("save/restore cursor stays two bytes", "\x1b7saved\x1b8\n", "saved\n"),
+    ("reverse index stays two bytes", "\x1bMup\n", "up\n"),
+    # A CSI parameter is bytes the command chose to write: '²' is isdigit but
+    # not isdecimal, and int() refuses it.
+    ("a non-decimal digit parameter is not a crash", "junk\x1b[\xb2K\rfresh\n", "fresh\n"),
     (
         "a trailing prompt survives verbatim",
         "Setting up\r\nContinue? [Y/n] ",
@@ -742,6 +764,39 @@ def sterilize_unit_tests():
     rendered = user._sterilize("\x1b]0;" + "A" * 5000 + "\nreal output\n")
     check(rendered.endswith("real output\n"), "an unterminated escape cannot swallow the log")
 
+    # A cursor-forward names a column; materializing that column as padding is
+    # how a dozen bytes of output become hundreds of megabytes. Every other hop
+    # in this chain is bounded, and the transcript cap is applied AFTER
+    # rendering, so it cannot be the thing that saves this one.
+    cap = user._RENDER_MAX_COLS
+    bomb = user._sterilize("\x1b[200000000Cx\n")
+    check(len(bomb) <= cap + 2, "a runaway cursor-forward cannot pad past the margin")
+    check(bomb.endswith("x\n"), "the character the cursor moved toward is still rendered")
+    check(bomb == system._sterilize("\x1b[200000000Cx\n"), "both servers bound it the same way")
+    check(
+        user._sterilize("\x1b[200000000Gx\n") == bomb,
+        "column-absolute is bounded like cursor-forward",
+    )
+
+    # Only motion into cells nobody wrote is bounded. A long line of real
+    # output is the command's own evidence and is never cut.
+    long_line = "z" * (cap * 3)
+    check(
+        user._sterilize(long_line + "\x1b[0m\n") == long_line + "\n",
+        "a line of real output longer than the margin survives whole",
+    )
+    check(
+        user._sterilize(long_line + "\x1b[1G!\n") == "!" + long_line[1:] + "\n",
+        "a redraw still lands on a line longer than the margin",
+    )
+
+    # The same renderer feeds the live stream, where the padding would evict
+    # every other line from the 64 KiB ring a dispatch REMIND tail reads —
+    # destroying exactly the prompt visibility the live stream exists for.
+    sink = io.StringIO()
+    user._LiveStream(sink).feed(b"\x1b[5000000Cx")
+    check(len(sink.getvalue()) <= cap + 1, "the live stream is bounded by the same margin")
+
     # The renderer feeds the live stream too, where a chunk boundary lands
     # wherever the reader stopped — inside an escape, or between CR and LF.
     for _label, raw, expected in STERILIZE_CASES:
@@ -768,7 +823,14 @@ def sterilize_unit_tests():
         check(got == expected, f"_output_window(offset={offset}, tail={tail}) == {expected}")
     check(user._output_window("", None, 5) == (0, ""), "a window over empty output clamps to empty")
 
-    for name in ("_STERILIZE_TAG", "_LOG_REPEAT_RUN_MIN", "_TRANSCRIPT_MAX_CHARS", "_ESC_MAX_LEN"):
+    for name in (
+        "_STERILIZE_TAG",
+        "_LOG_REPEAT_RUN_MIN",
+        "_TRANSCRIPT_MAX_CHARS",
+        "_ESC_MAX_LEN",
+        "_ESC_INTERMEDIATES",
+        "_RENDER_MAX_COLS",
+    ):
         check(
             getattr(user, name) == getattr(system, name),
             f"both servers share the same {name}",
@@ -776,6 +838,10 @@ def sterilize_unit_tests():
     check(
         isinstance(user._TRANSCRIPT_MAX_CHARS, int) and user._TRANSCRIPT_MAX_CHARS > 0,
         "the transcript cap is a positive number of characters",
+    )
+    check(
+        isinstance(user._RENDER_MAX_COLS, int) and 0 < user._RENDER_MAX_COLS < user._TRANSCRIPT_MAX_CHARS,
+        "the margin is positive and a fraction of the transcript cap",
     )
 
 
@@ -805,6 +871,22 @@ BULK_SCRIPT = r"""
 import sys
 for i in range(4000):
     sys.stdout.write('line %05d padding padding padding\n' % i)
+sys.stdout.flush()
+"""
+
+# The bytes a terminfo-driven program puts on a real PTY, written literally so
+# the test does not depend on ncurses being installed: `\x1b(B\x1b[m` is what
+# `infocmp xterm-256color` gives for sgr0, and `\x1b(0` starts the line drawing
+# a dialog/whiptail box is made of. run_job inherits TERM into a real PTY, so
+# these are the conditions that produce them. The job ends on an unanswered
+# prompt — the one line the tool description tells the model to read back.
+TERMCAP_SCRIPT = r"""
+import sys
+w = sys.stdout.write
+w('\x1b(B\x1b[mBuilding...\n')
+w('\x1b(0lqqk\x1b(B\n')
+w('\x1b[200000000Cx\n')
+w('\x1b(B\x1b[mContinue? [Y/n] ')
 sys.stdout.flush()
 """
 
@@ -911,6 +993,31 @@ def sterilize_job_tests(env, root):
     is_err, head = srv.call(3, "read_output", {"job": "bulk", "offset": 0, "tail": cap})
     check(not is_err and head.get("output") == full[:cap], "the marker's recipe fetches the omitted head")
     check(str(omitted) in transcript, "the marker says how many characters were omitted")
+    srv.close()
+
+    print("  terminal_escapes")
+    srv = Server(env)
+    srv.initialize()
+    margin = load_server_module(USER_SERVER, "shell_margin")._RENDER_MAX_COLS
+    command = write_script(root, "termcap.py", TERMCAP_SCRIPT)
+    is_err, payload = srv.call(1, "run_job", {"command": command, "job": "termcap"}, timeout=60)
+    transcript = payload.get("transcript", "")
+    check(not is_err and payload.get("exit_code") == 0, "the terminfo-noise job ran to completion")
+    check("\x1b" not in transcript, "no escape sequence survives into the transcript")
+    check(
+        transcript.endswith("Continue? [Y/n] "),
+        "the prompt line the model must echo back is verbatim",
+    )
+    check("BContinue" not in transcript, "sgr0's final byte is not welded onto the prompt")
+    check(transcript.startswith("Building..."), "nor onto the first line")
+    check("0lqqk" not in transcript, "a charset designation leaves no stray byte on its line")
+    longest = max(len(line) for line in transcript.split("\n"))
+    check(longest <= margin + 1, "a column no terminal has cannot stretch a line past the margin")
+    check(len(transcript) < 4 * margin, "the whole transcript stays a few lines long")
+
+    raw = (pathlib.Path(root) / "jarvis-shell" / "termcap" / "out.log").read_bytes()
+    check(b"\x1b(B" in raw, "out.log still holds the raw charset designation")
+    check(b"\x1b[200000000C" in raw, "out.log still holds the raw cursor-forward")
     srv.close()
 
 
