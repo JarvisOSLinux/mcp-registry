@@ -27,6 +27,7 @@ scripts/
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   selftest_platform_format.py  Temp-dir self-test for the platform-format checks
+  selftest_embedding_drift.py  Temp-dir self-test for the embedding-drift checks
   selftest_needs_input.py  Self-test of the shell servers' needs_input report
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
 docs/
@@ -59,7 +60,33 @@ Main index. Each server entry contains:
 - `setupScriptWindows` — PowerShell script (`setup.ps1`) run instead of `setupScript` on Windows hosts; like `setupScript`, it must name a committed script in the server directory, never an off-registry URL
 - `source` — git repo to clone for local servers (optional `rev` pin — a full 40-char SHA is binding)
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
-- `tools` — list of tools the server exposes
+- `tools` — list of tools the server exposes; a tool that can park awaiting input
+  declares `blocking: true` plus an optional `suggestedRemindAfter` (seconds),
+  the reminder interval an orchestrator applies when the caller set none
+
+### servers/jarvis-shell{,-system}/server.py — the interactive-command pattern
+
+Reference implementation of the two shapes a server uses when it wraps a command
+that can prompt. Both are documented for third-party authors in
+`MCP-REGISTRY-GUIDE.md` ("Interactive Tools: Closed stdin", "The Job Pattern",
+"stdin, stdout, and the Process Lifecycle"); this is where they actually live.
+
+- **Closed stdin + `needs_input`** — `execute_command` spawns with
+  `stdin=DEVNULL`, because a stdio server's own stdin IS the JSON-RPC channel. An
+  interactive command hits EOF and aborts legibly instead of hanging; the tool
+  then inspects the output tail and attaches a purely additive
+  `needs_input` (prompted / prompt / hint) when the last line is still a prompt.
+  A report, never a dialogue. Gated by `scripts/selftest_needs_input.py`.
+- **The job model** — `run_job` / `send_input` / `read_output` / `kill_job`. Every
+  tool call is a fresh server process (one-shot dmcp lifecycle), so in-process
+  state cannot survive to the call that answers a prompt: the job's handle lives
+  on the **filesystem** (`$XDG_RUNTIME_DIR/jarvis-shell/<job>/`, uid-checked,
+  `/tmp` fallback) behind a detached PTY holder. `run_job` blocks and streams to
+  stderr (stdout is the wire), and carries `blocking: true` +
+  `suggestedRemindAfter: 30`. Output is sterilized at **read** time — `out.log`
+  keeps every raw byte — and the transcript is capped at its tail. Gated by
+  `scripts/selftest_jobs.py`, which also enforces that both servers' shared
+  blocks stay byte-identical.
 
 ## Automation
 
@@ -69,12 +96,17 @@ Main index. Each server entry contains:
   recomputes hashes; opens PRs with updated registry.json
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
-- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`
-  and `scripts/selftest_jobs.py`, then `scripts/validate_registry.py` (schema,
+- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`,
+  `scripts/selftest_embedding_drift.py` and `scripts/selftest_jobs.py`, then
+  `scripts/validate_registry.py` (schema,
   id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
   scripts, setup-script locations, orphan directories) and blocks `trustStatus`
-  promotion to `official` without the maintainer `trust-approved` label
+  promotion to `official` without the maintainer `trust-approved` label.
+  Embedding drift is checked on every entry but reported as a **warning**:
+  vectors need Ollama, which only the manual `generate-embeddings.yml` has, so
+  failing would block a manifest edit until vectors were regenerated for text
+  that has not merged. `--strict-embeddings` promotes them to errors
 - `remove-server.yml` — Manual dispatch (`server_id` + optional `force`);
   runs `scripts/remove_server.py` and opens a **non-auto-merged** removal PR
   for a maintainer to review
@@ -84,9 +116,11 @@ Main index. Each server entry contains:
 ```bash
 python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
 python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
-python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs (PR gate)
+python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs, embedding drift (PR gate)
+python scripts/validate_registry.py --strict-embeddings  # ...failing on stale/missing embeddings instead of warning
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
+python scripts/selftest_embedding_drift.py  # Offline self-test: stale/missing embedding detection + severity
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 ```
@@ -101,6 +135,15 @@ python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell intera
 4. Run `python scripts/sync_registry.py` (fills integrity hashes, syncs
    name/summary/keywords/platforms from the manifest)
 5. Submit PR — `validate-pr.yml` gates it
+
+If the server wraps commands that can prompt, both shapes are available patterns
+rather than things to reinvent: close the child's stdin and report the prompt
+(`needs_input`), and where the prompt must actually be *answered*, use the job
+model — a detached PTY holder with the job handle on the filesystem, since a
+stdio server gets a fresh process per tool call. The blocking tool then declares
+`blocking: true` + `suggestedRemindAfter`. `servers/jarvis-shell/server.py` is
+the reference implementation; `MCP-REGISTRY-GUIDE.md` documents both for
+third-party authors.
 
 See `MCP-REGISTRY-GUIDE.md` for format details.
 

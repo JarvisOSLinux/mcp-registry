@@ -273,8 +273,67 @@ The `tools` array declares the tools the server exposes. This list is used for d
 |-------|------|----------|-------------|
 | `name` | string | Yes | Tool identifier (snake_case recommended). |
 | `description` | string | Yes | What the tool does. Used for semantic search. |
+| `blocking` | boolean | No | `true` if this tool can park indefinitely waiting for input. See [Blocking Tools](#blocking-tools). |
+| `suggestedRemindAfter` | integer | No | Seconds. The reminder interval the server recommends for this tool. See [Blocking Tools](#blocking-tools). |
 
 At least one tool is required. Descriptions should be specific enough for an LLM to determine when to use the tool.
+
+### Blocking Tools
+
+```json
+{
+  "name": "run_job",
+  "description": "Run a command that may need interactive input …",
+  "blocking": true,
+  "suggestedRemindAfter": 30
+}
+```
+
+Most tools answer and return. A few cannot: they run something that stops and
+waits for a human decision — an installer with no `-y`, a partitioning wizard, a
+REPL, an `ssh` that hits a host-key prompt — and the tool call stays outstanding
+for exactly as long as the wait lasts. That is not a hang; the call is doing its
+job. But it is indistinguishable from a hang to a caller with nothing scheduled
+to look at it.
+
+An orchestrator that dispatches such a tool as a concurrent task and sets **no
+reminder** never finds out the tool is waiting. The task simply never completes,
+nothing is pushed, and the question at the other end goes unanswered until
+something times out. `blocking` is the tool telling the caller, up front, that
+this is a real possibility for it.
+
+| Field | Meaning |
+|-------|---------|
+| `blocking: true` | This tool can park indefinitely awaiting input. A caller that dispatches it with no reminder will never learn it is waiting. |
+| `suggestedRemindAfter: <int>` | Seconds. The reminder interval the server recommends for this tool — chosen by the server author, who knows how long its normal quiet stretches are. |
+
+**Both keys are optional and opt-in.** A tool without `blocking` behaves exactly
+as it does today; nothing about existing manifests changes. A
+`suggestedRemindAfter` with no `blocking: true` is meaningless, but it is not an
+error — it is inert metadata, not a contradiction to reject.
+
+**The consumer rule.** When a task targets a tool whose manifest declares
+`blocking: true` **and the caller supplied no reminder interval of its own**, the
+orchestrator applies the tool's `suggestedRemindAfter` (or its own built-in
+default when the manifest names none). An interval the caller supplied
+explicitly **always** wins — including an explicit opt-out of reminders. The
+manifest supplies a default for callers that did not think about it; it never
+overrides a caller that did. See dispatch's `remind_after`.
+
+**Choosing a value.** Two failure modes bracket it. Too short and every ordinary
+run wakes the orchestrator repeatedly for nothing, which costs a round trip each
+time. Too long and a human sits in front of an unanswered prompt while nothing
+reports it. Pick from the tool's own behavior: how long does it normally go quiet
+mid-run, and how quickly does a stall need noticing? A tool whose whole purpose is
+interactive work wants a shorter interval than one that merely *might* prompt
+after a long silent phase.
+
+**Where a blocking tool comes from.** The usual reason a tool parks is that it is
+holding an interactive process open so a *later* tool call can answer it — the
+job pattern, since a stdio server gets a fresh process per call and cannot keep
+the process in memory. `MCP-REGISTRY-GUIDE.md` ("The Job Pattern", and
+"Interactive Tools: Closed stdin" for the non-blocking half) is the worked
+version; these two manifest keys are what it declares.
 
 ---
 
@@ -415,6 +474,12 @@ server process is reused across a series of calls so the in-process state
 persists. Stateless servers ignore sessions entirely and always run one-shot.
 Declaring `stateful` never changes one-shot behavior; it only advertises that
 the server *can* be driven session-scoped.
+
+Sessions are **user scope only** — dmcp refuses `--session` for a system-scope
+server, so an elevated server never becomes a standing capability. A server that
+must keep something alive across calls without a session (or at system scope)
+cannot hold it in memory at all: the handle has to live on the filesystem, which
+is the job pattern in `MCP-REGISTRY-GUIDE.md`.
 
 ---
 

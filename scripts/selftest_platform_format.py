@@ -24,11 +24,18 @@ import pathlib
 import sys
 import tempfile
 
+import generate_embeddings
 import sync_registry
 import validate_registry
 
 SERVER_ID = "com.example.mcp.demo"
 MANIFEST_URL = "https://example.invalid/servers/demo/manifest.json"
+
+# The embedding-drift check runs on every entry, so a fixture that is drifted by
+# construction would make the "nothing is reported" cases assert on noise from
+# a check they are not about. Four dimensions is enough to be a vector.
+EMBEDDING_MODEL = generate_embeddings.DEFAULT_MODEL
+EMBEDDING_VECTOR = [0.0, 1.0, -1.0, 0.5]
 
 SETUP_SH = "#!/usr/bin/env bash\nset -euo pipefail\npython3 -m venv .venv\n"
 SETUP_PS1 = "$ErrorActionPreference = 'Stop'\npython -m venv .venv\n"
@@ -79,6 +86,8 @@ def fixture(doc, scripts):
         root = pathlib.Path(tmp)
         server_dir = root / "servers" / "demo"
         server_dir.mkdir(parents=True)
+        chash = generate_embeddings.canonical_hash(generate_embeddings.canonical_text(doc))
+        doc = dict(doc, embeddings={EMBEDDING_MODEL: {"v": EMBEDDING_VECTOR, "hash": chash}})
         (server_dir / "manifest.json").write_text(json.dumps(doc, indent=2) + "\n")
         for filename, body in scripts.items():
             (server_dir / filename).write_text(body)
@@ -90,6 +99,12 @@ def fixture(doc, scripts):
                 {
                     "version": "1.0",
                     "updated": "2026-01-01T00:00:00Z",
+                    "embedding_spec": {
+                        "model": EMBEDDING_MODEL,
+                        "dimensions": len(EMBEDDING_VECTOR),
+                        "provider": "ollama",
+                        "canonical_fields": ["name", "summary", "keywords", "tools"],
+                    },
                     "servers": {
                         SERVER_ID: {
                             "id": SERVER_ID,
@@ -101,6 +116,12 @@ def fixture(doc, scripts):
                             "trustStatus": "community",
                             "integrity": {},
                             "manifest": MANIFEST_URL,
+                            "embeddings": {
+                                "model": EMBEDDING_MODEL,
+                                "version": chash[:16],
+                                "server": EMBEDDING_VECTOR,
+                                "tools": {},
+                            },
                         }
                     },
                 },

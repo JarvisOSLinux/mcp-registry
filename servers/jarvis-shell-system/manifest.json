@@ -52,7 +52,9 @@
     },
     {
       "name": "run_job",
-      "description": "Run a command that may need interactive input, with system privileges, under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the full transcript, exit code, and job name."
+      "description": "Run a command that may need interactive input, with system privileges, under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. ALWAYS dispatch this as a concurrent task WITH a remind_after (30s is the suggested interval): the call parks for as long as the command waits on input, so without a reminder nothing ever reports that a prompt is up. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the transcript, exit code, and job name. The transcript is what a terminal would have shown (carriage-return redraws collapsed, escape sequences removed) and is capped at its tail, with a truncation marker naming the read_output call that fetches the omitted head.",
+      "blocking": true,
+      "suggestedRemindAfter": 30
     },
     {
       "name": "send_input",
@@ -60,7 +62,7 @@
     },
     {
       "name": "read_output",
-      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done."
+      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done. The output is sterilized the same way as run_job's transcript, and optional 'tail'/'offset' read just a window of it \u2014 'tail' alone gives the last N characters, which is where an unanswered prompt sits."
     },
     {
       "name": "kill_job",
