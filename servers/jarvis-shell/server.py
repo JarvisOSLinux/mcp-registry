@@ -13,6 +13,7 @@ fresh, short-lived server process and only the filesystem survives between
 calls.
 """
 
+import codecs
 import json
 import os
 import re
@@ -139,13 +140,16 @@ TOOLS = [
             "as long as the command waits on input, so with no reminder "
             "nothing ever reports that a prompt is up. While blocked, "
             "everything the command prints is streamed live to this task's "
-            "stderr. The "
-            "intended loop: dispatch run_job as a task; when a REMIND or "
-            "status tail shows the command waiting on input (a prompt, a "
-            "menu, a [Y/n]), call send_input with exactly what the output "
-            "asked for; never guess input the output did not ask for. "
-            "Returns the full transcript, exit code, and job name. Prefer "
-            "execute_command for anything non-interactive."
+            "stderr. The intended loop: dispatch run_job as a task; when a "
+            "REMIND or status tail shows the command waiting on input (a "
+            "prompt, a menu, a [Y/n]), call send_input with exactly what the "
+            "output asked for; never guess input the output did not ask for. "
+            "Returns the transcript, exit code, and job name. The transcript "
+            "is what a terminal would have shown — carriage-return redraws "
+            "collapsed to their final state, colour and cursor escapes "
+            "removed — and is capped at its tail, with a truncation marker "
+            "naming the read_output call that fetches the omitted head. "
+            "Prefer execute_command for anything non-interactive."
         ),
         "inputSchema": {
             "type": "object",
@@ -203,7 +207,13 @@ TOOLS = [
             "mid-run and after exit: while the job runs it returns everything "
             "printed so far (use it to see the exact prompt before "
             "send_input); once the job has exited it also carries the exit "
-            "code."
+            "code. The output is what a terminal would have shown — "
+            "carriage-return redraws collapsed to their final state, colour "
+            "and cursor escapes removed. Pass 'tail' to read only the last N "
+            "characters, which is usually all you need: an unanswered prompt "
+            "is the last thing in the output. The reply reports "
+            "output_offset / output_length / total_length so a long log can "
+            "be walked with 'offset'."
         ),
         "inputSchema": {
             "type": "object",
@@ -211,6 +221,25 @@ TOOLS = [
                 "job": {
                     "type": "string",
                     "description": "Name of the job to read",
+                },
+                "tail": {
+                    "type": "integer",
+                    "description": (
+                        "Optional. How many characters to return. Without "
+                        "'offset' these are the LAST characters of the "
+                        "output — the usual case, since a prompt sits at the "
+                        "end. Clamped to what exists."
+                    ),
+                },
+                "offset": {
+                    "type": "integer",
+                    "description": (
+                        "Optional. Character index to start reading from. "
+                        "With 'tail' it starts a window that many characters "
+                        "wide; on its own it reads from there to the end. "
+                        "Clamped to what exists. Omit both to read the whole "
+                        "output."
+                    ),
                 },
             },
             "required": ["job"],
@@ -479,6 +508,23 @@ _JOB_SWEEP_GRACE_SECS = 60
 _JOB_KILL_GRACE_SECS = 2.0
 _JOB_HOLDER_READY_TIMEOUT_SECS = 10
 
+# Sterilization (issue #69). out.log is written byte-exact and read
+# rendered: under a PTY a progress bar redraws one line thousands of times and
+# every redraw is bytes, so the raw log is the wrong thing to hand an LLM.
+_STERILIZE_TAG = "[jarvis-shell]"
+_ESC = "\x1b"
+# Openers of an escape sequence that runs until a string terminator rather
+# than a single final byte (OSC and friends).
+_ESC_STRING_OPENERS = "]PX^_"
+# A malformed or killed writer can leave such a sequence unterminated forever;
+# without a bound the buffer would swallow the rest of the log.
+_ESC_MAX_LEN = 4096
+_NEEDS_RENDER_RE = re.compile("[\r\b\a\x00\x1b]")
+# BEL is an audible alert and NUL is padding: neither is content.
+_DROPPED_CONTROLS = "\a\x00"
+_LOG_REPEAT_RUN_MIN = 3
+_TRANSCRIPT_MAX_CHARS = 32768
+
 
 def _jobs_unsupported() -> str | None:
     if pty is not None and sys.platform in ("linux", "darwin"):
@@ -574,6 +620,220 @@ def _read_job_log(job_dir: str) -> str:
             return f.read().decode(errors="replace")
     except OSError:
         return ""
+
+
+class _TerminalLines:
+    """Render terminal output into the lines a terminal would have shown.
+
+    out.log holds every byte the command wrote to its PTY, which is not what
+    anyone saw: a pacman-style progress bar redraws one line thousands of
+    times with carriage returns, each redraw carrying its own colour and
+    cursor escapes. Replaying that spends a context window on frames of an
+    animation nobody watched. Rendering keeps the FINAL visible state of each
+    line instead — what a human at that terminal actually read.
+
+    Incremental, because the same renderer feeds the live stream, where a
+    chunk boundary falls wherever the reader happened to stop: mid escape
+    sequence, or between the CR and the LF of a line ending. Everything that
+    outlives a chunk lives in this object.
+
+    A CR/LF pair needs no lookahead and so cannot be split wrongly: CR only
+    moves the cursor and LF ends the line with whatever cells exist, so the
+    pair renders as one plain line break however the two arrive.
+    """
+
+    def __init__(self) -> None:
+        self._cells: list = []
+        self._col = 0
+        self._esc = ""
+
+    def feed(self, text: str) -> tuple:
+        """Consume text; return (completed lines, the line still being drawn)."""
+        completed = []
+        for ch in text:
+            if self._esc:
+                self._esc += ch
+                self._end_escape()
+            elif ch == _ESC:
+                self._esc = ch
+            elif ch == "\n":
+                completed.append("".join(self._cells))
+                self._cells = []
+                self._col = 0
+            elif ch == "\r":
+                self._col = 0
+            elif ch == "\b":
+                self._col = max(0, self._col - 1)
+            elif ch not in _DROPPED_CONTROLS:
+                self._put(ch)
+        return completed, "".join(self._cells)
+
+    def _put(self, ch: str) -> None:
+        # A tab occupies one cell rather than advancing to the next tab stop:
+        # expanding it would rewrite the command's own output, and the only
+        # cost of leaving it alone is column drift when a tab-indented line is
+        # redrawn over.
+        if self._col < len(self._cells):
+            self._cells[self._col] = ch
+        else:
+            self._cells.extend(" " * (self._col - len(self._cells)))
+            self._cells.append(ch)
+        self._col += 1
+
+    def _end_escape(self) -> None:
+        """Close the buffered escape sequence once its terminator arrives."""
+        seq = self._esc
+        if len(seq) < 2:
+            return
+        kind = seq[1]
+        if kind == "[":
+            if len(seq) > 2 and "\x40" <= seq[-1] <= "\x7e":
+                self._csi(seq[2:])
+                self._esc = ""
+            elif len(seq) > _ESC_MAX_LEN:
+                self._esc = ""
+        elif kind in _ESC_STRING_OPENERS:
+            if seq.endswith("\a") or seq.endswith(_ESC + "\\") or len(seq) > _ESC_MAX_LEN:
+                self._esc = ""
+        else:
+            self._esc = ""
+
+    def _csi(self, body: str) -> None:
+        """Apply a CSI sequence's effect on THIS line; drop everything else.
+
+        Erase-in-line is what decides whether a redraw actually erased
+        anything: a bare CR only moves the cursor, so a short redraw over a
+        longer line leaves the old tail visible — which is what a terminal
+        shows — and only an explicit erase wipes it. Horizontal cursor motion
+        is the same arithmetic as a backspace. Colour, vertical motion and
+        screen operations cannot change one line's text, and honouring them
+        would mean keeping a whole screen buffer, so they are dropped.
+        """
+        final = body[-1]
+        params = body[:-1]
+        if params.startswith("?"):
+            return
+        head = params.split(";")[0]
+        value = int(head) if head.isdigit() else None
+        if final == "K":
+            mode = value or 0
+            if mode == 0:
+                del self._cells[self._col:]
+            elif mode == 1:
+                blank = min(self._col + 1, len(self._cells))
+                self._cells[:blank] = " " * blank
+            elif mode == 2:
+                self._cells = []
+        elif final == "G":
+            self._col = max(0, (value or 1) - 1)
+        elif final == "D":
+            self._col = max(0, self._col - (value or 1))
+        elif final == "C":
+            self._col += value or 1
+
+
+def _render_lines(text: str) -> tuple:
+    """Rendered lines of `text`, skipping the renderer when nothing needs it."""
+    if not _NEEDS_RENDER_RE.search(text):
+        # Ordinary command output is the overwhelming majority and renders to
+        # itself; a multi-megabyte log should not pay for a per-character
+        # Python loop that cannot change a single character of it.
+        plain = text.split("\n")
+        return plain[:-1], plain[-1]
+    return _TerminalLines().feed(text)
+
+
+def _collapse_repeats(lines: list) -> list:
+    """Fold a run of identical lines into the line plus a count.
+
+    A retry loop, a watchdog, or a spinner drawn without carriage returns
+    emits the same line until something changes. The line is worth reading
+    once; the repetition is worth a number, not a copy each.
+    """
+    folded = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        run = 1
+        while index + run < len(lines) and lines[index + run] == line:
+            run += 1
+        folded.append(line)
+        if run > _LOG_REPEAT_RUN_MIN:
+            folded.append(f"{_STERILIZE_TAG} previous line repeated {run - 1} more times")
+        else:
+            folded.extend([line] * (run - 1))
+        index += run
+    return folded
+
+
+def _sterilize(text: str) -> str:
+    """What a terminal would have shown, with repeated lines collapsed.
+
+    Applied at READ time only. out.log keeps the exact bytes the command
+    wrote, so nothing here can destroy evidence: a later reader — or a
+    human — can always go back to the file.
+
+    The trailing line is never folded into a repeat count and never trimmed.
+    An unanswered prompt has no newline after it, so it IS that line, and
+    touching the tail could hide the very question the job model exists to
+    surface.
+    """
+    lines, pending = _render_lines(text)
+    rendered = _collapse_repeats(lines)
+    return "".join(line + "\n" for line in rendered) + pending
+
+
+def _output_window(text: str, offset, tail) -> tuple:
+    """Slice `text` for read_output's 'offset'/'tail'; returns (start, chunk).
+
+    'tail' is a window size and 'offset' its start; with no offset the window
+    ends at the end of the output, which is the case that matters because an
+    unanswered prompt is the last thing in it. Both clamp to what exists
+    rather than erroring: a caller paging a log that is still growing should
+    not have to learn its length first.
+    """
+    total = len(text)
+    size = total if tail is None else max(0, min(tail, total))
+    start = max(0, total - size) if offset is None else max(0, min(offset, total))
+    return start, text[start:min(total, start + size)]
+
+
+def _optional_count(arguments: dict, key: str) -> tuple:
+    """Read an optional non-negative integer argument; returns (value, error)."""
+    value = arguments.get(key)
+    if value is None:
+        return None, None
+    # bool is an int in Python, and a `true` here is a caller mistaking this
+    # for a flag — better to say so than to silently read it as 1.
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+        return None, f"read_output '{key}' must be a whole number of characters"
+    if value < 0:
+        return None, f"read_output '{key}' must not be negative"
+    return int(value), None
+
+
+def _job_transcript(job_dir: str, job: str) -> str:
+    """run_job's transcript: sterilized, and capped at its tail.
+
+    The end is the half worth keeping — the exit state, the error, the
+    question left unanswered all live there — so the cap drops the head and
+    says so where it cannot be missed. This was the last uncapped hop in the
+    chain (dmcp retains 64 KiB of a child's stderr, dispatch's per-task ring
+    is 64 KiB, a REMIND carries 4096 characters). The cap here is the
+    tightest of the four because a transcript, unlike those, lands whole in
+    the model's context as a tool result.
+    """
+    text = _sterilize(_read_job_log(job_dir))
+    if len(text) <= _TRANSCRIPT_MAX_CHARS:
+        return text
+    start = len(text) - _TRANSCRIPT_MAX_CHARS
+    return (
+        f"{_STERILIZE_TAG} TRANSCRIPT TRUNCATED: this is the LAST "
+        f"{_TRANSCRIPT_MAX_CHARS} of {len(text)} characters; the first {start} "
+        f"are omitted. Read them with read_output "
+        f'{{"job": "{job}", "offset": <n>, "tail": {_TRANSCRIPT_MAX_CHARS}}}, '
+        f"walking <n> from 0 up to {start}.\n"
+    ) + text[start:]
 
 
 def _holder_relay(master_fd: int, listener, log_fd: int, child_pid: int) -> int:
@@ -763,12 +1023,70 @@ def _spawn_holder(job_dir: str, command: str) -> None:
     os.close(read_fd)
 
 
-def _stream_job_output(log_path: str, offset: int) -> int:
-    """Copy new out.log bytes to OUR stderr — never stdout, the JSON-RPC wire.
+class _LiveStream:
+    """Sterilize a job's output onto a sink as it arrives.
 
     dispatch surfaces a running task's stderr tail in REMIND/status signals,
     so this live copy is what lets the model see a prompt while run_job is
-    still blocked. Raw bytes, not decoded text: a partial UTF-8 sequence at a
+    still blocked. It gets the same treatment as the transcript for the same
+    reason: a progress bar flooding this stream is the transcript problem one
+    hop later, and the ring it lands in holds only 64 KiB.
+
+    Redraws are coalesced per feed. The caller polls the log every 100ms, so
+    however many times the command redrew a line in between, the sink sees at
+    most one redraw of it — while text the sink already holds is never
+    re-sent when a line merely grew, so ordinary output still streams out
+    verbatim and promptly.
+    """
+
+    def __init__(self, sink) -> None:
+        self._sink = sink
+        # Incremental: a chunk boundary can fall inside a multi-byte
+        # character, and decoding each chunk on its own would mangle it.
+        self._decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        self._renderer = _TerminalLines()
+        self._shown = ""
+
+    def feed(self, chunk: bytes) -> None:
+        completed, pending = self._renderer.feed(self._decoder.decode(chunk))
+        parts = []
+        for line in completed:
+            parts.append(self._delta(line))
+            parts.append("\n")
+            self._shown = ""
+        if pending != self._shown:
+            parts.append(self._delta(pending))
+            self._shown = pending
+        self._write("".join(parts))
+
+    def finish(self) -> None:
+        """Terminate a trailing partial line so nothing is glued onto it."""
+        if self._shown:
+            self._write("\n")
+            self._shown = ""
+
+    def _delta(self, line: str) -> str:
+        if not self._shown:
+            return line
+        if line.startswith(self._shown):
+            return line[len(self._shown):]
+        # The line was redrawn over text the sink already holds. A carriage
+        # return says that in the terminal's own vocabulary and keeps the
+        # newest state last, which is the part a tail actually reads.
+        return "\r" + line
+
+    def _write(self, text: str) -> None:
+        if not text:
+            return
+        self._sink.write(text)
+        self._sink.flush()
+
+
+def _stream_job_output(log_path: str, offset: int, stream) -> int:
+    """Feed new out.log bytes to `stream` — never stdout, the JSON-RPC wire.
+
+    Read as raw bytes and decoded by the stream, which is the only thing that
+    knows where the previous read stopped: a partial UTF-8 sequence at a
     chunk boundary must not be mangled.
     """
     try:
@@ -778,8 +1096,7 @@ def _stream_job_output(log_path: str, offset: int) -> int:
     except OSError:
         return offset
     if chunk:
-        sys.stderr.buffer.write(chunk)
-        sys.stderr.buffer.flush()
+        stream.feed(chunk)
     return offset + len(chunk)
 
 
@@ -905,12 +1222,13 @@ def _call_run_job(arguments: dict) -> dict:
         return _job_error(f"Could not start job '{job}': {exc}", job)
 
     log_path = _job_file(job_dir, _JOB_LOG)
+    stream = _LiveStream(sys.stderr)
     sys.stderr.write(f"[job {job}] started: {command}\n")
     sys.stderr.flush()
     offset = 0
     started = time.monotonic()
     while True:
-        offset = _stream_job_output(log_path, offset)
+        offset = _stream_job_output(log_path, offset, stream)
         state, code = _job_state(job_dir)
         if state != "running":
             break
@@ -919,8 +1237,9 @@ def _call_run_job(arguments: dict) -> dict:
             state, code = "timeout", None
             break
         time.sleep(0.1)
-    _stream_job_output(log_path, offset)
-    transcript = _read_job_log(job_dir)
+    _stream_job_output(log_path, offset, stream)
+    stream.finish()
+    transcript = _job_transcript(job_dir, job)
 
     if state == "exited":
         return _job_response(
@@ -1021,6 +1340,12 @@ def _call_read_output(arguments: dict) -> dict:
     invalid = _job_name_error(job)
     if invalid is not None:
         return _job_error(invalid)
+    tail, bad_tail = _optional_count(arguments, "tail")
+    if bad_tail is not None:
+        return _job_error(bad_tail, job)
+    offset, bad_offset = _optional_count(arguments, "offset")
+    if bad_offset is not None:
+        return _job_error(bad_offset, job)
     try:
         root = _ensure_jobs_root()
     except (OSError, RuntimeError) as exc:
@@ -1031,11 +1356,16 @@ def _call_read_output(arguments: dict) -> dict:
             f"Unknown job '{job}' — no such job exists (run_job starts one)", job
         )
     state, code = _job_state(job_dir)
+    text = _sterilize(_read_job_log(job_dir))
+    start, chunk = _output_window(text, offset, tail)
     payload = {
         "success": True,
         "job": job,
         "state": state,
-        "output": _read_job_log(job_dir),
+        "output": chunk,
+        "output_offset": start,
+        "output_length": len(chunk),
+        "total_length": len(text),
     }
     if state == "exited":
         payload["exit_code"] = code

@@ -40,6 +40,14 @@ command, real Unix sockets, real signals.
      and `suggestedRemindAfter` on the run_job tool entry only, agreeing
      across the two manifests, with the tool descriptions telling a caller to
      set remind_after even if it never reads the fields.
+  9. Output is sterilized at read time and bounded (issue #69): a carriage-
+     return progress bar renders as its final visible state, ANSI and control
+     noise is gone, runs of identical lines fold into a count — while out.log
+     on disk stays byte-exact, so nothing is destroyed. read_output's
+     tail/offset window clamps instead of erroring, run_job's transcript is
+     capped with a truncation marker naming the read_output call that
+     fetches the omitted head, and the live stderr stream gets the same
+     treatment (it is the same flood one hop later).
 
 Offline, stdlib only.
 
@@ -512,6 +520,14 @@ JOB_FUNCTION_HEADERS = [
     "def _pid_alive(",
     "def _job_state(",
     "def _read_job_log(",
+    "class _TerminalLines:",
+    "def _render_lines(",
+    "def _collapse_repeats(",
+    "def _sterilize(",
+    "def _output_window(",
+    "def _optional_count(",
+    "def _job_transcript(",
+    "class _LiveStream:",
     "def _holder_relay(",
     "def _holder_main(",
     "def _spawn_holder(",
@@ -648,6 +664,314 @@ def manifest_blocking_tests():
 
 
 # ---------------------------------------------------------------------------
+# 9a: sterilization, as a pure function on hand-built terminal output
+# ---------------------------------------------------------------------------
+
+# Each case is (label, raw bytes a command wrote to its PTY, what a terminal
+# would have shown). The overwrite cases are the load-bearing ones: a bare
+# carriage return moves the cursor and nothing more, so a short redraw leaves
+# the tail of a longer line visible — which is exactly what a terminal shows —
+# and only an explicit erase wipes it.
+STERILIZE_CASES = [
+    ("CRLF normalizes to LF", "a\r\nb\r\n", "a\nb\n"),
+    ("a redraw renders as its final visible state", "10%\r20%\r100% done\n", "100% done\n"),
+    (
+        "a SHORT redraw does not erase the longer line under it",
+        "downloading big-file.tar\rdone\n",
+        "doneloading big-file.tar\n",
+    ),
+    (
+        "...unless the program clears to end of line",
+        "downloading big-file.tar\rdone\x1b[K\n",
+        "done\n",
+    ),
+    ("erase-whole-line drops what came before it", "junk\x1b[2K\rfresh\n", "fresh\n"),
+    ("SGR colour is stripped", "\x1b[1;32mOK\x1b[0m\n", "OK\n"),
+    ("an OSC title sequence is stripped", "\x1b]0;my title\x07hello\n", "hello\n"),
+    ("BEL is dropped and backspace erases", "abc\x07\bX\n", "abX\n"),
+    ("cursor-left is honoured like a backspace", "abcdef\x1b[3DXYZ\n", "abcXYZ\n"),
+    ("column-absolute is honoured", "abcdef\x1b[1GZ\n", "Zbcdef\n"),
+    (
+        "a trailing prompt survives verbatim",
+        "Setting up\r\nContinue? [Y/n] ",
+        "Setting up\nContinue? [Y/n] ",
+    ),
+    ("empty output stays empty", "", ""),
+    ("a log with no trailing newline keeps its last line", "one\ntwo", "one\ntwo"),
+    ("a run of three identical lines is left alone", "x\nx\nx\ny\n", "x\nx\nx\ny\n"),
+    (
+        "a longer run folds into the line plus a count",
+        "x\nx\nx\nx\ny\n",
+        "x\n[jarvis-shell] previous line repeated 3 more times\ny\n",
+    ),
+]
+
+
+def load_server_module(path, name):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(name, str(path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def sterilize_unit_tests():
+    print("  sterilize_unit")
+    user = load_server_module(USER_SERVER, "shell_user_sterilize")
+    system = load_server_module(SYSTEM_SERVER, "shell_system_sterilize")
+
+    for label, raw, expected in STERILIZE_CASES:
+        check(user._sterilize(raw) == expected, label)
+        check(user._sterilize(raw) == system._sterilize(raw), f"both servers agree: {label}")
+
+    flood = "".join(f"[{'#' * (i % 40):<40}] {i}%\r" for i in range(5000)) + "ready\x1b[K\n"
+    rendered = user._sterilize(flood)
+    check(rendered == "ready\n", "5000 carriage-return redraws collapse to the final line")
+    check(len(flood) > 200 * len(rendered), "the collapse is the difference between 235 KB and a line")
+
+    repeated = "retry\n" * 1000 + "done\n"
+    rendered = user._sterilize(repeated)
+    check(
+        rendered == "retry\n[jarvis-shell] previous line repeated 999 more times\ndone\n",
+        "1000 identical lines fold into one line plus a count",
+    )
+
+    # An unterminated OSC has no terminator to wait for; without a bound the
+    # renderer would swallow the rest of the log looking for one.
+    rendered = user._sterilize("\x1b]0;" + "A" * 5000 + "\nreal output\n")
+    check(rendered.endswith("real output\n"), "an unterminated escape cannot swallow the log")
+
+    # The renderer feeds the live stream too, where a chunk boundary lands
+    # wherever the reader stopped — inside an escape, or between CR and LF.
+    for _label, raw, expected in STERILIZE_CASES:
+        renderer = user._TerminalLines()
+        completed = []
+        pending = ""
+        for ch in raw:
+            done, pending = renderer.feed(ch)
+            completed.extend(done)
+        piecemeal = "".join(line + "\n" for line in user._collapse_repeats(completed)) + pending
+        check(piecemeal == expected, f"one character at a time renders the same: {_label}")
+
+    windows = [
+        ((None, None), (0, "0123456789")),
+        ((None, 3), (7, "789")),
+        ((2, None), (2, "23456789")),
+        ((2, 3), (2, "234")),
+        ((99, 3), (10, "")),
+        ((None, 99), (0, "0123456789")),
+        ((None, 0), (10, "")),
+    ]
+    for (offset, tail), expected in windows:
+        got = user._output_window("0123456789", offset, tail)
+        check(got == expected, f"_output_window(offset={offset}, tail={tail}) == {expected}")
+    check(user._output_window("", None, 5) == (0, ""), "a window over empty output clamps to empty")
+
+    for name in ("_STERILIZE_TAG", "_LOG_REPEAT_RUN_MIN", "_TRANSCRIPT_MAX_CHARS", "_ESC_MAX_LEN"):
+        check(
+            getattr(user, name) == getattr(system, name),
+            f"both servers share the same {name}",
+        )
+    check(
+        isinstance(user._TRANSCRIPT_MAX_CHARS, int) and user._TRANSCRIPT_MAX_CHARS > 0,
+        "the transcript cap is a positive number of characters",
+    )
+
+
+# ---------------------------------------------------------------------------
+# 9b: the real server — sterilized transcript, byte-exact log, tail/offset
+# ---------------------------------------------------------------------------
+
+# Written to a file and run, rather than squeezed through `sh -c`: the point is
+# the exact bytes reaching the PTY, and quoting them twice invites a typo that
+# would silently weaken the test.
+NOISY_SCRIPT = r"""
+import sys
+w = sys.stdout.write
+w('\x1b]0;build\x07')
+for i in range(0, 101, 10):
+    w('downloading pkg [%3d%%]\r' % i)
+w('\rdone\x1b[K\n')
+w('fetching big-file.tar\rgot\n')
+w('\x1b[1;32mOK\x1b[0m\n')
+for _ in range(50):
+    w('retrying...\n')
+w('finished\a\n')
+sys.stdout.flush()
+"""
+
+BULK_SCRIPT = r"""
+import sys
+for i in range(4000):
+    sys.stdout.write('line %05d padding padding padding\n' % i)
+sys.stdout.flush()
+"""
+
+
+def write_script(root, name, body):
+    path = pathlib.Path(root) / name
+    path.write_text(body)
+    return f"{shlex.quote(sys.executable)} {shlex.quote(str(path))}"
+
+
+def sterilize_job_tests(env, root):
+    print("  sterilized_transcript")
+    srv = Server(env)
+    srv.initialize()
+    command = write_script(root, "noisy.py", NOISY_SCRIPT)
+    is_err, payload = srv.call(1, "run_job", {"command": command, "job": "noisy"}, timeout=60)
+    transcript = payload.get("transcript", "")
+    check(not is_err and payload.get("exit_code") == 0, "the noisy job ran to completion")
+    check("\x1b" not in transcript, "no escape sequence survives into the transcript")
+    check("\x07" not in transcript, "no BEL survives into the transcript")
+    check("\r" not in transcript, "no carriage return survives into the transcript")
+    check("done\n" in transcript, "the cleared progress line renders as its final state")
+    check("[ 50%]" not in transcript, "no intermediate progress frame is kept")
+    check(
+        "gotching big-file.tar\n" in transcript,
+        "an UNCLEARED short redraw leaves the tail of the line under it",
+    )
+    check("OK\n" in transcript, "the colour-wrapped line keeps its text")
+    check(transcript.count("retrying...") == 1, "the repeated line appears once")
+    check(
+        "previous line repeated 49 more times" in transcript,
+        "the repeat count says how many were folded",
+    )
+    check(transcript.rstrip("\n").endswith("finished"), "the last line is intact")
+
+    # Sterilization is a READ-time rendering: the log on disk is the evidence
+    # and must still hold every byte the command wrote.
+    raw = (pathlib.Path(root) / "jarvis-shell" / "noisy" / "out.log").read_bytes()
+    check(b"\x1b]0;build\x07" in raw, "out.log still holds the raw OSC sequence")
+    check(b"\x1b[1;32m" in raw, "out.log still holds the raw colour escape")
+    check(raw.count(b"\r") > 10, "out.log still holds every carriage return")
+    check(raw.count(b"retrying...") == 50, "out.log still holds all 50 repeated lines")
+    check(len(raw) > 2 * len(transcript), "the transcript is a fraction of the raw log")
+
+    print("  read_output_window")
+    is_err, whole = srv.call(2, "read_output", {"job": "noisy"})
+    total = whole.get("total_length")
+    check(not is_err and whole.get("output") == transcript, "a whole read matches the transcript")
+    check(whole.get("output_offset") == 0, "a whole read starts at offset 0")
+    check(whole.get("output_length") == total, "a whole read returns every character")
+
+    is_err, tail = srv.call(3, "read_output", {"job": "noisy", "tail": 20})
+    check(not is_err and tail.get("output") == transcript[-20:], "tail returns the LAST characters")
+    check(tail.get("output_offset") == total - 20, "tail reports where the window starts")
+    check(tail.get("total_length") == total, "tail still reports the full length")
+
+    is_err, clamped = srv.call(4, "read_output", {"job": "noisy", "tail": total * 10})
+    check(not is_err and clamped.get("output") == transcript, "an oversized tail clamps to the whole output")
+
+    is_err, offset = srv.call(5, "read_output", {"job": "noisy", "offset": 10})
+    check(not is_err and offset.get("output") == transcript[10:], "offset alone reads through to the end")
+
+    is_err, window = srv.call(6, "read_output", {"job": "noisy", "offset": 10, "tail": 25})
+    check(not is_err and window.get("output") == transcript[10:35], "offset + tail is a window of that size")
+    check(window.get("output_offset") == 10, "the window reports its own start")
+
+    is_err, past = srv.call(7, "read_output", {"job": "noisy", "offset": total * 10})
+    check(not is_err and past.get("output") == "", "an offset past the end clamps to empty")
+    check(past.get("output_offset") == total, "a clamped offset reports the end")
+
+    is_err, zero = srv.call(8, "read_output", {"job": "noisy", "tail": 0})
+    check(not is_err and zero.get("output") == "", "tail 0 returns nothing and is not an error")
+
+    for bad, label in (("12", "a string"), (-5, "a negative"), (1.5, "a fraction"), (True, "a bool")):
+        is_err, payload = srv.call(9, "read_output", {"job": "noisy", "tail": bad})
+        check(is_err, f"{label} tail is refused")
+        check("tail" in payload.get("error", ""), f"{label} tail error names the argument")
+    srv.close()
+
+    print("  transcript_cap")
+    srv = Server(env)
+    srv.initialize()
+    cap = load_server_module(USER_SERVER, "shell_cap")._TRANSCRIPT_MAX_CHARS
+    command = write_script(root, "bulk.py", BULK_SCRIPT)
+    is_err, payload = srv.call(1, "run_job", {"command": command, "job": "bulk"}, timeout=120)
+    transcript = payload.get("transcript", "")
+    check(not is_err and payload.get("exit_code") == 0, "the bulk job ran to completion")
+    check("TRANSCRIPT TRUNCATED" in transcript, "an over-cap transcript carries a truncation marker")
+    check(transcript.startswith("[jarvis-shell] TRANSCRIPT TRUNCATED"), "the marker is the first thing read")
+    check("read_output" in transcript, "the marker names the tool that fetches the rest")
+    check('"offset"' in transcript, "the marker names the argument that fetches the rest")
+
+    is_err, whole = srv.call(2, "read_output", {"job": "bulk"})
+    full = whole.get("output", "")
+    check(not is_err and len(full) > cap, "the whole output is still readable through read_output")
+    check(transcript.endswith(full[-cap:]), "the transcript kept the LAST cap characters")
+    check(
+        len(transcript) - len(full[-cap:]) == len(transcript) - cap,
+        "nothing beyond the marker is added to the capped tail",
+    )
+    check(str(len(full)) in transcript, "the marker says how many characters there were")
+
+    omitted = len(full) - cap
+    is_err, head = srv.call(3, "read_output", {"job": "bulk", "offset": 0, "tail": cap})
+    check(not is_err and head.get("output") == full[:cap], "the marker's recipe fetches the omitted head")
+    check(str(omitted) in transcript, "the marker says how many characters were omitted")
+    srv.close()
+
+
+# ---------------------------------------------------------------------------
+# 9c: the live stderr stream is sterilized too
+# ---------------------------------------------------------------------------
+
+LIVE_SCRIPT = r"""
+import sys, time
+w = sys.stdout.write
+for i in range(2000):
+    w('\x1b[1;36m[%-40s]\x1b[0m %d%%\r' % ('#' * (i % 40), i % 101))
+    if i % 500 == 0:
+        sys.stdout.flush()
+        time.sleep(0.15)
+sys.stdout.flush()
+w('\ndownload complete\n')
+sys.stdout.flush()
+answer = input('Proceed with install? [Y/n] ')
+print('answered ' + answer.strip())
+"""
+
+
+def live_stream_tests(env, root):
+    print("  live_stream_sterilized")
+    first = Server(env)
+    first.initialize()
+    command = write_script(root, "live.py", LIVE_SCRIPT)
+    first.send_call(2, "run_job", {"command": command, "job": "flood"})
+
+    seen = wait_until(
+        lambda: b"Proceed with install? [Y/n]" in bytes(first.stderr_buf), timeout=60
+    )
+    check(seen, "the prompt reaches the live stream despite the flood ahead of it")
+    check(2 not in first.responses, "run_job is still blocked on the prompt")
+    streamed = first.stderr_text()
+    check("\x1b" not in streamed, "no escape sequence reaches the live stream")
+    check("download complete" in streamed, "ordinary lines still stream through verbatim")
+
+    second = Server(env)
+    second.initialize()
+    is_err, _payload = second.call(1, "send_input", {"job": "flood", "text": "Y\n"})
+    check(not is_err, "the flooded job still answers send_input")
+    second.close()
+
+    msg = first.wait(2, timeout=60)
+    payload = json.loads(msg["result"]["content"][0]["text"])
+    check(payload.get("exit_code") == 0, "the flooded job exits cleanly once answered")
+    check("answered Y" in payload.get("transcript", ""), "the answer took effect")
+
+    raw = (pathlib.Path(root) / "jarvis-shell" / "flood" / "out.log").read_bytes()
+    streamed = first.stderr_text()
+    check(len(streamed) * 4 < len(raw), "the live stream is a small fraction of the raw log")
+    check(
+        streamed.count("Proceed with install?") == 1,
+        "the prompt is not re-sent on every poll",
+    )
+    first.close()
+
+
+# ---------------------------------------------------------------------------
 
 def cleanup_jobs(root):
     """Best-effort teardown of any holder a failed test left running."""
@@ -681,6 +1005,9 @@ def main():
         spawn_timeout_tests(root)
         identity_tests(env)
         manifest_blocking_tests()
+        sterilize_unit_tests()
+        sterilize_job_tests(env, root)
+        live_stream_tests(env, root)
     finally:
         cleanup_jobs(root)
         shutil.rmtree(root, ignore_errors=True)
