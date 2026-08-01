@@ -328,6 +328,13 @@ mid-run, and how quickly does a stall need noticing? A tool whose whole purpose 
 interactive work wants a shorter interval than one that merely *might* prompt
 after a long silent phase.
 
+**Where a blocking tool comes from.** The usual reason a tool parks is that it is
+holding an interactive process open so a *later* tool call can answer it — the
+job pattern, since a stdio server gets a fresh process per call and cannot keep
+the process in memory. `MCP-REGISTRY-GUIDE.md` ("The Job Pattern", and
+"Interactive Tools: Closed stdin" for the non-blocking half) is the worked
+version; these two manifest keys are what it declares.
+
 ---
 
 ## Source
@@ -467,6 +474,12 @@ server process is reused across a series of calls so the in-process state
 persists. Stateless servers ignore sessions entirely and always run one-shot.
 Declaring `stateful` never changes one-shot behavior; it only advertises that
 the server *can* be driven session-scoped.
+
+Sessions are **user scope only** — dmcp refuses `--session` for a system-scope
+server, so an elevated server never becomes a standing capability. A server that
+must keep something alive across calls without a session (or at system scope)
+cannot hold it in memory at all: the handle has to live on the filesystem, which
+is the job pattern in `MCP-REGISTRY-GUIDE.md`.
 
 ---
 

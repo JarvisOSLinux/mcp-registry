@@ -184,7 +184,7 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 | `setupScriptWindows`    | string | PowerShell setup script used on Windows hosts instead of `setupScript`. For local servers the value must be `"setup.ps1"`. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
-| `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls. Absent/`false` = stateless. |
+| `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls, which are **user scope only**. Absent/`false` = stateless — every call is a fresh process, see [stdin, stdout, and the Process Lifecycle](#stdin-stdout-and-the-process-lifecycle). |
 | `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
 
 ### Platforms
@@ -279,6 +279,161 @@ the tool's normal quiet stretches run.
 
 Any server author may use both fields — they are a general manifest facility, not
 a convention private to any one server.
+
+#### Interactive Tools: Closed stdin
+
+A tool that wraps another program eventually wraps one that stops and asks a
+question — a package manager's `[Y/n]`, an installer with no `-y`, a host-key
+prompt, `fdisk`. Two shapes handle that, and which one you need depends on
+whether the question has to be *answered* or merely *reported*. This section is
+the reporting shape; [The Job Pattern](#the-job-pattern) below is the answering
+one.
+
+**Spawn every child with its stdin closed.** A stdio server's own stdin is the
+JSON-RPC channel (see
+[stdin, stdout, and the Process Lifecycle](#stdin-stdout-and-the-process-lifecycle)),
+so a child that inherits it is reading the protocol wire. With stdin on
+`/dev/null` a command that reads it gets immediate EOF instead: it aborts, takes
+its default, or silently does nothing — in milliseconds, rather than hanging
+forever on input that will never arrive.
+
+All three outcomes look like an ordinary run from the outside, and that is the
+part worth reporting. Inspect the **tail** of the finished command's combined
+output; when its last line still holds an unanswered prompt, attach a purely
+additive object beside the ordinary result. The first-party shell servers call it
+`needs_input`:
+
+```json
+{
+  "success": false,
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": ":: Proceed with installation? [Y/n] ",
+  "needs_input": {
+    "prompted": true,
+    "prompt": ":: Proceed with installation? [Y/n]",
+    "hint": "The command asked for input; stdin is closed, so its default was used (or it aborted). Re-run with the tool's non-interactive flag (e.g. -y / --yes / --noconfirm) to choose explicitly."
+  }
+}
+```
+
+- **Additive, never a verdict.** The report never flips `success` or `exit_code`.
+  It says what the output shows; the exit code still says what the command did.
+- **Key on the shape of the last line, not on the exit code.** A `[Y/n]`-style
+  confirmation, a bare `…?`, a `password:` / `passphrase:` request. Shape catches
+  the abort (exit 1), the silent no-op (exit 0) and the took-a-default (exit 0)
+  alike, which a status check cannot. Matching only the *last* line is what keeps
+  a `[Y/n]` printed mid-output — inside a package list, a changelog — from
+  reading as a live prompt.
+- **A credential prompt is its own case.** Give it a distinct hint that forbids a
+  blind re-run: a password or passphrase is the credential boundary, and a human
+  (or a configured non-interactive credential source) has to supply it.
+- **This is a report, not a dialogue.** Nothing is held, nothing waits. The
+  caller surfaces the prompt and re-runs non-interactively.
+
+#### The Job Pattern
+
+Some work cannot be made non-interactive, because the questions only appear as
+the work unfolds: a partitioning wizard, `mysql_secure_installation`, a REPL. No
+argument supplied up front answers a sequence nobody has seen yet.
+
+The constraint that shapes the answer is the **stdio lifecycle**: dmcp is
+one-shot by default — a fresh server process per tool call, spawned, called once,
+killed. So a tool call cannot both wait on a prompt and receive the answer: the
+call carrying the answer arrives at a *different process*, and everything the
+first process held in memory is gone. In-process state cannot bridge that gap.
+**The handle has to be on the filesystem** — a directory the next process finds
+by name. That is true of any server wrapping an interactive process, whatever it
+wraps; it is not a quirk of shells.
+
+The shape, as the first-party shell servers implement it: four tools over one
+named job.
+
+| Tool | Role |
+|------|------|
+| `run_job` | Starts `command` under a real PTY as the named job and **blocks** until the job exits, streaming the job's output to the server's stderr while it waits. Returns the transcript, exit code, and job name. Declared `blocking: true` with `suggestedRemindAfter: 30`. |
+| `send_input` | Writes `text` verbatim to the running job's terminal (the caller supplies any trailing newline) and returns immediately. Called from a *later, separate* tool call, while `run_job` is still parked. |
+| `read_output` | The job's output so far plus its running/exited state, with optional `tail` / `offset` windows and `output_offset` / `output_length` / `total_length` so a long log can be walked. |
+| `kill_job` | SIGTERM then SIGKILL to the job's whole process group, which also unblocks the pending `run_job`. |
+
+The loop a consumer runs: dispatch `run_job` as a concurrent task **with a
+reminder**; when that reminder (or a status tail) shows the command waiting on
+input, call `send_input` with exactly what the output asked for.
+
+One directory per job, under a per-user root:
+
+```
+$XDG_RUNTIME_DIR/<server>/       0700, refused unless owned by this uid
+                                 (fallback: /tmp/<server>-<uid>)
+  <job>/                         0700, one directory per job name
+    out.log                      every byte the command wrote to the PTY
+    in.sock                      0600 socket; the holder relays it into the PTY master
+    status                       exit code, written atomically — the "finished" signal
+    holder.pid, child.pid        liveness, and the process group to signal
+```
+
+Rules worth copying, each one earned:
+
+- **A PTY, not pipes.** Many programs only prompt when they believe a terminal is
+  attached, and the prompt is the thing this pattern exists to surface.
+- **The holder must not be the server's child.** Detach it — double `fork` plus
+  `setsid` — or it dies with the tool call that started it. Put its own stdin,
+  stdout and stderr on `/dev/null`: it was forked from a process whose stdout is
+  the protocol wire.
+- **A job name is a path component, not a path.** Validate against a strict
+  character set and reject `.` and `..` explicitly — those are navigation, not
+  names. In Python, anchor with `\Z`: `$` also matches before a trailing newline,
+  which would admit `evil\n` and slip `..\n` past a dot check.
+- **Write the exit code atomically** (temporary file, then rename over the
+  target). It doubles as the "job finished" signal, so a reader must never
+  observe half of it.
+- **Signal the command's own session, not just its leader**, so everything it
+  spawned goes with it — while leaving the holder alive to reap the child and
+  record the code.
+- **Sweep on startup.** A job directory with no recorded exit code whose holder is
+  dead is a crashed holder's residue; a finished one past a TTL has had its day.
+  Signal the recorded process group *before* removing the directory: that file is
+  the last handle to a command that may still be running, and deleting it turns a
+  survivor into a runaway nothing can ever address again.
+- **Declare it.** The blocking tool carries `blocking: true` and a
+  `suggestedRemindAfter` — see [Blocking Tools](#blocking-tools). A job model
+  whose blocking call is dispatched with no reminder leaves a human sitting at a
+  prompt nobody reads.
+- **Say so where the host cannot.** The pattern needs a Unix PTY and Unix
+  sockets. On a host with neither, the job tools should return a legible
+  "unsupported" error naming the non-interactive tool to use instead, not an
+  import failure.
+
+**What consumers get back: sterilized output.** Under a PTY, output is not text —
+it is a recording of an animation. A progress bar redraws one line thousands of
+times, and every redraw carries its own colour and cursor escapes. Replaying that
+spends a model's context on frames nobody watched. So job output is **rendered at
+read time, never at write time**: `out.log` keeps every byte the command wrote —
+nothing is destroyed, and a human can always go back to the file — while
+`run_job`'s transcript and `read_output` return the rendering. A consumer of this
+pattern can expect:
+
+- Carriage-return redraws collapsed to each line's final visible state, with
+  erase-in-line honoured — the difference between `done` and
+  `doneloading big-file.tar`. Inventing text the command never displayed is the
+  failure mode being avoided.
+- Colour, title-setting and cursor escapes removed; horizontal cursor motion and
+  backspace honoured, since those decide what the line says.
+- A run of identical lines folded into the line plus a count.
+- **The trailing line untouched** — not folded, not trimmed, not reordered. An
+  unanswered prompt has no newline after it, so it *is* the trailing line, and a
+  renderer able to hide it would defeat the model it serves.
+
+Bound every hop that ends in a context window. The transcript `run_job` returns
+is a tool result spent, in full, out of a model's budget, so it is capped at its
+**tail** — the exit state, the error and the unanswered question all live at the
+end — and opens with a marker naming the exact `read_output` call, offset
+included, that fetches the omitted head. The live stderr stream gets the same
+renderer incrementally, so an escape sequence split across two reads is held
+rather than mangled, and cursor motion into cells nobody wrote stops at a right
+margin: `ESC[200000000C` is a dozen bytes a command may choose to write, and
+materializing that column as padding would evict every other line from the ring a
+reminder reads.
 
 ### Setup Script
 
@@ -378,6 +533,41 @@ Runs as a local process. The `command` and `args` are executed from the project 
 | `args`        | array  | Arguments, relative to project root.          |
 | `description` | string | Optional description of this entrypoint.       |
 | `platforms`   | array  | Optional. Hosts this entrypoint is for. See Per-Transport Platforms below. |
+
+#### stdin, stdout, and the Process Lifecycle
+
+A stdio server does not merely *use* stdin and stdout: for the life of the
+process they **are** the MCP wire. dmcp writes JSON-RPC requests to the process's
+stdin and reads responses from its stdout. Two rules follow, and both bite the
+first time a tool spawns a child process:
+
+- **Never let a child inherit stdin.** Python's
+  `subprocess.run(..., capture_output=True)` redirects stdout and stderr and
+  leaves stdin inherited — so a child that reads stdin is reading the protocol
+  channel. It blocks forever on input that channel will never carry, and it can
+  swallow a request that arrives mid-run, eating the very status or kill call
+  meant to rescue it. Pass `stdin=subprocess.DEVNULL`, or your language's
+  equivalent. A command fed a script *on* stdin is already safe: it hits EOF on
+  its own. What to do about the prompt that then goes unanswered is
+  [Interactive Tools: Closed stdin](#interactive-tools-closed-stdin).
+- **Write nothing but JSON-RPC to stdout.** Diagnostics, progress, and any live
+  output belong on stderr or in a file; one stray byte on stdout corrupts the
+  stream. stderr is the useful channel here — dmcp relays a server's stderr
+  onward *while the call is still running*, which is how a caller sees a
+  long-running tool's output before it returns.
+
+**Lifecycle: one process per tool call.** dmcp is one-shot by default — it
+spawns the server, makes the call, and kills it. Nothing a server holds in memory
+survives to the next tool call, and that call will be answered by a different
+process. `stateful: true` plus `dmcp call --session <id>` is the exception,
+keeping one process alive across a series of calls, and it is **user-scope only**
+(a system-scope server is refused a session, so an elevated server cannot become
+a standing capability).
+
+Anything that must outlive a single call therefore has to leave its handle on the
+filesystem. That is the constraint behind [The Job Pattern](#the-job-pattern),
+which is how a tool starts a program that asks questions and lets a *later* call
+answer them.
 
 ### sse (Server-Sent Events)
 
