@@ -553,10 +553,15 @@ def _jobs_unsupported() -> str | None:
 
 
 def _jobs_root() -> str:
+    euid = os.geteuid()
     xdg = os.environ.get("XDG_RUNTIME_DIR")
     if xdg and os.path.isdir(xdg):
-        return os.path.join(xdg, "jarvis-shell")
-    return os.path.join(tempfile.gettempdir(), f"jarvis-shell-{os.getuid()}")
+        try:
+            if os.stat(xdg).st_uid == euid:
+                return os.path.join(xdg, "jarvis-shell")
+        except OSError:
+            pass
+    return os.path.join(tempfile.gettempdir(), f"jarvis-shell-{euid}")
 
 
 def _ensure_jobs_root() -> str:
@@ -576,9 +581,9 @@ def _ensure_jobs_root() -> str:
     st = os.lstat(root)
     if not stat.S_ISDIR(st.st_mode):
         raise RuntimeError(f"refusing to use {root}: not a directory")
-    if st.st_uid != os.getuid():
+    if st.st_uid != os.geteuid():
         raise RuntimeError(
-            f"refusing to use {root}: owned by uid {st.st_uid}, not {os.getuid()}"
+            f"refusing to use {root}: owned by uid {st.st_uid}, not {os.geteuid()}"
         )
     os.chmod(root, 0o700)
     return root
@@ -1465,7 +1470,7 @@ def _sweep_stale_jobs() -> None:
         st = os.lstat(root)
     except OSError:
         return
-    if not stat.S_ISDIR(st.st_mode) or st.st_uid != os.getuid():
+    if not stat.S_ISDIR(st.st_mode) or st.st_uid != os.geteuid():
         return
     now = time.time()
     for name in os.listdir(root):
