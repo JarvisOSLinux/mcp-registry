@@ -1079,6 +1079,99 @@ def live_stream_tests(env, root):
 
 
 # ---------------------------------------------------------------------------
+# 10: _jobs_root() falls back to /tmp/jarvis-shell-{euid} without XDG_RUNTIME_DIR
+# ---------------------------------------------------------------------------
+
+def no_xdg_tests():
+    """Verify _jobs_root() uses the /tmp fallback when XDG_RUNTIME_DIR is absent.
+
+    Issue #70: when an elevated process (pkexec/sudo) inherits XDG_RUNTIME_DIR,
+    geteuid() mismatches the dir's uid and _jobs_root() must fall back to
+    /tmp/jarvis-shell-{euid}/. This test covers the simpler shape of that path:
+    XDG_RUNTIME_DIR entirely absent — same fallback branch, no privilege dance needed.
+    """
+    print("  no_xdg_fallback")
+    euid = os.geteuid()
+    tmp_root = pathlib.Path(tempfile.gettempdir()) / f"jarvis-shell-{euid}"
+
+    # Strip XDG_RUNTIME_DIR from the environment the servers inherit.
+    no_xdg_env = {k: v for k, v in os.environ.items() if k != "XDG_RUNTIME_DIR"}
+
+    try:
+        # 1. Quick-exit job: verify it lands in the /tmp fallback root.
+        srv = Server(no_xdg_env)
+        srv.initialize()
+        is_err, payload = srv.call(1, "run_job", {"command": "echo hello", "job": "noxdg-echo"}, timeout=30)
+        check(not is_err, "run_job works without XDG_RUNTIME_DIR")
+        check(payload.get("exit_code") == 0, "the fallback-path job exits cleanly")
+        check("hello" in payload.get("transcript", ""), "transcript carries the output")
+        check((tmp_root / "noxdg-echo").is_dir(), f"job dir created under /tmp fallback ({tmp_root})")
+        srv.close()
+
+        # 2. Interactive job: a second separate-process server must resolve the same
+        #    /tmp/jarvis-shell-{euid}/ path for send_input and read_output.
+        prompt_cmd = (
+            shlex.quote(sys.executable)
+            + """ -c 'x = input("noxdg: "); print("got " + x)'"""
+        )
+        first = Server(no_xdg_env)
+        first.initialize()
+        first.send_call(2, "run_job", {"command": prompt_cmd, "job": "noxdg-prompt"})
+
+        seen = wait_until(lambda: b"noxdg: " in bytes(first.stderr_buf), timeout=30)
+        check(seen, "fallback-path job prompt reaches the live stream")
+        check(2 not in first.responses, "run_job is still blocked on the fallback-path job")
+
+        second = Server(no_xdg_env)
+        second.initialize()
+        is_err, _ = second.call(1, "send_input", {"job": "noxdg-prompt", "text": "hi\n"})
+        check(not is_err, "send_input from a separate process finds the fallback-path job")
+
+        is_err, out = second.call(2, "read_output", {"job": "noxdg-prompt"})
+        check(not is_err, "read_output finds the fallback-path job")
+        second.close()
+
+        msg = first.wait(2, timeout=30)
+        run_payload = json.loads(msg["result"]["content"][0]["text"])
+        check(run_payload.get("exit_code") == 0, "fallback-path interactive job exits cleanly")
+        check("got hi" in run_payload.get("transcript", ""), "transcript carries the answered output")
+        first.close()
+
+        # 3. kill_job: verify it resolves the same fallback path.
+        first3 = Server(no_xdg_env)
+        first3.initialize()
+        first3.send_call(3, "run_job", {"command": "sleep 300", "job": "noxdg-kill"})
+        child_pid_file = tmp_root / "noxdg-kill" / "child.pid"
+        check(wait_until(child_pid_file.exists, timeout=15), "kill-target job dir appears in the /tmp fallback root")
+
+        killer = Server(no_xdg_env)
+        killer.initialize()
+        is_err, _ = killer.call(1, "kill_job", {"job": "noxdg-kill"})
+        check(not is_err, "kill_job from a separate process finds the fallback-path job")
+        killer.close()
+        first3.wait(3, timeout=15)
+        first3.close()
+
+    finally:
+        # Kill any stray holders and remove only the noxdg-* job dirs we created.
+        if tmp_root.is_dir():
+            for job_dir in tmp_root.iterdir():
+                if not job_dir.name.startswith("noxdg-"):
+                    continue
+                for pid_file in ("child.pid", "holder.pid"):
+                    try:
+                        pid = int((job_dir / pid_file).read_text())
+                        os.killpg(pid, signal.SIGKILL)
+                    except (OSError, ValueError):
+                        pass
+                shutil.rmtree(str(job_dir), ignore_errors=True)
+            try:
+                tmp_root.rmdir()  # succeeds only if now empty; leaves it alone otherwise
+            except OSError:
+                pass
+
+
+# ---------------------------------------------------------------------------
 
 def cleanup_jobs(root):
     """Best-effort teardown of any holder a failed test left running."""
@@ -1115,6 +1208,7 @@ def main():
         sterilize_unit_tests()
         sterilize_job_tests(env, root)
         live_stream_tests(env, root)
+        no_xdg_tests()
     finally:
         cleanup_jobs(root)
         shutil.rmtree(root, ignore_errors=True)
