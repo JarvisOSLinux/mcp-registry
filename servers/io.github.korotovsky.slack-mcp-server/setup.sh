@@ -8,31 +8,28 @@ need() {
   }
 }
 
-need node
-need npm
-need git
+need go
 
-node_major="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
-if [ "${node_major:-0}" -lt 18 ]; then
-  echo "Node.js >= 18 is required (found $(node -v))." >&2
+go_major="$(go version | grep -oP 'go\K[0-9]+' | head -1)"
+if [ "${go_major:-0}" -lt 1 ]; then
+  echo "Go 1.21+ is required." >&2
   exit 1
 fi
 
-REPO_DIR="$(dirname "$0")/slack-mcp-server-src"
+# Pre-download and verify the module via Go module proxy + sumdb.
+# Version pinned to v1.3.0 (SHA a079b3cd4d5836d791c942a9fc107987e7865b37).
+echo "Pre-fetching slack-mcp-server@v1.3.0 via Go module proxy (sumdb-verified)."
+GOPATH="$(go env GOPATH)"
+export GOPATH
+go install "github.com/korotovsky/slack-mcp-server/cmd/slack-mcp-server@v1.3.0"
 
-if [ ! -d "$REPO_DIR/.git" ]; then
-  echo "Cloning slack-mcp-server repository."
-  git clone https://github.com/korotovsky/slack-mcp-server.git "$REPO_DIR"
-else
-  echo "Updating slack-mcp-server repository."
-  git -C "$REPO_DIR" pull --ff-only
+BINARY="${GOPATH}/bin/slack-mcp-server"
+if [ ! -f "$BINARY" ]; then
+  echo "Build failed: ${BINARY} not found." >&2
+  exit 1
 fi
 
-cd "$REPO_DIR"
-echo "Installing dependencies and building slack-mcp-server."
-npm install
-npm run build
-
-echo "OK: slack-mcp-server built at $REPO_DIR/dist/index.js"
-echo "Run via: node dist/index.js (from $REPO_DIR)"
-echo "Required env: SLACK_BOT_TOKEN, SLACK_TEAM_ID"
+echo "OK: slack-mcp-server v1.3.0 installed at ${BINARY}"
+echo "Run via: go run github.com/korotovsky/slack-mcp-server/cmd/slack-mcp-server@v1.3.0"
+echo "Required env: at least one of SLACK_MCP_XOXB_TOKEN, SLACK_MCP_XOXP_TOKEN, or SLACK_MCP_XOXC_TOKEN+SLACK_MCP_XOXD_TOKEN"
+echo "Optional env: SLACK_MCP_ADD_MESSAGE_TOOL=1 to enable send_message"

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "7.0.0",
   "scope": "user",
   "platforms": [
     "linux"
@@ -10,14 +10,15 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        "dist/index.js"
+        "ha-mcp-src/dist/index.js"
       ],
       "description": "Home Assistant MCP server (stdio). Requires HA_BASE_URL and HA_TOKEN."
     }
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/homeassistant-ai/ha-mcp.git"
+    "url": "https://github.com/homeassistant-ai/ha-mcp.git",
+    "rev": "1f2bbbc74e81933a39e9c63998d1408f0c198309"
   },
   "tools": [
     {
@@ -30,7 +31,8 @@
     },
     {
       "name": "call_service",
-      "description": "Call a Home Assistant service (e.g. light.turn_on, switch.toggle, climate.set_temperature). Passes through TLA confirmation for actuation."
+      "description": "Call a Home Assistant service (e.g. light.turn_on, switch.toggle, climate.set_temperature). Triggers real home automation actuation — gates through TLA confirmation.",
+      "threat_level": "elevated"
     },
     {
       "name": "list_services",
@@ -46,7 +48,8 @@
     },
     {
       "name": "render_template",
-      "description": "Render a Home Assistant Jinja2 template and return the result."
+      "description": "Render a Home Assistant Jinja2 template and return the result. Template is evaluated server-side with full access to HA state, secrets, and system context.",
+      "threat_level": "dangerous"
     }
   ],
   "configurableProperties": [
@@ -60,7 +63,7 @@
     {
       "key": "HA_TOKEN",
       "label": "Home Assistant Long-Lived Access Token",
-      "description": "Long-lived access token generated from your HA profile (Profile → Security → Long-Lived Access Tokens).",
+      "description": "Long-lived access token generated from your HA profile (Profile → Security → Long-Lived Access Tokens). Warning: HA long-lived tokens grant full HA admin access — there is no scope restriction in the HA token model.",
       "sensitive": true,
       "required": true
     }
@@ -72,10 +75,12 @@
     "checks": [
       "license: MIT (upstream)",
       "source: git clone https://github.com/homeassistant-ai/ha-mcp.git",
+      "rev: 1f2bbbc74e81933a39e9c63998d1408f0c198309 (v7.0.0 tag, post-CVE-2026-32111 fix)",
       "build: npm install && npm run build",
-      "auth: requires HA_BASE_URL + HA_TOKEN long-lived access token"
+      "auth: requires HA_BASE_URL + HA_TOKEN long-lived access token",
+      "CVE-2026-32111: SSRF via ha_url in OAuth DCR mode — fixed in v7.0.0; does not affect primary (pre-configured HA_BASE_URL) deployment"
     ],
-    "notes": "Community-vetted Home Assistant MCP server. Communicates with a local HA instance over the local network — aligned with the local-first thesis. call_service triggers home automation actuators and should gate through TLA confirmation.",
-    "securityNotes": "Outward-facing actuation (lights, locks, climate). call_service tool requires TLA confirmation. HA_TOKEN stored as dmcp secret. Scope the HA token to the minimum required permissions via HA's token system."
+    "notes": "Community Home Assistant MCP server. Communicates with a local HA instance over the local network — aligned with the local-first thesis. call_service triggers home automation actuators and requires TLA confirmation. render_template is rated dangerous: Jinja2 templates execute server-side with access to all HA state, secrets, and system context — a prompt-injected template can exfiltrate secrets or trigger destructive automations.",
+    "securityNotes": "HA long-lived tokens are full-admin — there is no scope restriction in the HA token model. A compromised or stolen HA_TOKEN grants complete Home Assistant control including locks, alarms, and safety systems. Source pinned to v7.0.0 SHA 1f2bbbc74e81933a39e9c63998d1408f0c198309 (fixes CVE-2026-32111 SSRF in OAuth DCR mode). CVE-2026-32111 only affects deployments using the OAuth dynamic client registration flow with attacker-controlled ha_url; primary deployment via pre-configured HA_BASE_URL env var is not affected. HA_TOKEN stored as dmcp secret. Prompt injection risk: HA entity names, automation descriptions, or template results can carry instructions that influence LLM reasoning — treat all HA state as untrusted input."
   }
 }

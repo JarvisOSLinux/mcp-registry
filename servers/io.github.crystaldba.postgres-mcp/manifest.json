@@ -1,5 +1,5 @@
 {
-  "version": "0.3.3",
+  "version": "0.3.0",
   "scope": "user",
   "platforms": [
     "linux"
@@ -10,20 +10,22 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "postgres-mcp",
-        "--access-mode=unrestricted"
+        "postgres-mcp==0.3.0",
+        "--access-mode=restricted"
       ],
-      "description": "PostgreSQL MCP server (stdio via uvx). Requires DATABASE_URI."
+      "description": "PostgreSQL MCP server (stdio via uvx, restricted mode). Requires DATABASE_URI. Restricted mode: SELECT and EXPLAIN only; DDL/DML blocked by pglast AST validation."
     }
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/crystaldba/postgres-mcp.git"
+    "url": "https://github.com/crystaldba/postgres-mcp.git",
+    "rev": "07eb329c8c48e49640e0d1b5b35465d4d024c3ee"
   },
   "tools": [
     {
       "name": "query",
-      "description": "Execute a SQL query against the configured PostgreSQL database."
+      "description": "Execute a SQL query against the configured PostgreSQL database. Restricted to SELECT and EXPLAIN statements in default mode.",
+      "threat_level": "elevated"
     },
     {
       "name": "list_schemas",
@@ -70,10 +72,12 @@
     "checks": [
       "license: Apache-2.0 (upstream)",
       "source: git clone https://github.com/crystaldba/postgres-mcp.git",
-      "install: uvx postgres-mcp (Python package via uv/pip)",
-      "auth: requires DATABASE_URI connection string"
+      "rev: 07eb329c8c48e49640e0d1b5b35465d4d024c3ee (HEAD at review time)",
+      "install: uvx postgres-mcp==0.3.0 (version-pinned Python package via uv/pip)",
+      "auth: requires DATABASE_URI connection string",
+      "access-mode: restricted (SELECT/EXPLAIN only via pglast AST validation)"
     ],
-    "notes": "Community-vetted PostgreSQL MCP server. Defaults to unrestricted mode — configure a read-only database role for production use. Access-mode flag can be set to `restricted` for read-only queries only.",
-    "securityNotes": "Direct database access. Recommend using a read-only PostgreSQL role scoped to the target schema. DATABASE_URI is stored as a dmcp secret and never logged."
+    "notes": "Community PostgreSQL MCP server. Deployed in restricted mode — pglast AST validation allows only SELECT and EXPLAIN statements; DDL/DML blocked at the server layer. Note: COPY statement validation was commented out in the pglast validator as 'will be validated' but is not yet implemented; the DATABASE_URI role is the enforcement backstop.",
+    "securityNotes": "Deployed in restricted access mode (SELECT/EXPLAIN only). Use a read-only PostgreSQL role scoped to the target schema as the primary access control layer — the COPY bypass in pglast restricted mode means the role-level permission is load-bearing. DATABASE_URI is stored as a dmcp secret and never logged. Source pinned to SHA 07eb329c8c48e49640e0d1b5b35465d4d024c3ee to prevent silent supply chain updates. Prompt injection risk: untrusted data in query results can include SQL or natural language that influences subsequent LLM reasoning — treat all query results as untrusted."
   }
 }

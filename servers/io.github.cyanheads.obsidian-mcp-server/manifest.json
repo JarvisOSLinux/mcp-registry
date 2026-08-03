@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "3.2.12",
   "scope": "user",
   "platforms": [
     "linux"
@@ -8,58 +8,122 @@
   "transports": [
     {
       "type": "stdio",
-      "command": "node",
+      "command": "npx",
       "args": [
-        "dist/index.js"
+        "-y",
+        "obsidian-mcp-server@3.2.12"
       ],
-      "description": "Obsidian vault MCP server (stdio). Requires OBSIDIAN_VAULT_PATH."
+      "description": "Obsidian vault MCP server via Local REST API plugin (stdio, version-pinned). Requires OBSIDIAN_API_KEY and the Obsidian Local REST API community plugin running in Obsidian."
     }
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/cyanheads/obsidian-mcp-server.git"
+    "url": "https://github.com/cyanheads/obsidian-mcp-server.git",
+    "rev": "5b3271d35fdef0064b578a52af20aad5f783910d"
   },
   "tools": [
     {
-      "name": "read_note",
-      "description": "Read the full content of a note in the Obsidian vault by path."
+      "name": "obsidian_get_note",
+      "description": "Read a note as raw content, structured form (content + frontmatter + tags + stat), structural document map, or a single section."
     },
     {
-      "name": "write_note",
-      "description": "Create or overwrite a note at a given vault path with new content."
+      "name": "obsidian_list_notes",
+      "description": "List notes and subdirectories under a vault path with optional extension and regex filters."
     },
     {
-      "name": "append_to_note",
-      "description": "Append content to an existing note without overwriting it."
+      "name": "obsidian_list_tags",
+      "description": "List all tags used in the vault with occurrence counts. Not narrowed by OBSIDIAN_READ_PATHS — tag names from outside the read scope can surface."
     },
     {
-      "name": "search_vault",
-      "description": "Full-text search across all notes in the Obsidian vault."
+      "name": "obsidian_search_notes",
+      "description": "Search the vault by text, JSONLogic, or BM25-ranked Omnisearch. Results paginate via opaque cursors."
     },
     {
-      "name": "list_notes",
-      "description": "List notes in the vault, optionally filtered by directory or tag."
+      "name": "obsidian_write_note",
+      "description": "Create a note or replace a single section. With overwrite: true, clobbers an existing file. Refuses whole-file writes to an existing path by default.",
+      "threat_level": "elevated"
     },
     {
-      "name": "get_backlinks",
-      "description": "Get all notes that link to a given note."
+      "name": "obsidian_append_to_note",
+      "description": "Append content to a note. Creates the file if missing (without section). With section, appends to a specific heading or frontmatter field.",
+      "threat_level": "elevated"
     },
     {
-      "name": "get_tags",
-      "description": "Return all tags used in the vault, with occurrence counts."
+      "name": "obsidian_patch_note",
+      "description": "Surgical append/prepend/replace against a heading, block reference, or frontmatter field.",
+      "threat_level": "elevated"
     },
     {
-      "name": "delete_note",
-      "description": "Delete a note from the vault (irreversible — gates through TLA confirmation)."
+      "name": "obsidian_replace_in_note",
+      "description": "Body-wide search-replace inside a single note. Supports literal or regex matching with capture-group replacement.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "obsidian_manage_frontmatter",
+      "description": "Read or write YAML frontmatter fields in a note.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "obsidian_manage_tags",
+      "description": "Add, remove, or rename tags across vault notes.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "obsidian_delete_note",
+      "description": "Delete a note from the vault. Irreversible — gates through TLA confirmation.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "obsidian_open_in_ui",
+      "description": "Open a note in the Obsidian UI (requires Obsidian to be running)."
+    },
+    {
+      "name": "obsidian_list_commands",
+      "description": "List Obsidian command-palette commands. Opt-in: requires OBSIDIAN_ENABLE_COMMANDS=true."
+    },
+    {
+      "name": "obsidian_execute_command",
+      "description": "Execute an Obsidian command-palette command by ID. Opt-in: requires OBSIDIAN_ENABLE_COMMANDS=true. Command behavior is arbitrary — some commands close the vault or delete files.",
+      "threat_level": "dangerous"
     }
   ],
   "configurableProperties": [
     {
-      "key": "OBSIDIAN_VAULT_PATH",
-      "label": "Obsidian Vault Path",
-      "description": "Absolute path to the root directory of the Obsidian vault. Example: /home/user/Notes",
-      "sensitive": false,
+      "key": "OBSIDIAN_API_KEY",
+      "label": "Obsidian Local REST API Key",
+      "description": "API key from the Obsidian Local REST API community plugin (Obsidian → Settings → Local REST API). The plugin must be installed, enabled, and running.",
+      "sensitive": true,
       "required": true
+    },
+    {
+      "key": "OBSIDIAN_READ_ONLY",
+      "label": "Read-Only Mode",
+      "description": "Set to 'true' to disable all write tools and the command palette at startup. Recommended for read-focused workflows.",
+      "sensitive": false,
+      "required": false,
+      "default": "false"
+    },
+    {
+      "key": "OBSIDIAN_READ_PATHS",
+      "label": "Read Path Allowlist",
+      "description": "Comma-separated vault paths the LLM may read from. Default unset = full vault. Example: journal/,projects/",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "OBSIDIAN_WRITE_PATHS",
+      "label": "Write Path Allowlist",
+      "description": "Comma-separated vault paths the LLM may write to. Default unset = full vault. Example: scratch/,inbox/",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "OBSIDIAN_ENABLE_COMMANDS",
+      "label": "Enable Command Palette Tools",
+      "description": "Set to 'true' to enable obsidian_execute_command and obsidian_list_commands. Off by default. Command-palette commands can close the vault, delete files, or trigger arbitrary plugins.",
+      "sensitive": false,
+      "required": false,
+      "default": "false"
     }
   ],
   "trust": {
@@ -69,10 +133,12 @@
     "checks": [
       "license: Apache-2.0 (upstream)",
       "source: git clone https://github.com/cyanheads/obsidian-mcp-server.git",
-      "build: npm install && npm run build",
-      "auth: vault path only — no API key, no network egress"
+      "rev: 5b3271d35fdef0064b578a52af20aad5f783910d (v3.2.12 HEAD at review time)",
+      "install: npx -y obsidian-mcp-server@3.2.12 (version-pinned npm package)",
+      "auth: OBSIDIAN_API_KEY Bearer token to local REST API plugin",
+      "architecture: REST API proxy (HTTPS to localhost Obsidian plugin) — no direct filesystem access"
     ],
-    "notes": "Community Obsidian vault MCP server. Reads/writes local files in vault directory only. No external network calls — purely local file I/O. Suitable for personal knowledge management workflows.",
-    "securityNotes": "Scoped to OBSIDIAN_VAULT_PATH — server cannot traverse outside the vault root. delete_note is irreversible; gates through TLA confirmation. Vault path should not contain secrets."
+    "notes": "Community Obsidian vault MCP server v3.2.12. Architecture changed significantly from v1.x: no longer accesses the vault filesystem directly. All vault operations go through the Obsidian Local REST API community plugin (HTTPS to localhost). Requires the plugin to be installed, enabled, and running in Obsidian. Path-scoping env vars (OBSIDIAN_READ_PATHS, OBSIDIAN_WRITE_PATHS) gate which vault paths each tool can target. OBSIDIAN_READ_ONLY=true disables all write tools at startup. obsidian_execute_command and obsidian_list_commands are off by default (opt-in via OBSIDIAN_ENABLE_COMMANDS).",
+    "securityNotes": "Source pinned to SHA 5b3271d35fdef0064b578a52af20aad5f783910d to prevent silent supply chain updates via npm auto-upgrade. OBSIDIAN_API_KEY stored as dmcp secret. obsidian_delete_note is irreversible — TLA gate mandatory. obsidian_execute_command is opt-in and rated dangerous: command-palette commands can trigger arbitrary Obsidian plugins including file deletion, vault close, and network operations. Recommend OBSIDIAN_READ_ONLY=true for read-focused workflows and explicit OBSIDIAN_WRITE_PATHS for write access rather than full-vault default. Prompt injection risk: vault note contents may contain injected instructions that influence LLM reasoning — treat all note content as untrusted."
   }
 }

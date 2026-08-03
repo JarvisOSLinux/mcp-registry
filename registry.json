@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-08-03T08:38:47Z",
+  "updated": "2026-08-03T09:13:07Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -16324,8 +16324,8 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "1c1f7b7497f03b6f3d09659a23945f51aef3300d94e9b0448182d762749abe9c",
-        "setupScriptSha256": "d6d85601f21fcc8415ce2d6b2d1c09ef773829450051f60c7bf2bd1dafd41fdb"
+        "manifestSha256": "b8b8b1b6c3c73b94f03b1e586a93b3c6fc02184add94452d86686c10562f2885",
+        "setupScriptSha256": "82ab62e5df54a4a2f670b589a64acca512bfb7fd6aadbdc6408592868eff9a2e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.crystaldba.postgres-mcp/manifest.json"
     },
@@ -16353,8 +16353,8 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "6c6ee44536828920b255ce12e0a58231cf340de9811f2a2c812ab4aea5feeb7b",
-        "setupScriptSha256": "5f9a135190c5b4dbfb274d0ce6a8b01c658e4d7845c4473b5518b57a1f34f895"
+        "manifestSha256": "a7e3c53143bb2f3ffef12b64b4abaa4ad51c71c8870c48d23f8e9127bfd0141b",
+        "setupScriptSha256": "fca8ee4b16a22c15690ef6943ad8194d57e545b39c56e99636cde698a43c75d4"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.homeassistant-ai.ha-mcp/manifest.json"
     },
@@ -16382,8 +16382,8 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "3af64857c22100f7ae5d4cab3b47208e265e37034499d93a353a5afb591cf8ec",
-        "setupScriptSha256": "0a93486cdd7244c9a946ae4fa73d5feae96688ad0ae5b7e0c2eaf1d1777cf5ff"
+        "manifestSha256": "40dc3422d7e6b18a4926057ca3352308cbbe2783e61dc2796c71498b9b2b884c",
+        "setupScriptSha256": "5809cfffdb1bc5b31870567f7b9d89d957ca6a8e4bb924c9569ed3869c258c16"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.cyanheads.obsidian-mcp-server/manifest.json"
     },
@@ -16411,8 +16411,8 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "7386354f410f53685eefebafa2857d050a92f44aa02712094d72a215eb01fd1e",
-        "setupScriptSha256": "007342f17600f7abff04bee2385b4ae7e7a7862753e4efb0768467b5d2e265dd"
+        "manifestSha256": "a7d3e7ed9fbe010d4f5ad9a7883701fd23f1566d7e9e5eab449d4092fce51e52",
+        "setupScriptSha256": "16c2c896310838f2361d0c47d27bb3d0d84cbfe2e2d867cbbd81aeaf112c1a7e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.korotovsky.slack-mcp-server/manifest.json"
     }
