@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-08-01T07:22:14Z",
+  "updated": "2026-08-03T09:13:07Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -16299,6 +16299,122 @@
         "setupScriptSha256": "844e8db797b803d74148decdf40ae6b4447359a5e48ba0078743d135643af1af"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.czlonkowski.n8n-mcp/manifest.json"
+    },
+    "io.github.crystaldba.postgres-mcp": {
+      "id": "io.github.crystaldba.postgres-mcp",
+      "name": "PostgreSQL MCP",
+      "summary": "Read and analyze PostgreSQL databases \u2014 queries, schema inspection, index analysis, and query explain plans",
+      "version": "0.3.3",
+      "scope": "user",
+      "homepage": "https://github.com/crystaldba/postgres-mcp",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "postgresql",
+        "database",
+        "sql",
+        "query",
+        "analytics"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "database",
+        "data-analysis"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "b8b8b1b6c3c73b94f03b1e586a93b3c6fc02184add94452d86686c10562f2885",
+        "setupScriptSha256": "82ab62e5df54a4a2f670b589a64acca512bfb7fd6aadbdc6408592868eff9a2e"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.crystaldba.postgres-mcp/manifest.json"
+    },
+    "io.github.homeassistant-ai.ha-mcp": {
+      "id": "io.github.homeassistant-ai.ha-mcp",
+      "name": "Home Assistant MCP",
+      "summary": "Control and query a Home Assistant instance \u2014 read entities, call services, and access automation state",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/homeassistant-ai/ha-mcp",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "home-assistant",
+        "smart-home",
+        "iot",
+        "automation",
+        "hass"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "home-automation",
+        "iot"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "a7e3c53143bb2f3ffef12b64b4abaa4ad51c71c8870c48d23f8e9127bfd0141b",
+        "setupScriptSha256": "fca8ee4b16a22c15690ef6943ad8194d57e545b39c56e99636cde698a43c75d4"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.homeassistant-ai.ha-mcp/manifest.json"
+    },
+    "io.github.cyanheads.obsidian-mcp-server": {
+      "id": "io.github.cyanheads.obsidian-mcp-server",
+      "name": "Obsidian Vault MCP",
+      "summary": "Read, write, and search notes in an Obsidian vault \u2014 local file I/O only, no network egress",
+      "version": "1.3.0",
+      "scope": "user",
+      "homepage": "https://github.com/cyanheads/obsidian-mcp-server",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "obsidian",
+        "notes",
+        "knowledge-base",
+        "markdown",
+        "vault"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "productivity",
+        "knowledge-management"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "40dc3422d7e6b18a4926057ca3352308cbbe2783e61dc2796c71498b9b2b884c",
+        "setupScriptSha256": "5809cfffdb1bc5b31870567f7b9d89d957ca6a8e4bb924c9569ed3869c258c16"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.cyanheads.obsidian-mcp-server/manifest.json"
+    },
+    "io.github.korotovsky.slack-mcp-server": {
+      "id": "io.github.korotovsky.slack-mcp-server",
+      "name": "Slack MCP",
+      "summary": "Read channels and post messages to Slack via bot token \u2014 requires scoped bot OAuth credentials",
+      "version": "0.2.2",
+      "scope": "user",
+      "homepage": "https://github.com/korotovsky/slack-mcp-server",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "slack",
+        "messaging",
+        "team",
+        "channels",
+        "workspace"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "communication",
+        "team-collaboration"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "a7d3e7ed9fbe010d4f5ad9a7883701fd23f1566d7e9e5eab449d4092fce51e52",
+        "setupScriptSha256": "16c2c896310838f2361d0c47d27bb3d0d84cbfe2e2d867cbbd81aeaf112c1a7e"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.korotovsky.slack-mcp-server/manifest.json"
     }
   },
   "embedding_spec": {
