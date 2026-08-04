@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-08-03T09:13:07Z",
+  "updated": "2026-08-04T08:23:25Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -16415,6 +16415,49 @@
         "setupScriptSha256": "16c2c896310838f2361d0c47d27bb3d0d84cbfe2e2d867cbbd81aeaf112c1a7e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.korotovsky.slack-mcp-server/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.computer-use-linux": {
+      "id": "com.github.yakupatahanov.mcp.computer-use-linux",
+      "name": "JARVIS Computer Use \u2014 Linux",
+      "summary": "Local Wayland/KDE Plasma desktop control via AT-SPI2 accessibility (read windows, find and click elements, set text in form fields) and ydotool (keyboard injection, mouse clicks, key sequences). Screenshots via Spectacle or grim. Semantic AT-SPI actions are preferred over raw coordinates; raw input is available for apps with no accessibility tree. All input-injection tools are DANGEROUS-tier and must route through JARVIS TLA confirmation. Screenshot capture is ELEVATED-tier (screen content may include passwords or private data).",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "desktop",
+        "computer-use",
+        "wayland",
+        "kde",
+        "plasma",
+        "gui",
+        "accessibility",
+        "at-spi",
+        "atspi",
+        "input",
+        "keyboard",
+        "mouse",
+        "click",
+        "screenshot",
+        "screen-capture",
+        "ydotool",
+        "automation",
+        "control"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "mcp",
+        "desktop",
+        "computer-use"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "472a577beec02961c92b670925e3175274dd98a906516b2527996f1ebb0622d8",
+        "setupScriptSha256": "2a2033751ed045cc750cbd3601d87eac442d8134d44e00cc17a6642fbcd81c81"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/computer-use-linux/manifest.json"
     }
   },
   "embedding_spec": {
