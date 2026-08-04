@@ -1,0 +1,92 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux",
+    "darwin",
+    "windows"
+  ],
+  "name": "JARVIS ComfyUI — On-Device Image Generation",
+  "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, and returns the output as a base64-encoded PNG — entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
+  "keywords": [
+    "image",
+    "generation",
+    "comfyui",
+    "stable-diffusion",
+    "diffusion",
+    "text-to-image",
+    "creative",
+    "local",
+    "on-device",
+    "gpu",
+    "art",
+    "illustration"
+  ],
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "server.py"
+      ],
+      "description": "JARVIS ComfyUI MCP Server (stdio). Stdlib only — bridges to a local ComfyUI HTTP API."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "path": "servers/comfyui"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    {
+      "name": "generate_image",
+      "description": "Generate an image from a text prompt using a locally running ComfyUI instance. Queues a Stable Diffusion workflow, waits for completion and returns the image as a base64-encoded PNG. Runs entirely on-device — no cloud API, no data leaves the machine.",
+      "blocking": true,
+      "suggestedRemindAfter": 60
+    },
+    {
+      "name": "list_models",
+      "description": "List the model files available in the running ComfyUI instance, grouped by type (checkpoints, loras, vae, etc.). Use to discover valid model filenames for generate_image."
+    },
+    {
+      "name": "get_queue",
+      "description": "Show the current ComfyUI queue: pending and running prompts."
+    },
+    {
+      "name": "interrupt",
+      "description": "Stop the currently running ComfyUI generation."
+    },
+    {
+      "name": "get_history",
+      "description": "Return the most recent generation history from ComfyUI: prompt IDs and output filenames."
+    }
+  ],
+  "configurableProperties": [
+    {
+      "key": "COMFYUI_URL",
+      "label": "ComfyUI Server URL",
+      "description": "Base URL of the running ComfyUI instance. Default http://127.0.0.1:8188. Change only if you started ComfyUI on a different host or port.",
+      "sensitive": false,
+      "required": false,
+      "default": "http://127.0.0.1:8188"
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/comfyui/server.py",
+      "https://github.com/JarvisOSLinux/mcp-registry/issues/38"
+    ],
+    "checks": [
+      "license: same as this registry (GPL-3.0), first-party server",
+      "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/comfyui)",
+      "build: none — Python standard library only (urllib, json, base64); setup.sh installs nothing",
+      "no third-party Python dependencies, no subprocess calls",
+      "network: only the COMFYUI_URL host (127.0.0.1:8188 by default); no other outbound calls",
+      "no filesystem writes — images read into memory and returned as base64; ComfyUI writes its own output_dir"
+    ],
+    "notes": "First-party server. Thin HTTP bridge to a locally running ComfyUI instance. Stdlib only. The server itself is low-risk; the GPU and model resources it drives are the user's own hardware. Generated images are returned as base64 content blocks and not cached by this server.",
+    "securityNotes": "All requests go to COMFYUI_URL — a local endpoint by default. No credentials are required or accepted. Generated images are read into memory, base64-encoded and returned in the MCP response; they are never written to disk by this server (ComfyUI itself writes output_dir). The interrupt tool can abort an in-progress generation, which is useful if the agent queues something unintended. generate_image blocks for up to 10 minutes waiting for completion; the suggestedRemindAfter hint is 60 seconds so the orchestrator can report progress. The COMFYUI_URL config allows targeting a non-local ComfyUI server — if changed to a remote URL, generation prompts and images traverse the network unencrypted unless ComfyUI is behind TLS."
+  }
+}

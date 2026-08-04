@@ -4058,7 +4058,7 @@
     "com.github.yakupatahanov.jarvis-shell-mcp": {
       "id": "com.github.yakupatahanov.jarvis-shell-mcp",
       "name": "JARVIS Shell",
-      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+      "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo — use jarvis-shell-system-mcp for privileged commands.",
       "version": "1.1.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -8907,7 +8907,7 @@
     "com.github.yakupatahanov.mcp.identity-mcp": {
       "id": "com.github.yakupatahanov.mcp.identity-mcp",
       "name": "Identity MCP",
-      "summary": "Every response clearly identifies which server responded \u2014 confirms server discovery, routing, and LLM awareness",
+      "summary": "Every response clearly identifies which server responded — confirms server discovery, routing, and LLM awareness",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -15387,7 +15387,7 @@
     "io.github.microsoft.playwright-mcp": {
       "id": "io.github.microsoft.playwright-mcp",
       "name": "Playwright Browser",
-      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic \u2014 acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
+      "summary": "Interactive browser automation via accessibility-tree snapshots: navigate, click, type, fill forms, take screenshots, manage tabs. Deterministic — acts on the structured a11y tree, not pixel-guessing; headless-capable. Web page content is untrusted input: outputs flow through JARVIS's Cryptographic Boundary Protocol and dangerous actions gate through TLA.",
       "version": "0.0.78",
       "scope": "user",
       "homepage": "https://github.com/microsoft/playwright-mcp",
@@ -16233,7 +16233,7 @@
     "com.github.yakupatahanov.mcp.email": {
       "id": "com.github.yakupatahanov.mcp.email",
       "name": "JARVIS Email",
-      "summary": "Personal email over plain IMAP and SMTP: list mailboxes, search, read, and send from the user's own account. Provider-neutral \u2014 any IMAP/SMTP host, no vendor API and no OAuth broker; credentials stay on the machine. Mail is untrusted third-party text: every read result carries a provenance banner, attachments are listed but never decoded, and send_message is an irreversible outward-facing action.",
+      "summary": "Personal email over plain IMAP and SMTP: list mailboxes, search, read, and send from the user's own account. Provider-neutral — any IMAP/SMTP host, no vendor API and no OAuth broker; credentials stay on the machine. Mail is untrusted third-party text: every read result carries a provenance banner, attachments are listed but never decoded, and send_message is an irreversible outward-facing action.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -16303,7 +16303,7 @@
     "io.github.crystaldba.postgres-mcp": {
       "id": "io.github.crystaldba.postgres-mcp",
       "name": "PostgreSQL MCP",
-      "summary": "Read and analyze PostgreSQL databases \u2014 queries, schema inspection, index analysis, and query explain plans",
+      "summary": "Read and analyze PostgreSQL databases — queries, schema inspection, index analysis, and query explain plans",
       "version": "0.3.3",
       "scope": "user",
       "homepage": "https://github.com/crystaldba/postgres-mcp",
@@ -16332,7 +16332,7 @@
     "io.github.homeassistant-ai.ha-mcp": {
       "id": "io.github.homeassistant-ai.ha-mcp",
       "name": "Home Assistant MCP",
-      "summary": "Control and query a Home Assistant instance \u2014 read entities, call services, and access automation state",
+      "summary": "Control and query a Home Assistant instance — read entities, call services, and access automation state",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/homeassistant-ai/ha-mcp",
@@ -16361,7 +16361,7 @@
     "io.github.cyanheads.obsidian-mcp-server": {
       "id": "io.github.cyanheads.obsidian-mcp-server",
       "name": "Obsidian Vault MCP",
-      "summary": "Read, write, and search notes in an Obsidian vault \u2014 local file I/O only, no network egress",
+      "summary": "Read, write, and search notes in an Obsidian vault — local file I/O only, no network egress",
       "version": "1.3.0",
       "scope": "user",
       "homepage": "https://github.com/cyanheads/obsidian-mcp-server",
@@ -16390,7 +16390,7 @@
     "io.github.korotovsky.slack-mcp-server": {
       "id": "io.github.korotovsky.slack-mcp-server",
       "name": "Slack MCP",
-      "summary": "Read channels and post messages to Slack via bot token \u2014 requires scoped bot OAuth credentials",
+      "summary": "Read channels and post messages to Slack via bot token — requires scoped bot OAuth credentials",
       "version": "0.2.2",
       "scope": "user",
       "homepage": "https://github.com/korotovsky/slack-mcp-server",
@@ -16418,7 +16418,7 @@
     },
     "com.github.yakupatahanov.mcp.computer-use-linux": {
       "id": "com.github.yakupatahanov.mcp.computer-use-linux",
-      "name": "JARVIS Computer Use \u2014 Linux",
+      "name": "JARVIS Computer Use — Linux",
       "summary": "Local Wayland/KDE Plasma desktop control via AT-SPI2 accessibility (read windows, find and click elements, set text in form fields) and ydotool (keyboard injection, mouse clicks, key sequences). Screenshots via Spectacle or grim. Semantic AT-SPI actions are preferred over raw coordinates; raw input is available for apps with no accessibility tree. All input-injection tools are DANGEROUS-tier and must route through JARVIS TLA confirmation. Screenshot capture is ELEVATED-tier (screen content may include passwords or private data).",
       "version": "1.0.0",
       "scope": "user",
@@ -16458,6 +16458,45 @@
         "setupScriptSha256": "2a2033751ed045cc750cbd3601d87eac442d8134d44e00cc17a6642fbcd81c81"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/computer-use-linux/manifest.json"
+    },
+    "com.github.yakupatahanov.mcp.comfyui": {
+      "id": "com.github.yakupatahanov.mcp.comfyui",
+      "name": "JARVIS ComfyUI — On-Device Image Generation",
+      "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, and returns the output as a base64-encoded PNG — entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
+      "keywords": [
+        "image",
+        "generation",
+        "comfyui",
+        "stable-diffusion",
+        "diffusion",
+        "text-to-image",
+        "creative",
+        "local",
+        "on-device",
+        "gpu",
+        "art",
+        "illustration"
+      ],
+      "platforms": [
+        "linux",
+        "darwin",
+        "windows"
+      ],
+      "categories": [
+        "mcp",
+        "creative",
+        "image-generation"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "1af4116b82a717dd899b51a16b391c7e157df7f373bfd7888430b4fc056c4a8d",
+        "setupScriptSha256": "813d536ddc2f5e7382b86bab2ca49ddfe6d76c01e6df749deaf8912b9808773a"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/comfyui/manifest.json"
     }
   },
   "embedding_spec": {
