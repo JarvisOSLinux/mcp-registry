@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-08-05T08:43:42Z",
+  "updated": "2026-08-06T04:34:20Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -24212,7 +24212,7 @@
     "com.github.yakupatahanov.mcp.comfyui": {
       "id": "com.github.yakupatahanov.mcp.comfyui",
       "name": "JARVIS ComfyUI \u2014 On-Device Image Generation",
-      "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, and returns the output as a base64-encoded PNG \u2014 entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
+      "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, writes the output PNG to disk and returns its file path plus small metadata (dimensions, prompt_id) \u2014 the image bytes are never inlined into the result. Entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
@@ -24243,7 +24243,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "5ed59a74a8137eab94ffa79d450dc42e316a61141036000ae8eb7453470258f1",
+        "manifestSha256": "120bcf1d51a35445251d51f3d276f242f1fee3e4ab84a676d244f181e5c3350f",
         "setupScriptSha256": "813d536ddc2f5e7382b86bab2ca49ddfe6d76c01e6df749deaf8912b9808773a"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/comfyui/manifest.json",

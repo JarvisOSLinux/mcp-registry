@@ -3,17 +3,17 @@
 JARVIS ComfyUI MCP Server
 
 Local text-to-image generation via a running ComfyUI instance. Builds and
-queues a minimal Stable Diffusion workflow, polls until completion, and
-returns the output image as a base64-encoded PNG — all on-device, no cloud
-API, no telemetry.
+queues a minimal Stable Diffusion workflow, polls until completion, writes the
+output PNG to disk and returns its file path plus small metadata — all
+on-device, no cloud API, no telemetry.
 
 Requires a ComfyUI server running at COMFYUI_URL (default http://127.0.0.1:8188).
 GPU-dependent: ComfyUI needs a GPU with enough VRAM for the loaded model.
 
 Tools
 -----
-generate_image   Queue text-to-image, block until done, return base64 PNG
-                 (blocking: true — long operation, suggestedRemindAfter: 60s)
+generate_image   Queue text-to-image, block until done, save the PNG and return
+                 its path (blocking: true — long op, suggestedRemindAfter: 60s)
 list_models      List available checkpoints/LoRAs/VAEs from ComfyUI
 get_queue        Show pending and running prompts
 interrupt        Stop the current generation
@@ -22,18 +22,22 @@ get_history      Recent generation history
 Security posture
 ----------------
 All requests go to the configured COMFYUI_URL — a local endpoint by default.
-No credentials. Generated images are read into memory and returned; they are
-not written to disk by this server (ComfyUI writes its own output_dir).
-Image data is returned as an MCP image content block so the orchestrator
-can pass it to vision tools without an intermediate save step.
+No credentials. A generated image is written to the output directory
+(COMFYUI_OUTPUT_DIR, default $XDG_DATA_HOME/jarvis/comfyui/ or
+~/.local/share/jarvis/comfyui/, created 0700) and the tool result returns only
+that path plus small metadata (dimensions, prompt_id). The image bytes are
+never inlined into the tool result: a Stable Diffusion PNG is 0.5–2 MB, and
+returning it base64-encoded would land the whole image in the model's context
+on every call (the JARVIS "Bloated Context" threat). A caller that needs the
+pixels reads them from the returned path.
 """
 
 from __future__ import annotations
 
-import base64
 import json
 import os
 import random
+import re
 import sys
 import time
 import urllib.error
@@ -52,6 +56,9 @@ _SERVER_VERSION = "1.0.0"
 _POLL_INTERVAL = 2.0   # seconds between /history polls
 _GENERATION_TIMEOUT = 600  # 10 minutes hard cap
 
+# Relative fallback under the XDG data dir when COMFYUI_OUTPUT_DIR is unset.
+_OUTPUT_SUBDIR = ("jarvis", "comfyui")
+
 # ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
@@ -62,7 +69,10 @@ TOOLS = [
         "description": (
             "Generate an image from a text prompt using a locally running ComfyUI "
             "instance (Stable Diffusion). Queues a generation workflow, waits for "
-            "completion and returns the image as a base64-encoded PNG. "
+            "completion, writes the resulting PNG to the output directory and "
+            "returns its file path plus small metadata (path, width, height, "
+            "format, prompt_id). The image bytes are NOT returned inline — read "
+            "the PNG from the returned path if you need the pixels. "
             "Runs entirely on-device — no cloud API, no data leaves the machine. "
             "GPU-dependent: requires a model loaded in ComfyUI and enough VRAM. "
             "This tool blocks until generation finishes (typically 10–90 seconds "
@@ -258,6 +268,51 @@ def _get_image_bytes(filename: str, subfolder: str, folder_type: str) -> bytes:
 
 
 # ---------------------------------------------------------------------------
+# Output-file helpers
+# ---------------------------------------------------------------------------
+
+
+def _output_dir() -> str:
+    """Directory the generated PNG is written to.
+
+    COMFYUI_OUTPUT_DIR wins if set (the user's own choice — its permissions are
+    left as they are). Otherwise a private per-user dir under the XDG data dir,
+    forced to 0700 because it holds the images this server generates.
+    """
+    custom = os.environ.get("COMFYUI_OUTPUT_DIR")
+    if custom:
+        path = os.path.expanduser(custom)
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    xdg = os.environ.get("XDG_DATA_HOME")
+    base = xdg if xdg else os.path.join(os.path.expanduser("~"), ".local", "share")
+    path = os.path.join(base, *_OUTPUT_SUBDIR)
+    os.makedirs(path, exist_ok=True)
+    # exist_ok skips the mode on an existing dir and makedirs' mode is umask-masked
+    # anyway; set it explicitly so the dir is private regardless of how it arose.
+    try:
+        os.chmod(path, 0o700)
+    except OSError:
+        pass
+    return path
+
+
+def _png_dimensions(data: bytes) -> tuple[int, int] | None:
+    """(width, height) read from a PNG's IHDR, or None if not a PNG.
+
+    Layout: 8-byte signature, then the IHDR chunk (4-byte length, 4-byte type),
+    so width is bytes 16:20 and height 20:24, big-endian.
+    """
+    if len(data) >= 24 and data[:8] == b"\x89PNG\r\n\x1a\n":
+        width = int.from_bytes(data[16:20], "big")
+        height = int.from_bytes(data[20:24], "big")
+        if width > 0 and height > 0:
+            return width, height
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Workflow builder
 # ---------------------------------------------------------------------------
 
@@ -400,17 +455,33 @@ def tool_generate_image(args: dict) -> dict:
         image_info.get("subfolder", ""),
         image_info.get("type", "output"),
     )
-    img_b64 = base64.b64encode(img_bytes).decode("ascii")
+
+    # Write the PNG to disk and return its path — never the bytes. Inlining a
+    # 0.5–2 MB image into the tool result would put the whole thing in the
+    # model's context on every call (the "Bloated Context" threat). The
+    # prompt_id is unique per generation, so it makes a collision-free filename.
+    out_dir = _output_dir()
+    safe_id = re.sub(r"[^A-Za-z0-9._-]", "_", str(prompt_id)) or "image"
+    out_path = os.path.join(out_dir, f"{safe_id}.png")
+    try:
+        with open(out_path, "wb") as fh:
+            fh.write(img_bytes)
+    except OSError as exc:
+        raise ToolError(f"Failed to write image to {out_path!r}: {exc}")
+
+    # Prefer the actual pixel dimensions from the PNG header; fall back to the
+    # requested (latent) dimensions if the header is unreadable.
+    dims = _png_dimensions(img_bytes)
+    out_width, out_height = dims if dims else (width, height)
 
     return {
+        "path": out_path,
         "format": "png",
-        "encoding": "base64",
-        "data": img_b64,
+        "width": out_width,
+        "height": out_height,
         "prompt_id": prompt_id,
         "seed": seed,
         "model": model,
-        "width": width,
-        "height": height,
         "steps": steps,
         "cfg": cfg,
         "sampler": sampler,
@@ -493,26 +564,7 @@ _HANDLERS = {
 
 
 def _ok_result(payload: dict) -> dict:
-    if payload.get("encoding") == "base64" and payload.get("format") == "png":
-        content = [
-            {
-                "type": "text",
-                "text": json.dumps(
-                    {k: v for k, v in payload.items() if k != "data"},
-                    indent=2, ensure_ascii=False,
-                ),
-            },
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": payload["data"],
-                },
-            },
-        ]
-    else:
-        content = [{"type": "text", "text": json.dumps(payload, indent=2, ensure_ascii=False)}]
+    content = [{"type": "text", "text": json.dumps(payload, indent=2, ensure_ascii=False)}]
     return {"content": content, "isError": False}
 
 
