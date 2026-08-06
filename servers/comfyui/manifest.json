@@ -6,8 +6,8 @@
     "darwin",
     "windows"
   ],
-  "name": "JARVIS ComfyUI \u2014 On-Device Image Generation",
-  "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, and returns the output as a base64-encoded PNG \u2014 entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
+  "name": "JARVIS ComfyUI — On-Device Image Generation",
+  "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, writes the output PNG to disk and returns its file path plus small metadata (dimensions, prompt_id) — the image bytes are never inlined into the result. Entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
   "keywords": [
     "image",
     "generation",
@@ -30,7 +30,7 @@
       "args": [
         "server.py"
       ],
-      "description": "JARVIS ComfyUI MCP Server (stdio). Stdlib only \u2014 bridges to a local ComfyUI HTTP API."
+      "description": "JARVIS ComfyUI MCP Server (stdio). Stdlib only — bridges to a local ComfyUI HTTP API."
     }
   ],
   "source": {
@@ -42,7 +42,7 @@
   "tools": [
     {
       "name": "generate_image",
-      "description": "Generate an image from a text prompt using a locally running ComfyUI instance. Queues a Stable Diffusion workflow, waits for completion and returns the image as a base64-encoded PNG. Runs entirely on-device \u2014 no cloud API, no data leaves the machine.",
+      "description": "Generate an image from a text prompt using a locally running ComfyUI instance. Queues a Stable Diffusion workflow, waits for completion, writes the resulting PNG to the output directory and returns its file path plus small metadata (path, width, height, format, prompt_id). The image bytes are not returned inline — read the PNG from the returned path. Runs entirely on-device — no cloud API, no data leaves the machine.",
       "blocking": true,
       "suggestedRemindAfter": 60
     },
@@ -71,6 +71,14 @@
       "sensitive": false,
       "required": false,
       "default": "http://127.0.0.1:8188"
+    },
+    {
+      "key": "COMFYUI_OUTPUT_DIR",
+      "label": "Generated Image Output Directory",
+      "description": "Directory where generated PNGs are written; the tool result returns a path into it, not the image bytes. Defaults to $XDG_DATA_HOME/jarvis/comfyui/ (or ~/.local/share/jarvis/comfyui/), created 0700 if absent.",
+      "sensitive": false,
+      "required": false,
+      "default": "~/.local/share/jarvis/comfyui/"
     }
   ],
   "trust": {
@@ -81,13 +89,13 @@
     "checks": [
       "license: same as this registry (GPL-3.0), first-party server",
       "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/comfyui)",
-      "build: none \u2014 Python standard library only (urllib, json, base64); setup.sh installs nothing",
+      "build: none — Python standard library only (urllib, json, os, re); setup.sh installs nothing",
       "no third-party Python dependencies, no subprocess calls",
       "network: only the COMFYUI_URL host (127.0.0.1:8188 by default); no other outbound calls",
-      "no filesystem writes \u2014 images read into memory and returned as base64; ComfyUI writes its own output_dir"
+      "filesystem writes: only generated PNGs, written to COMFYUI_OUTPUT_DIR (default ~/.local/share/jarvis/comfyui/, created 0700); the tool result returns the file path, never the image bytes"
     ],
-    "notes": "First-party server. Thin HTTP bridge to a locally running ComfyUI instance. Stdlib only. The server itself is low-risk; the GPU and model resources it drives are the user's own hardware. Generated images are returned as base64 content blocks and not cached by this server.",
-    "securityNotes": "All requests go to COMFYUI_URL \u2014 a local endpoint by default. No credentials are required or accepted. Generated images are read into memory, base64-encoded and returned in the MCP response; they are never written to disk by this server (ComfyUI itself writes output_dir). The interrupt tool can abort an in-progress generation, which is useful if the agent queues something unintended. generate_image blocks for up to 10 minutes waiting for completion; the suggestedRemindAfter hint is 60 seconds so the orchestrator can report progress. The COMFYUI_URL config allows targeting a non-local ComfyUI server \u2014 if changed to a remote URL, generation prompts and images traverse the network unencrypted unless ComfyUI is behind TLS."
+    "notes": "First-party server. Thin HTTP bridge to a locally running ComfyUI instance. Stdlib only. The server itself is low-risk; the GPU and model resources it drives are the user's own hardware. Generated images are written to the output directory and the tool result returns only the file path plus small metadata — the image bytes never enter the model's context (they would otherwise be 0.5–2 MB of base64 per call, the 'Bloated Context' threat).",
+    "securityNotes": "All requests go to COMFYUI_URL — a local endpoint by default. No credentials are required or accepted. A generated image is written to COMFYUI_OUTPUT_DIR (default ~/.local/share/jarvis/comfyui/, created 0700) under a filename derived from the ComfyUI prompt_id, and the MCP response carries only that path plus small metadata (dimensions, prompt_id) — the image bytes are never inlined, so a large PNG cannot flood the model's context. The interrupt tool can abort an in-progress generation, which is useful if the agent queues something unintended. generate_image blocks for up to 10 minutes waiting for completion; the suggestedRemindAfter hint is 60 seconds so the orchestrator can report progress. The COMFYUI_URL config allows targeting a non-local ComfyUI server — if changed to a remote URL, generation prompts and images traverse the network unencrypted unless ComfyUI is behind TLS."
   },
   "embeddings": {
     "nomic-embed-text": {
