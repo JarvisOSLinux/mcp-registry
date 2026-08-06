@@ -4,7 +4,7 @@
   "platforms": [
     "linux"
   ],
-  "name": "JARVIS Computer Use \u2014 Linux",
+  "name": "JARVIS Computer Use — Linux",
   "summary": "Local Wayland/KDE Plasma desktop control via AT-SPI2 accessibility (read windows, find and click elements, set text in form fields) and ydotool (keyboard injection, mouse clicks, key sequences). Screenshots via Spectacle or grim. Semantic AT-SPI actions are preferred over raw coordinates; raw input is available for apps with no accessibility tree. All input-injection tools are DANGEROUS-tier and must route through JARVIS TLA confirmation. Screenshot capture is ELEVATED-tier (screen content may include passwords or private data).",
   "keywords": [
     "desktop",
@@ -49,44 +49,54 @@
   "tools": [
     {
       "name": "list_windows",
-      "description": "List all top-level application windows currently visible to the AT-SPI2 accessibility stack. Returns the application name, PID, role and number of children for each. Use this to discover the app_name to pass to other tools."
+      "description": "List all top-level application windows currently visible to the AT-SPI2 accessibility stack. Returns the application name, PID, role and number of children for each. Use this to discover the app_name to pass to other tools.",
+      "threat_level": "safe"
     },
     {
       "name": "get_accessibility_tree",
-      "description": "Return a text representation of the AT-SPI2 accessibility tree for an application. Each node shows its role and name. Use it to plan which element to target with click_element or set_element_text."
+      "description": "Return a text representation of the AT-SPI2 accessibility tree for an application. Each node shows its role and name. Use it to plan which element to target with click_element or set_element_text.",
+      "threat_level": "elevated"
     },
     {
       "name": "find_elements",
-      "description": "Search the AT-SPI2 tree of an application for elements matching a role and/or name substring. Returns matching elements with their role, name, description and available actions. Use to verify an element exists before calling click_element or set_element_text."
+      "description": "Search the AT-SPI2 tree of an application for elements matching a role and/or name substring. Returns matching elements with their role, name, description and available actions. Use to verify an element exists before calling click_element or set_element_text.",
+      "threat_level": "elevated"
     },
     {
       "name": "focus_window",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Bring an application window to the foreground by activating its top-level AT-SPI frame. Required before coordinate-based mouse operations so clicks land on the right window."
+      "description": "DANGEROUS — INPUT INJECTION. Bring an application window to the foreground by activating its top-level AT-SPI frame. Required before coordinate-based mouse operations so clicks land on the right window.",
+      "threat_level": "safe"
     },
     {
       "name": "click_element",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Click a UI element inside an application using its AT-SPI accessibility action (not a raw coordinate). Prefers the 'click' action, falls back to 'press', then 'activate'. More reliable than mouse_click for semantic UI actions because it is not affected by window position, DPI or Wayland coordinate mapping."
+      "description": "DANGEROUS — INPUT INJECTION. Click a UI element inside an application using its AT-SPI accessibility action (not a raw coordinate). Prefers the 'click' action, falls back to 'press', then 'activate'. More reliable than mouse_click for semantic UI actions because it is not affected by window position, DPI or Wayland coordinate mapping.",
+      "threat_level": "dangerous"
     },
     {
       "name": "set_element_text",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Replace the text contents of an editable text field using the AT-SPI2 EditableText interface. Overwrites the entire current value. More reliable than type_text for form fields because it does not depend on focus or clipboard state, and never garbles non-ASCII characters."
+      "description": "DANGEROUS — INPUT INJECTION. Replace the text contents of an editable text field using the AT-SPI2 EditableText interface. Overwrites the entire current value. More reliable than type_text for form fields because it does not depend on focus or clipboard state, and never garbles non-ASCII characters.",
+      "threat_level": "dangerous"
     },
     {
       "name": "take_screenshot",
-      "description": "ELEVATED \u2014 SCREEN CAPTURE. Capture the current Wayland display as a PNG and return it base64-encoded. Uses spectacle on KDE Plasma or grim on other compositors. Screenshots may contain passwords, private messages or financial data \u2014 confirm with the user before capturing.",
+      "description": "ELEVATED — SCREEN CAPTURE. Capture the current Wayland display as a PNG and return it base64-encoded. Uses spectacle on KDE Plasma or grim on other compositors. Screenshots may contain passwords, private messages or financial data — confirm with the user before capturing.",
+      "threat_level": "elevated",
       "blocking": false
     },
     {
       "name": "type_text",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Type text into the currently focused element by copying to the Wayland clipboard (wl-copy) and pasting via ydotool Ctrl+V. Works across all apps and layouts; avoids the ydotool key-code layout problem. Prefer set_element_text when the target is an AT-SPI editable field."
+      "description": "DANGEROUS — INPUT INJECTION. Type text into the currently focused element by copying to the Wayland clipboard (wl-copy) and pasting via ydotool Ctrl+V. Works across all apps and layouts; avoids the ydotool key-code layout problem. Prefer set_element_text when the target is an AT-SPI editable field.",
+      "threat_level": "dangerous"
     },
     {
       "name": "key_press",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Inject a keyboard shortcut or key sequence via ydotool. Key names follow ydotool/X11 keysym conventions: 'Return', 'Escape', 'Tab', 'ctrl+c', 'ctrl+shift+t', 'alt+F4'. Multiple keys separated by spaces are pressed in sequence."
+      "description": "DANGEROUS — INPUT INJECTION. Inject a keyboard shortcut or key sequence via ydotool. Key names follow ydotool/X11 keysym conventions: 'Return', 'Escape', 'Tab', 'ctrl+c', 'ctrl+shift+t', 'alt+F4'. Multiple keys separated by spaces are pressed in sequence.",
+      "threat_level": "dangerous"
     },
     {
       "name": "mouse_click",
-      "description": "DANGEROUS \u2014 INPUT INJECTION. Move the mouse to absolute Wayland compositor coordinates (x, y) and click. Use click_element for semantic UI actions; reserve this for apps with no AT-SPI coverage. Focus the target window first with focus_window."
+      "description": "DANGEROUS — INPUT INJECTION. Move the mouse to absolute Wayland compositor coordinates (x, y) and click. Use click_element for semantic UI actions; reserve this for apps with no AT-SPI coverage. Focus the target window first with focus_window.",
+      "threat_level": "dangerous"
     }
   ],
   "configurableProperties": [
@@ -122,12 +132,12 @@
       "license: same as this registry (GPL-3.0), first-party server",
       "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/computer-use-linux)",
       "dependencies: python3-pyatspi (AT-SPI2 bindings), ydotool+ydotoold (/dev/uinput input injection), wl-clipboard (paste trick), spectacle or grim (screenshots)",
-      "no network calls \u2014 all operations are local IPC (AT-SPI2 D-Bus, ydotoold socket, Wayland socket)",
+      "no network calls — all operations are local IPC (AT-SPI2 D-Bus, ydotoold socket, Wayland socket)",
       "no filesystem writes except the temporary screenshot PNG which is deleted after base64 encoding",
-      "input injection requires user to be in the 'input' group and ydotoold running \u2014 not passively available"
+      "input injection requires user to be in the 'input' group and ydotoold running — not passively available"
     ],
-    "notes": "First-party server. AT-SPI2 read operations (list_windows, get_accessibility_tree, find_elements) are safe and read-only. All input-injection and screenshot tools are high-privilege surface \u2014 see securityNotes.",
-    "securityNotes": "THIS SERVER IS THE HIGHEST-PRIVILEGE SURFACE IN THE REGISTRY. GUI control + keyboard injection + mouse control equals full interactive desktop access \u2014 equivalent to physical keyboard and mouse access. A compromised or misdirected agent using this server can: drive any GUI application, type passwords into forms, click confirmation dialogs, exfiltrate screen content. The threat model from Project-JARVIS issue #35 applies: input injection tools must route through TLA confirmation at DANGEROUS tier. Screenshot capture must route through TLA at ELEVATED tier (screen content may include passwords, private messages, financial data). The AT-SPI read tools (list_windows, get_accessibility_tree, find_elements) are SAFE-tier and do not require confirmation. ydotool injects events via /dev/uinput through ydotoold \u2014 uinput access grants the ability to inject input into any application; the setup.sh privileged step (group add, systemd unit) is the one-time boundary. For text entry, prefer AT-SPI set_element_text (no clipboard side-channel) over type_text (uses clipboard, which other apps can read). Reserve mouse_click for apps with no AT-SPI tree; semantic click_element is safer because it does not depend on screen geometry."
+    "notes": "First-party server. AT-SPI2 read operations (list_windows, get_accessibility_tree, find_elements) are safe and read-only. All input-injection and screenshot tools are high-privilege surface — see securityNotes.",
+    "securityNotes": "THIS SERVER IS THE HIGHEST-PRIVILEGE SURFACE IN THE REGISTRY. GUI control + keyboard injection + mouse control equals full interactive desktop access — equivalent to physical keyboard and mouse access. A compromised or misdirected agent using this server can: drive any GUI application, type passwords into forms, click confirmation dialogs, exfiltrate screen content. The threat model from Project-JARVIS issue #35 applies: input injection tools must route through TLA confirmation at DANGEROUS tier. Screenshot capture must route through TLA at ELEVATED tier (screen content may include passwords, private messages, financial data). The AT-SPI read tools (list_windows, get_accessibility_tree, find_elements) are SAFE-tier and do not require confirmation. ydotool injects events via /dev/uinput through ydotoold — uinput access grants the ability to inject input into any application; the setup.sh privileged step (group add, systemd unit) is the one-time boundary. For text entry, prefer AT-SPI set_element_text (no clipboard side-channel) over type_text (uses clipboard, which other apps can read). Reserve mouse_click for apps with no AT-SPI tree; semantic click_element is safer because it does not depend on screen geometry."
   },
   "embeddings": {
     "nomic-embed-text": {
