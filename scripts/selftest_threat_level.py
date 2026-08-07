@@ -19,9 +19,12 @@ validate entry point against it, and asserts on what it reports:
   3. A tool with a threat_level outside the enum ERRORS.
   4. The legacy `confirmation_required: true` shorthand is accepted in place of
      threat_level.
-  5. A `removed` entry is exempt — dmcp refuses to install it, so classifying a
-     tool it will never run buys the gate nothing.
-  6. A `deprecated` entry is exempt too (the same "not a live entry" line).
+  5. A `removed` entry is exempt — dmcp refuses to install it on both the human
+     CLI and the agent path, so classifying a tool it will never run buys the
+     gate nothing.
+  6. A `deprecated` entry is NOT exempt — dmcp's cli_trust_gate only warns, so a
+     human can still install and run it, and an unclassified tool reaches the
+     confirmation gate. Its missing threat_level must ERROR like a live entry's.
   7. Each of the four enum values is accepted.
 
 Offline, stdlib only, writes nothing outside its temp directory.
@@ -233,14 +236,21 @@ def a_removed_entry_is_exempt():
 
 
 @case
-def a_deprecated_entry_is_exempt():
+def a_deprecated_entry_is_not_exempt():
+    # A deprecated server is still human-installable: dmcp's cli_trust_gate only
+    # warns and the install proceeds, so an unclassified tool would reach the
+    # daemon's confirmation gate and run unconfirmed. The gate must treat it like
+    # any other live entry — only a `removed` tombstone (refused on install) is
+    # exempt.
     tools = [{"name": "sync", "description": "Sync something"}]  # no threat_level
     with fixture(tools, trust="deprecated"):
         code, out = validate()
-        check(code == 0, "a deprecated entry with an unclassified tool passes")
+        check(code == 1, "a deprecated entry with an unclassified tool fails the gate")
+        check("::error::" in out, "the missing threat_level on a deprecated entry is an error")
+        check("'sync'" in out, "the error names the offending tool on the deprecated entry")
         check(
-            "declares neither 'threat_level'" not in out,
-            "a deprecated entry is on its way out and is not asked to classify",
+            "declares neither 'threat_level'" in out,
+            "a deprecated entry is still installable and must classify its tools",
         )
 
 

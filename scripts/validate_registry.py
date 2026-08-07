@@ -17,7 +17,8 @@ Static checks (always run):
   - every tool of a live entry declares a threat_level (safe/elevated/dangerous/
     forbidden) or the legacy confirmation_required: true — a tool that classifies
     what it can do to the host, so the daemon's confirmation gate is not blind to
-    a destructive tool hiding under an unfamiliar name (removed/deprecated exempt)
+    a destructive tool hiding under an unfamiliar name (only `removed` is exempt;
+    a `deprecated` server is still installable via the human CLI)
   - integrity.manifestSha256 is present and matches the manifest file bytes
   - setup scripts and their hashes agree in both directions: a setup.sh /
     setup.ps1 in the server directory needs a recorded hash that matches, and a
@@ -89,11 +90,15 @@ INTEGRITY_KEY = dict(SETUP_SCRIPTS)
 # and must therefore be discoverable from what it actually says today.
 EMBEDDING_EXEMPT_TRUST = {"removed"}
 
-# A `removed` entry cannot be installed and a `deprecated` one is being phased
-# out, so backfilling a threat_level on either buys the confirmation gate
-# nothing — this is the same "not a live entry" line remove_server.py draws.
-# Every entry still offered for install must classify each tool it exposes.
-THREAT_LEVEL_EXEMPT_TRUST = {"removed", "deprecated"}
+# Only a `removed` tombstone is exempt: dmcp refuses to install it on both the
+# human CLI and the agent path, so a tool it will never run need not classify
+# itself. A `deprecated` entry is NOT exempt — cli_trust_gate warns and the
+# install PROCEEDS (dmcp install.rs), so a human can still install and run it,
+# and an unclassified tool reaches the daemon's confirmation gate and runs
+# unconfirmed. This is the same "still installable" line EMBEDDING_EXEMPT_TRUST
+# draws (removed only) — not remove_server.py's removability line, which counts
+# deprecated as excisable for a different reason (it is on its way out).
+THREAT_LEVEL_EXEMPT_TRUST = {"removed"}
 
 EMBEDDING_SUMMARY = (
     "{count} embedding problem(s) above: semantic search ranks these servers "

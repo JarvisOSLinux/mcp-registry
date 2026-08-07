@@ -280,7 +280,7 @@ The `tools` array declares the tools the server exposes. This list is used for d
 
 At least one tool is required. Descriptions should be specific enough for an LLM to determine when to use the tool.
 
-¹ Every tool of a live entry must declare `threat_level` (or the legacy `confirmation_required: true`); the PR gate rejects a tool that declares neither. `removed`/`deprecated` entries are exempt. See [Threat Level](#threat-level).
+¹ Every installable entry must declare `threat_level` (or the legacy `confirmation_required: true`) on each tool; the PR gate rejects a tool that declares neither. Only a `removed` entry is exempt (dmcp refuses to install it); a `deprecated` entry is still human-installable and is not exempt. See [Threat Level](#threat-level).
 
 ### Threat Level
 
@@ -316,17 +316,20 @@ user to approve without reading, which costs more safety than it buys.
 }
 ```
 
-**It is required, and enforced.** Every tool of a live entry (any `trustStatus`
-other than `removed` or `deprecated`) must declare a `threat_level` in the enum
+**It is required, and enforced.** Every tool of an installable entry (any
+`trustStatus` other than `removed`) must declare a `threat_level` in the enum
 above, or the legacy `confirmation_required: true`. `scripts/validate_registry.py`
 makes a tool that declares neither an **error** — the PR gate rejects it — and an
 out-of-enum value an error too. A tool the daemon's host floor does not recognise
 classifies `safe` and runs unconfirmed, so the omission is a hole in the
 confirmation gate, not a stylistic gap: leaving it to a warning would let the
-next merged server quietly reopen it. `removed`/`deprecated` entries are exempt
-(dmcp installs neither, so classifying a tool it will never run buys nothing),
-the same line the embedding gate and `remove_server.py` already draw.
-`scripts/selftest_threat_level.py` proves the check still fires.
+next merged server quietly reopen it. Only a `removed` entry is exempt (dmcp
+refuses to install it, so classifying a tool it will never run buys nothing),
+the same line the embedding gate draws. A `deprecated` entry is **not** exempt:
+`cli_trust_gate` only warns and the human CLI install proceeds, so its tools can
+still run and must be classified. (`remove_server.py` counts `deprecated` as
+excisable-without-`--force`, but that is a removability judgement, not an
+install one.) `scripts/selftest_threat_level.py` proves the check still fires.
 
 `servers/computer-use-linux/manifest.json` is the worked example: input
 injection is `dangerous`, arbitrary screen reads are `elevated`, and window
