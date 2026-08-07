@@ -24,15 +24,18 @@
   "tools": [
     {
       "name": "whoami",
-      "description": "Return server ID, version, and current timestamp. Confirms which server the LLM is talking to."
+      "description": "Return server ID, version, and current timestamp. Confirms which server the LLM is talking to.",
+      "threat_level": "safe"
     },
     {
       "name": "echo",
-      "description": "Echo a message back with the server identity prefix. Confirms parameter passing and routing."
+      "description": "Echo a message back with the server identity prefix. Confirms parameter passing and routing.",
+      "threat_level": "safe"
     },
     {
       "name": "ping",
-      "description": "Instant liveness check. Returns server identity and timestamp."
+      "description": "Instant liveness check. Returns server identity and timestamp.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

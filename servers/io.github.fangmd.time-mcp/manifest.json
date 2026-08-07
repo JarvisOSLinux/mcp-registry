@@ -23,7 +23,8 @@
   "tools": [
     {
       "name": "getCurrentTime",
-      "description": "Return current UTC time in ISO 8601 format plus Unix timestamp."
+      "description": "Return current UTC time in ISO 8601 format plus Unix timestamp.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

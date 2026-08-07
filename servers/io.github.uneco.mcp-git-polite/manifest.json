@@ -25,19 +25,23 @@
   "tools": [
     {
       "name": "list_changes",
-      "description": "List unstaged changes (including untracked files) as numbered lines with pagination."
+      "description": "List unstaged changes (including untracked files) as numbered lines with pagination.",
+      "threat_level": "elevated"
     },
     {
       "name": "diff",
-      "description": "View complete numbered diff for a single file (no truncation)."
+      "description": "View complete numbered diff for a single file (no truncation).",
+      "threat_level": "elevated"
     },
     {
       "name": "apply_changes",
-      "description": "Apply selected change numbers to the git index (supports partial staging)."
+      "description": "Apply selected change numbers to the git index (supports partial staging).",
+      "threat_level": "dangerous"
     },
     {
       "name": "auto_commit",
-      "description": "Autopilot mode to group changes into focused commits."
+      "description": "Autopilot mode to group changes into focused commits.",
+      "threat_level": "dangerous"
     }
   ],
   "configurableProperties": [],

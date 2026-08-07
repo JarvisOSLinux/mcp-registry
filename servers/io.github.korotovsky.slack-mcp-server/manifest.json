@@ -13,7 +13,7 @@
         "run",
         "github.com/korotovsky/slack-mcp-server/cmd/slack-mcp-server@v1.3.0"
       ],
-      "description": "Slack MCP server (stdio, Go binary, version-pinned). Requires at least one token env var (SLACK_MCP_XOXB_TOKEN recommended). send_message tool disabled by default \u2014 set SLACK_MCP_ADD_MESSAGE_TOOL=1 to enable."
+      "description": "Slack MCP server (stdio, Go binary, version-pinned). Requires at least one token env var (SLACK_MCP_XOXB_TOKEN recommended). send_message tool disabled by default — set SLACK_MCP_ADD_MESSAGE_TOOL=1 to enable."
     }
   ],
   "source": {
@@ -24,27 +24,33 @@
   "tools": [
     {
       "name": "list_channels",
-      "description": "List public channels in the Slack workspace."
+      "description": "List public channels in the Slack workspace.",
+      "threat_level": "safe"
     },
     {
       "name": "get_channel_history",
-      "description": "Retrieve message history from a Slack channel."
+      "description": "Retrieve message history from a Slack channel.",
+      "threat_level": "elevated"
     },
     {
       "name": "get_thread_replies",
-      "description": "Get all replies in a Slack message thread."
+      "description": "Get all replies in a Slack message thread.",
+      "threat_level": "elevated"
     },
     {
       "name": "search_messages",
-      "description": "Search Slack messages across the workspace by keyword."
+      "description": "Search Slack messages across the workspace by keyword.",
+      "threat_level": "elevated"
     },
     {
       "name": "list_users",
-      "description": "List users in the Slack workspace."
+      "description": "List users in the Slack workspace.",
+      "threat_level": "elevated"
     },
     {
       "name": "get_user_profile",
-      "description": "Get profile details for a specific Slack user."
+      "description": "Get profile details for a specific Slack user.",
+      "threat_level": "elevated"
     },
     {
       "name": "send_message",
@@ -70,7 +76,7 @@
     {
       "key": "SLACK_MCP_XOXC_TOKEN",
       "label": "Slack Browser Session Token (xoxc-)",
-      "description": "Slack browser session cookie token (xoxc-...). Stealth mode \u2014 used together with SLACK_MCP_XOXD_TOKEN.",
+      "description": "Slack browser session cookie token (xoxc-...). Stealth mode — used together with SLACK_MCP_XOXD_TOKEN.",
       "sensitive": true,
       "required": false
     },
@@ -84,14 +90,14 @@
     {
       "key": "SLACK_MCP_ADD_MESSAGE_TOOL",
       "label": "Enable send_message Tool",
-      "description": "Set to any non-empty value (e.g. '1') to enable the send_message tool. Disabled by default \u2014 message sending requires explicit opt-in.",
+      "description": "Set to any non-empty value (e.g. '1') to enable the send_message tool. Disabled by default — message sending requires explicit opt-in.",
       "sensitive": false,
       "required": false
     },
     {
       "key": "SLACK_MCP_ADD_MESSAGE_UNFURLING",
       "label": "Enable Link Unfurling in send_message",
-      "description": "Set to any non-empty value (e.g. '1') to enable Slack link unfurling in sent messages. Disabled by default. Warning: link unfurling causes Slack to fetch URLs in sent messages \u2014 enables exfiltration of attacker-controlled URLs if an LLM sends a prompt-injected message.",
+      "description": "Set to any non-empty value (e.g. '1') to enable Slack link unfurling in sent messages. Disabled by default. Warning: link unfurling causes Slack to fetch URLs in sent messages — enables exfiltration of attacker-controlled URLs if an LLM sends a prompt-injected message.",
       "sensitive": false,
       "required": false
     }
@@ -104,14 +110,14 @@
       "license: MIT (upstream)",
       "source: git clone https://github.com/korotovsky/slack-mcp-server.git",
       "rev: a079b3cd4d5836d791c942a9fc107987e7865b37 (v1.3.0 tag at review time)",
-      "runtime: Go binary (not Node.js) \u2014 module github.com/korotovsky/slack-mcp-server, go 1.25",
+      "runtime: Go binary (not Node.js) — module github.com/korotovsky/slack-mcp-server, go 1.25",
       "build: go run github.com/korotovsky/slack-mcp-server/cmd/slack-mcp-server@v1.3.0 (version-pinned via Go module proxy + sumdb)",
       "auth: SLACK_MCP_XOXB_TOKEN (bot), SLACK_MCP_XOXP_TOKEN (user OAuth), or SLACK_MCP_XOXC_TOKEN+SLACK_MCP_XOXD_TOKEN (stealth)",
       "send_message: disabled by default (SLACK_MCP_ADD_MESSAGE_TOOL must be set)",
       "unfurl: disabled by default (SLACK_MCP_ADD_MESSAGE_UNFURLING must be set)"
     ],
-    "notes": "Community Slack MCP server v1.3.0 \u2014 Go binary (not Node.js). Supports three auth modes: bot token (xoxb-), user OAuth (xoxp-), or stealth browser session tokens (xoxc-/xoxd-). Read-only tools (list_channels, get_channel_history, search_messages, etc.) are enabled by default. send_message is disabled by default and requires explicit env opt-in. Link unfurling in send_message is disabled by default \u2014 a critical defense against the lethal-trifecta exfiltration attack (LLM reads injected Slack content \u2192 crafts URL in send_message \u2192 Slack unfurls to attacker server).",
-    "securityNotes": "Source pinned to SHA a079b3cd4d5836d791c942a9fc107987e7865b37 (v1.3.0) via Go module proxy + sumdb verification. SLACK_MCP_XOXB_TOKEN stored as dmcp secret. Bot token scope to minimum Slack OAuth scopes: channels:read, channels:history, users:read (add chat:write only if send_message is enabled). send_message triggers real outbound messages \u2014 TLA gate mandatory, enable only via SLACK_MCP_ADD_MESSAGE_TOOL. Do NOT enable SLACK_MCP_ADD_MESSAGE_UNFURLING: link unfurling + send_message + untrusted channel content creates a prompt-injection exfiltration path (attacker posts malicious Slack message \u2192 LLM reads it \u2192 LLM sends message with attacker URL \u2192 Slack fetches URL to unfurl \u2192 exfiltration). Prompt injection risk: Slack channel content (messages, user names, channel topics) may contain injected instructions \u2014 treat all Slack data as untrusted input."
+    "notes": "Community Slack MCP server v1.3.0 — Go binary (not Node.js). Supports three auth modes: bot token (xoxb-), user OAuth (xoxp-), or stealth browser session tokens (xoxc-/xoxd-). Read-only tools (list_channels, get_channel_history, search_messages, etc.) are enabled by default. send_message is disabled by default and requires explicit env opt-in. Link unfurling in send_message is disabled by default — a critical defense against the lethal-trifecta exfiltration attack (LLM reads injected Slack content → crafts URL in send_message → Slack unfurls to attacker server).",
+    "securityNotes": "Source pinned to SHA a079b3cd4d5836d791c942a9fc107987e7865b37 (v1.3.0) via Go module proxy + sumdb verification. SLACK_MCP_XOXB_TOKEN stored as dmcp secret. Bot token scope to minimum Slack OAuth scopes: channels:read, channels:history, users:read (add chat:write only if send_message is enabled). send_message triggers real outbound messages — TLA gate mandatory, enable only via SLACK_MCP_ADD_MESSAGE_TOOL. Do NOT enable SLACK_MCP_ADD_MESSAGE_UNFURLING: link unfurling + send_message + untrusted channel content creates a prompt-injection exfiltration path (attacker posts malicious Slack message → LLM reads it → LLM sends message with attacker URL → Slack fetches URL to unfurl → exfiltration). Prompt injection risk: Slack channel content (messages, user names, channel topics) may contain injected instructions — treat all Slack data as untrusted input."
   },
   "embeddings": {
     "nomic-embed-text": {

@@ -37,7 +37,8 @@
   "tools": [
     {
       "name": "sequentialthinking",
-      "description": "Record and reflect on one reasoning step at a time. Takes the current thought plus thoughtNumber, totalThoughts and nextThoughtNeeded, with optional isRevision/revisesThought and branchFromThought/branchId to revise or branch earlier reasoning; returns the step with progress counters and no persisted content. Operates solely on the thoughts the caller supplies -- it fetches nothing, reads no files and runs no commands."
+      "description": "Record and reflect on one reasoning step at a time. Takes the current thought plus thoughtNumber, totalThoughts and nextThoughtNeeded, with optional isRevision/revisesThought and branchFromThought/branchId to revise or branch earlier reasoning; returns the step with progress counters and no persisted content. Operates solely on the thoughts the caller supplies -- it fetches nothing, reads no files and runs no commands.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [

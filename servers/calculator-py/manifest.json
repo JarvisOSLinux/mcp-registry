@@ -24,19 +24,23 @@
   "tools": [
     {
       "name": "add",
-      "description": "Add two numbers together"
+      "description": "Add two numbers together",
+      "threat_level": "safe"
     },
     {
       "name": "subtract",
-      "description": "Subtract the second number from the first"
+      "description": "Subtract the second number from the first",
+      "threat_level": "safe"
     },
     {
       "name": "multiply",
-      "description": "Multiply two numbers together"
+      "description": "Multiply two numbers together",
+      "threat_level": "safe"
     },
     {
       "name": "divide",
-      "description": "Divide the first number by the second"
+      "description": "Divide the first number by the second",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

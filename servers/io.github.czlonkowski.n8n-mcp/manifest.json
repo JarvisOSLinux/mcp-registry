@@ -36,106 +36,130 @@
   "tools": [
     {
       "name": "tools_documentation",
-      "description": "Return usage documentation for this server's own MCP tools. Reads bundled data only; no n8n instance or network access."
+      "description": "Return usage documentation for this server's own MCP tools. Reads bundled data only; no n8n instance or network access.",
+      "threat_level": "safe"
     },
     {
       "name": "search_nodes",
-      "description": "Full-text search across the 500+ bundled n8n node definitions, returning matches with example configurations. Served from the prebuilt local SQLite database; does not touch any n8n instance."
+      "description": "Full-text search across the 500+ bundled n8n node definitions, returning matches with example configurations. Served from the prebuilt local SQLite database; does not touch any n8n instance.",
+      "threat_level": "safe"
     },
     {
       "name": "get_node",
-      "description": "Return information about a single n8n node in one of several modes (summary info, docs, property search, or version list). Served from the bundled database; can return large property schemas in full mode."
+      "description": "Return information about a single n8n node in one of several modes (summary info, docs, property search, or version list). Served from the bundled database; can return large property schemas in full mode.",
+      "threat_level": "safe"
     },
     {
       "name": "validate_node",
-      "description": "Validate a single node's configuration against the bundled node schema, in a minimal or full mode. Offline; no instance access."
+      "description": "Validate a single node's configuration against the bundled node schema, in a minimal or full mode. Offline; no instance access.",
+      "threat_level": "safe"
     },
     {
       "name": "validate_workflow",
-      "description": "Validate a complete workflow JSON document (structure, node connections, expressions) against the bundled schema without deploying it. Offline; no instance access."
+      "description": "Validate a complete workflow JSON document (structure, node connections, expressions) against the bundled schema without deploying it. Offline; no instance access.",
+      "threat_level": "safe"
     },
     {
       "name": "search_templates",
-      "description": "Search the community workflow-template library by keyword, node, task or metadata. Template metadata is authored by third parties and is untrusted content."
+      "description": "Search the community workflow-template library by keyword, node, task or metadata. Template metadata is authored by third parties and is untrusted content.",
+      "threat_level": "safe"
     },
     {
       "name": "get_template",
-      "description": "Retrieve a complete community workflow template as JSON by id. Template content is third-party authored, untrusted, and can be large."
+      "description": "Retrieve a complete community workflow template as JSON by id. Template content is third-party authored, untrusted, and can be large.",
+      "threat_level": "safe"
     },
     {
       "name": "n8n_health_check",
-      "description": "Check connectivity and API health of the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Check connectivity and API health of the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_list_workflows",
-      "description": "List workflows on the configured n8n instance. Names and metadata are user/third-party authored and untrusted; the list can be large. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "List workflows on the configured n8n instance. Names and metadata are user/third-party authored and untrusted; the list can be large. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_get_workflow",
-      "description": "Fetch a single workflow's full definition by id from the configured n8n instance. Returned workflow content is untrusted third-party data. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Fetch a single workflow's full definition by id from the configured n8n instance. Returned workflow content is untrusted third-party data. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_workflow_versions",
-      "description": "List or inspect the version history of a workflow on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "List or inspect the version history of a workflow on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_create_workflow",
-      "description": "Create a new workflow on the configured n8n instance from a supplied definition. Writes to the live instance; a created workflow can contain code/HTTP/command nodes that run when executed. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Create a new workflow on the configured n8n instance from a supplied definition. Writes to the live instance; a created workflow can contain code/HTTP/command nodes that run when executed. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_update_full_workflow",
-      "description": "Replace an existing workflow's entire definition on the configured n8n instance. Overwrites live state. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Replace an existing workflow's entire definition on the configured n8n instance. Overwrites live state. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_update_partial_workflow",
-      "description": "Apply a partial (diff-style) update to an existing workflow on the configured n8n instance. Writes to live state. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Apply a partial (diff-style) update to an existing workflow on the configured n8n instance. Writes to live state. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_delete_workflow",
-      "description": "DESTRUCTIVE: permanently delete a workflow by id from the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "DESTRUCTIVE: permanently delete a workflow by id from the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_validate_workflow",
-      "description": "Validate a workflow that already exists on the configured n8n instance by id. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Validate a workflow that already exists on the configured n8n instance by id. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "safe"
     },
     {
       "name": "n8n_autofix_workflow",
-      "description": "Automatically fix common issues in an existing workflow on the configured n8n instance and write the corrected definition back. Modifies live state. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Automatically fix common issues in an existing workflow on the configured n8n instance and write the corrected definition back. Modifies live state. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_deploy_template",
-      "description": "Deploy a community template as a new workflow on the configured n8n instance. Installs third-party-authored workflow logic onto the live instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Deploy a community template as a new workflow on the configured n8n instance. Installs third-party-authored workflow logic onto the live instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_test_workflow",
-      "description": "Trigger a workflow on the configured n8n instance to test it. EXECUTES the workflow's nodes, which may run arbitrary code, shell commands or outbound HTTP on the n8n host. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Trigger a workflow on the configured n8n instance to test it. EXECUTES the workflow's nodes, which may run arbitrary code, shell commands or outbound HTTP on the n8n host. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_executions",
-      "description": "List and inspect execution records and their input/output data on the configured n8n instance. Execution data is arbitrary third-party content that flowed through the workflows (webhook payloads, API responses) \u2014 a primary prompt-injection channel \u2014 and can be large. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "List and inspect execution records and their input/output data on the configured n8n instance. Execution data is arbitrary third-party content that flowed through the workflows (webhook payloads, API responses) — a primary prompt-injection channel — and can be large. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_evaluations",
-      "description": "Manage and inspect workflow evaluations (test datasets and their results) on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Manage and inspect workflow evaluations (test datasets and their results) on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_manage_datatable",
-      "description": "Read and write n8n data tables (list, insert, query rows) on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Read and write n8n data tables (list, insert, query rows) on the configured n8n instance. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     },
     {
       "name": "n8n_manage_credentials",
-      "description": "Manage credentials stored in the configured n8n instance (e.g. create or list credential entries). Touches the instance's stored secrets \u2014 a sensitive, high-privilege operation. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Manage credentials stored in the configured n8n instance (e.g. create or list credential entries). Touches the instance's stored secrets — a sensitive, high-privilege operation. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "dangerous"
     },
     {
       "name": "n8n_audit_instance",
-      "description": "Run n8n's built-in security audit against the configured instance and return the findings report. Requires N8N_API_URL + N8N_API_KEY."
+      "description": "Run n8n's built-in security audit against the configured instance and return the findings report. Requires N8N_API_URL + N8N_API_KEY.",
+      "threat_level": "elevated"
     }
   ],
   "configurableProperties": [
     {
       "key": "N8N_API_URL",
       "label": "n8n API URL",
-      "description": "Base URL of your n8n instance's REST API, e.g. https://n8n.example.com. Required only for the 17 n8n_* management tools; leave it unset to run in documentation-only mode (the search/validate/template tools still work). Use https:// \u2014 the API key is sent to this host.",
+      "description": "Base URL of your n8n instance's REST API, e.g. https://n8n.example.com. Required only for the 17 n8n_* management tools; leave it unset to run in documentation-only mode (the search/validate/template tools still work). Use https:// — the API key is sent to this host.",
       "sensitive": false,
       "required": false
     },
@@ -170,7 +194,7 @@
     {
       "key": "DISABLED_TOOL_OPERATIONS",
       "label": "Disabled Tool Operations (optional)",
-      "description": "Optional governance control that blocks individual destructive operations while keeping the tools available \u2014 the upstream 'read-only deployment' pattern. See the n8n-mcp docs for the operation identifiers.",
+      "description": "Optional governance control that blocks individual destructive operations while keeping the tools available — the upstream 'read-only deployment' pattern. See the n8n-mcp docs for the operation identifiers.",
       "sensitive": false,
       "required": false
     },
@@ -193,7 +217,7 @@
     ],
     "checks": [
       "license: MIT (upstream)",
-      "source: git clone https://github.com/czlonkowski/n8n-mcp.git \u2014 community tier, UNPINNED (shallow clone of default-branch HEAD); a maintainer promoting to official should pin source.rev to a reviewed commit",
+      "source: git clone https://github.com/czlonkowski/n8n-mcp.git — community tier, UNPINNED (shallow clone of default-branch HEAD); a maintainer promoting to official should pin source.rev to a reviewed commit",
       "build: npm ci && npm run build (tsc -p tsconfig.build.json -> dist/); stdio entrypoint dist/mcp/stdio-wrapper.js (package bin), which is what `npx -y n8n-mcp` runs upstream",
       "database: the node-documentation database data/nodes.db is committed to the repo (.gitignore keeps !data/nodes.db), so no heavy rebuild is required at install",
       "auth: N8N_API_URL + N8N_API_KEY enable the 17 n8n_* management tools; the 7 documentation tools require no credentials and no instance",
@@ -202,7 +226,7 @@
       "NOT run-verified in this review: entry drafted from upstream inspection (README, package.json, GitHub metadata), not from a live JSON-RPC session against the server"
     ],
     "notes": "MCP server by czlonkowski (Romuald Czlonkowski) that gives an AI assistant structured knowledge of n8n's node catalog plus, optionally, a management API onto a live n8n instance. Node/TypeScript; ships a prebuilt SQLite database of node documentation so the search/validate/template tools work offline. Two operating modes: documentation-only (no N8N_API_URL/N8N_API_KEY) exposes 7 read-only knowledge tools; management mode (credentials configured) adds 17 n8n_* tools that read and write workflows, executions, data tables and credentials on the configured instance. Read-only deployment is possible upstream via DISABLED_TOOLS / DISABLED_TOOL_OPERATIONS.",
-    "securityNotes": "THIS SERVER'S TOOLS ARE NOT EQUALLY DANGEROUS. The 7 documentation tools (tools_documentation, search_nodes, get_node, validate_node, validate_workflow, search_templates, get_template) are effectively read-only against a bundled database plus the public template gallery; template content is third-party authored and must be treated as untrusted data. The 17 n8n_* management tools are a control plane over the user's own n8n instance and carry real risk: n8n_create_workflow / n8n_update_full_workflow / n8n_update_partial_workflow / n8n_autofix_workflow / n8n_deploy_template write live workflow logic, n8n_delete_workflow is destructive, n8n_test_workflow EXECUTES workflows (n8n Code and Execute-Command nodes can run arbitrary code and shell on the n8n host), and n8n_manage_credentials touches the instance's stored secrets. PROMPT-INJECTION CHAIN: n8n_executions and n8n_get_workflow/n8n_list_workflows return arbitrary third-party data that passed through the workflows (webhook and API payloads) \u2014 a classic injection channel \u2014 so a poisoned execution result could try to drive the agent into creating and running a malicious workflow. Every management-tool output must stay inside JARVIS's Cryptographic Boundary Protocol (treated as data, never instructions), and every write/execute/delete/credential operation should gate through TLA confirmation rather than being taken on the strength of returned text. The capability is CONTAINED: it is user scope (no root, no pkexec on the JARVIS host), reaches only the operator-configured N8N_API_URL, and is gated by an operator-supplied API key \u2014 the blast radius is the user's own instance, which they already control. Harden a deployment with DISABLED_TOOLS / DISABLED_TOOL_OPERATIONS (e.g. disable n8n_delete_workflow and n8n_manage_credentials, or run read-only) and prefer https:// for N8N_API_URL. N8N_API_KEY and N8N_CF_CLIENT_SECRET are stored in plaintext in the installed manifest today (registry-wide limitation). BUILD/RUN needs Node.js + npm on the host; this entry ships no setup.ps1 and is vetted on linux only. Because this is a community, unpinned clone of the default branch, the exact bytes are not pinned to a reviewed commit \u2014 a maintainer wanting stronger guarantees should set source.rev before promotion to official."
+    "securityNotes": "THIS SERVER'S TOOLS ARE NOT EQUALLY DANGEROUS. The 7 documentation tools (tools_documentation, search_nodes, get_node, validate_node, validate_workflow, search_templates, get_template) are effectively read-only against a bundled database plus the public template gallery; template content is third-party authored and must be treated as untrusted data. The 17 n8n_* management tools are a control plane over the user's own n8n instance and carry real risk: n8n_create_workflow / n8n_update_full_workflow / n8n_update_partial_workflow / n8n_autofix_workflow / n8n_deploy_template write live workflow logic, n8n_delete_workflow is destructive, n8n_test_workflow EXECUTES workflows (n8n Code and Execute-Command nodes can run arbitrary code and shell on the n8n host), and n8n_manage_credentials touches the instance's stored secrets. PROMPT-INJECTION CHAIN: n8n_executions and n8n_get_workflow/n8n_list_workflows return arbitrary third-party data that passed through the workflows (webhook and API payloads) — a classic injection channel — so a poisoned execution result could try to drive the agent into creating and running a malicious workflow. Every management-tool output must stay inside JARVIS's Cryptographic Boundary Protocol (treated as data, never instructions), and every write/execute/delete/credential operation should gate through TLA confirmation rather than being taken on the strength of returned text. The capability is CONTAINED: it is user scope (no root, no pkexec on the JARVIS host), reaches only the operator-configured N8N_API_URL, and is gated by an operator-supplied API key — the blast radius is the user's own instance, which they already control. Harden a deployment with DISABLED_TOOLS / DISABLED_TOOL_OPERATIONS (e.g. disable n8n_delete_workflow and n8n_manage_credentials, or run read-only) and prefer https:// for N8N_API_URL. N8N_API_KEY and N8N_CF_CLIENT_SECRET are stored in plaintext in the installed manifest today (registry-wide limitation). BUILD/RUN needs Node.js + npm on the host; this entry ships no setup.ps1 and is vetted on linux only. Because this is a community, unpinned clone of the default branch, the exact bytes are not pinned to a reviewed commit — a maintainer wanting stronger guarantees should set source.rev before promotion to official."
   },
   "embeddings": {
     "nomic-embed-text": {

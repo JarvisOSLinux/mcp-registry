@@ -25,31 +25,38 @@
   "tools": [
     {
       "name": "brave_web_search",
-      "description": "Web search with rich results and filtering."
+      "description": "Web search with rich results and filtering.",
+      "threat_level": "safe"
     },
     {
       "name": "brave_local_search",
-      "description": "Local business/place search (falls back to web search if limited plan)."
+      "description": "Local business/place search (falls back to web search if limited plan).",
+      "threat_level": "safe"
     },
     {
       "name": "brave_video_search",
-      "description": "Video search with metadata."
+      "description": "Video search with metadata.",
+      "threat_level": "safe"
     },
     {
       "name": "brave_image_search",
-      "description": "Image search."
+      "description": "Image search.",
+      "threat_level": "safe"
     },
     {
       "name": "brave_news_search",
-      "description": "News search with freshness controls."
+      "description": "News search with freshness controls.",
+      "threat_level": "safe"
     },
     {
       "name": "brave_summarizer",
-      "description": "Generate AI-powered summaries from web search results (requires summary key)."
+      "description": "Generate AI-powered summaries from web search results (requires summary key).",
+      "threat_level": "safe"
     },
     {
       "name": "brave_place_search",
-      "description": "Search points of interest (POIs) by location/coordinates."
+      "description": "Search points of interest (POIs) by location/coordinates.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [

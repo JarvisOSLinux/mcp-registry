@@ -24,11 +24,13 @@
   "tools": [
     {
       "name": "execute_sql",
-      "description": "Execute SQL with optional dry-run and row limits."
+      "description": "Execute SQL with optional dry-run and row limits.",
+      "threat_level": "dangerous"
     },
     {
       "name": "get_table_info",
-      "description": "Fetch schema + indexes + foreign keys + row count for a table."
+      "description": "Fetch schema + indexes + foreign keys + row count for a table.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [

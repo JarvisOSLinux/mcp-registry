@@ -24,15 +24,18 @@
   "tools": [
     {
       "name": "succeed",
-      "description": "Return a successful result immediately. Produces a 200 EXIT signal in dispatch."
+      "description": "Return a successful result immediately. Produces a 200 EXIT signal in dispatch.",
+      "threat_level": "safe"
     },
     {
       "name": "fail",
-      "description": "Raise an exception to produce a 500 EXIT signal in dispatch. Error content is nonce-tagged in the signal window."
+      "description": "Raise an exception to produce a 500 EXIT signal in dispatch. Error content is nonce-tagged in the signal window.",
+      "threat_level": "safe"
     },
     {
       "name": "succeed_after",
-      "description": "Wait a configurable number of seconds, then return success. Combine with fail() in a batch to test mixed exit states."
+      "description": "Wait a configurable number of seconds, then return success. Combine with fail() in a batch to test mixed exit states.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

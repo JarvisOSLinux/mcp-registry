@@ -43,24 +43,29 @@
     {
       "name": "generate_image",
       "description": "Generate an image from a text prompt using a locally running ComfyUI instance. Queues a Stable Diffusion workflow, waits for completion, writes the resulting PNG to the output directory and returns its file path plus small metadata (path, width, height, format, prompt_id). The image bytes are not returned inline — read the PNG from the returned path. Runs entirely on-device — no cloud API, no data leaves the machine.",
+      "threat_level": "elevated",
       "blocking": true,
       "suggestedRemindAfter": 60
     },
     {
       "name": "list_models",
-      "description": "List the model files available in the running ComfyUI instance, grouped by type (checkpoints, loras, vae, etc.). Use to discover valid model filenames for generate_image."
+      "description": "List the model files available in the running ComfyUI instance, grouped by type (checkpoints, loras, vae, etc.). Use to discover valid model filenames for generate_image.",
+      "threat_level": "safe"
     },
     {
       "name": "get_queue",
-      "description": "Show the current ComfyUI queue: pending and running prompts."
+      "description": "Show the current ComfyUI queue: pending and running prompts.",
+      "threat_level": "safe"
     },
     {
       "name": "interrupt",
-      "description": "Stop the currently running ComfyUI generation."
+      "description": "Stop the currently running ComfyUI generation.",
+      "threat_level": "safe"
     },
     {
       "name": "get_history",
-      "description": "Return the most recent generation history from ComfyUI: prompt IDs and output filenames."
+      "description": "Return the most recent generation history from ComfyUI: prompt IDs and output filenames.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [

@@ -20,7 +20,8 @@
   "tools": [
     {
       "name": "fetch",
-      "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense."
+      "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense.",
+      "threat_level": "elevated"
     }
   ],
   "configurableProperties": [],
