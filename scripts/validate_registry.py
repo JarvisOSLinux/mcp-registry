@@ -14,6 +14,10 @@ Static checks (always run):
   - per-transport platforms (manifest transports[].platforms) use the same enum,
     and no transport is shadowed by an earlier one that already matches its hosts
   - the manifest URL resolves to an existing servers/<dir>/manifest.json
+  - every tool of a live entry declares a threat_level (safe/elevated/dangerous/
+    forbidden) or the legacy confirmation_required: true — a tool that classifies
+    what it can do to the host, so the daemon's confirmation gate is not blind to
+    a destructive tool hiding under an unfamiliar name (removed/deprecated exempt)
   - integrity.manifestSha256 is present and matches the manifest file bytes
   - setup scripts and their hashes agree in both directions: a setup.sh /
     setup.ps1 in the server directory needs a recorded hash that matches, and a
@@ -68,6 +72,7 @@ MANIFEST_FILE = "manifest.json"
 ALLOWED_TRUST = {"community", "official", "deprecated", "removed"}
 ALLOWED_SCOPE = {"user", "system"}
 ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
+ALLOWED_THREAT_LEVELS = {"safe", "elevated", "dangerous", "forbidden"}
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 # Manifest field naming a setup script, paired with the only filename that field
@@ -83,6 +88,12 @@ INTEGRITY_KEY = dict(SETUP_SCRIPTS)
 # vectors would rank is moot. Everything else in the catalogue is discoverable
 # and must therefore be discoverable from what it actually says today.
 EMBEDDING_EXEMPT_TRUST = {"removed"}
+
+# A `removed` entry cannot be installed and a `deprecated` one is being phased
+# out, so backfilling a threat_level on either buys the confirmation gate
+# nothing — this is the same "not a live entry" line remove_server.py draws.
+# Every entry still offered for install must classify each tool it exposes.
+THREAT_LEVEL_EXEMPT_TRUST = {"removed", "deprecated"}
 
 EMBEDDING_SUMMARY = (
     "{count} embedding problem(s) above: semantic search ranks these servers "
@@ -287,6 +298,56 @@ def validate_setup_scripts(
             )
 
 
+def validate_threat_levels(where: str, manifest: dict, errors: list) -> None:
+    """Every tool a live server exposes must classify what it can do to the host.
+
+    JARVIS decides whether a tool call needs the user's confirmation from the
+    strictest of three sources: a host floor keyed on well-known tool names, this
+    manifest field, and a scan of the call's actual arguments. The host floor is
+    a list of names the daemon already knows, so a genuinely destructive tool
+    under a name it does not recognise (`apply`, `sync`, `type_text`) is invisible
+    to it — absent this field, such a tool classifies `safe` and runs unconfirmed.
+
+    So a tool that declares neither `threat_level` nor the legacy
+    `confirmation_required: true` is a hole in the confirmation gate, not a
+    stylistic omission. The catalogue's tools are fully classified today; making
+    the omission an ERROR is what stops the next merged server from silently
+    reopening the gap. An unknown threat_level string is an error for the same
+    reason a malformed platform is: a value the daemon cannot map is not a
+    classification.
+    """
+    tools = manifest.get("tools")
+    if not isinstance(tools, list):
+        # The shape of `tools` is the Tools contract's own concern; a non-list
+        # is a manifest problem this check is not the right place to report.
+        return
+
+    for position, tool in enumerate(tools):
+        if not isinstance(tool, dict):
+            continue
+        name = tool.get("name") or f"tools[{position}]"
+        level = tool.get("threat_level")
+
+        if level is None:
+            # The legacy shorthand: confirmation_required: true is an older
+            # spelling of `elevated`, still accepted so pre-threat_level
+            # manifests are not forced to migrate in the same PR.
+            if tool.get("confirmation_required") is True:
+                continue
+            errors.append(
+                f"{where}: tool '{name}' declares neither 'threat_level' "
+                f"({'|'.join(sorted(ALLOWED_THREAT_LEVELS))}) nor the legacy "
+                f"'confirmation_required: true' — every tool a live server exposes "
+                f"must classify what it can do to the host, or the confirmation "
+                f"gate treats it as 'safe' and runs it unconfirmed"
+            )
+        elif level not in ALLOWED_THREAT_LEVELS:
+            errors.append(
+                f"{where}: tool '{name}' threat_level {level!r} not in "
+                f"{sorted(ALLOWED_THREAT_LEVELS)}"
+            )
+
+
 def validate_embeddings(where: str, entry: dict, manifest: dict, spec: dict, notes: list) -> None:
     """Check that the stored vectors were computed from the manifest as it is now.
 
@@ -451,6 +512,8 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
 
         validate_setup_scripts(where, dir_name, manifest_url, manifest, integrity, errors)
         validate_transports(where, manifest, entry, errors, warnings)
+        if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
+            validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:
             validate_embeddings(where, entry, manifest, spec, embeddings)
 

@@ -275,10 +275,12 @@ The `tools` array declares the tools the server exposes. This list is used for d
 | `description` | string | Yes | What the tool does. Used for semantic search. |
 | `blocking` | boolean | No | `true` if this tool can park indefinitely waiting for input. See [Blocking Tools](#blocking-tools). |
 | `suggestedRemindAfter` | integer | No | Seconds. The reminder interval the server recommends for this tool. See [Blocking Tools](#blocking-tools). |
-| `threat_level` | string | No | `safe` \| `elevated` \| `dangerous` \| `forbidden`. What this tool can do to the host. See [Threat Level](#threat-level). |
-| `confirmation_required` | boolean | No | Legacy shorthand for `threat_level: elevated`. Prefer `threat_level`. |
+| `threat_level` | string | Yes¹ | `safe` \| `elevated` \| `dangerous` \| `forbidden`. What this tool can do to the host. See [Threat Level](#threat-level). |
+| `confirmation_required` | boolean | No | Legacy shorthand for `threat_level: elevated`, and accepted in its place. Prefer `threat_level`. |
 
 At least one tool is required. Descriptions should be specific enough for an LLM to determine when to use the tool.
+
+¹ Every tool of a live entry must declare `threat_level` (or the legacy `confirmation_required: true`); the PR gate rejects a tool that declares neither. `removed`/`deprecated` entries are exempt. See [Threat Level](#threat-level).
 
 ### Threat Level
 
@@ -313,6 +315,18 @@ user to approve without reading, which costs more safety than it buys.
   "threat_level": "dangerous"
 }
 ```
+
+**It is required, and enforced.** Every tool of a live entry (any `trustStatus`
+other than `removed` or `deprecated`) must declare a `threat_level` in the enum
+above, or the legacy `confirmation_required: true`. `scripts/validate_registry.py`
+makes a tool that declares neither an **error** — the PR gate rejects it — and an
+out-of-enum value an error too. A tool the daemon's host floor does not recognise
+classifies `safe` and runs unconfirmed, so the omission is a hole in the
+confirmation gate, not a stylistic gap: leaving it to a warning would let the
+next merged server quietly reopen it. `removed`/`deprecated` entries are exempt
+(dmcp installs neither, so classifying a tool it will never run buys nothing),
+the same line the embedding gate and `remove_server.py` already draw.
+`scripts/selftest_threat_level.py` proves the check still fires.
 
 `servers/computer-use-linux/manifest.json` is the worked example: input
 injection is `dangerous`, arbitrary screen reads are `elevated`, and window
