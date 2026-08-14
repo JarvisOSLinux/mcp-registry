@@ -30,7 +30,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/czlonkowski/n8n-mcp.git"
+    "url": "https://github.com/czlonkowski/n8n-mcp.git",
+    "rev": "5e3c425faaf0823b320c67ed8936903b00c55267"
   },
   "setupScript": "setup.sh",
   "tools": [

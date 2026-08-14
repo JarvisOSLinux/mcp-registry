@@ -19,7 +19,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/uneco/mcp-git-polite.git"
+    "url": "https://github.com/uneco/mcp-git-polite.git",
+    "rev": "a4bbb05befeab079354861dc2d1e885ba21d66b0"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.uneco.mcp-git-polite/setup.sh",
   "tools": [

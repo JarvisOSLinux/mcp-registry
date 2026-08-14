@@ -18,7 +18,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/eduresser/sqlite-mcp.git"
+    "url": "https://github.com/eduresser/sqlite-mcp.git",
+    "rev": "6be6fcd769418bfaa5a3449ead6e8b4971c639c8"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.eduresser.sqlite-mcp/setup.sh",
   "tools": [

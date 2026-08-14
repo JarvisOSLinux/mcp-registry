@@ -17,7 +17,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/fangmd/time-mcp.git"
+    "url": "https://github.com/fangmd/time-mcp.git",
+    "rev": "56b546cbf4586871cbf5d82c5be184acc62f94fe"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.fangmd.time-mcp/setup.sh",
   "tools": [

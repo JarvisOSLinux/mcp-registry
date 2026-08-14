@@ -15,7 +15,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/Erodenn/fetch-guard.git"
+    "url": "https://github.com/Erodenn/fetch-guard.git",
+    "rev": "9431b2c8562a4736e8251010639b441c863e2b6c"
   },
   "tools": [
     {

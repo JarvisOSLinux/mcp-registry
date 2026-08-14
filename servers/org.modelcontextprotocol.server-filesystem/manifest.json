@@ -18,7 +18,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/j0hanz/filesystem-mcp.git"
+    "url": "https://github.com/j0hanz/filesystem-mcp.git",
+    "rev": "86f6fe860b3d8071a07e333ffffa8be9493625a1"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/setup.sh",
   "tools": [

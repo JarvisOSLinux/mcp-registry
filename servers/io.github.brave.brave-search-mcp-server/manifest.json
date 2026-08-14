@@ -19,7 +19,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/brave/brave-search-mcp-server.git"
+    "url": "https://github.com/brave/brave-search-mcp-server.git",
+    "rev": "937e85a61f69e36f5a88e44308d47836a8d5d523"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.brave.brave-search-mcp-server/setup.sh",
   "tools": [

@@ -31,7 +31,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/ahujasid/blender-mcp.git"
+    "url": "https://github.com/ahujasid/blender-mcp.git",
+    "rev": "3ab892510cc0e5435ba5e611c01fb1021fbde8de"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.ahujasid.blender-mcp/setup.sh",
   "tools": [

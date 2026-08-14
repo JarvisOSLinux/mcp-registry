@@ -17,7 +17,8 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/MissionSquad/mcp-github.git"
+    "url": "https://github.com/MissionSquad/mcp-github.git",
+    "rev": "e312daffca07981c02aa8ca13a9dee82ad51697c"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/setup.sh",
   "tools": [
