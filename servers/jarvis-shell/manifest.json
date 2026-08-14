@@ -79,6 +79,20 @@
       "threat_level": "elevated"
     }
   ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell/server.py",
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell/setup.sh"
+    ],
+    "checks": [
+      "license: same as this registry (GPL-3.0), first-party server",
+      "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/jarvis-shell)",
+      "build: none — Python standard library only; setup.sh installs nothing",
+      "official-tier review: reviewer YakupAtahanov, 2026-08-14, reference: trust-approved promotion PR (mcp-registry) — the five TRUST-MODEL §official requirements are attested by the maintainer applying the trust-approved label to that PR"
+    ],
+    "notes": "First-party server. Reference implementation of the interactive-command pattern documented in MCP-REGISTRY-GUIDE.md: execute_command spawns with closed stdin and reports an unanswered prompt via needs_input; run_job/send_input/read_output/kill_job run interactive commands behind a detached PTY holder with the job handle on the filesystem. Gated by scripts/selftest_needs_input.py and scripts/selftest_jobs.py.",
+    "securityNotes": "Executes arbitrary shell commands, scripts and desktop launches as the logged-in user — the full user-level shell surface. Mutating calls gate through JARVIS's TLA confirmation upstream; command output, including PTY job transcripts, is untrusted text and can carry prompt injection. No sudo — privileged operations belong to jarvis-shell-system-mcp."
+  },
   "embeddings": {
     "nomic-embed-text": {
       "v": [

@@ -76,6 +76,20 @@
       "threat_level": "elevated"
     }
   ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell-system/server.py",
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell-system/setup.sh"
+    ],
+    "checks": [
+      "license: same as this registry (GPL-3.0), first-party server",
+      "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/jarvis-shell-system)",
+      "build: none — Python standard library only; setup.sh installs nothing",
+      "official-tier review: reviewer YakupAtahanov, 2026-08-14, reference: trust-approved promotion PR (mcp-registry) — the five TRUST-MODEL §official requirements are attested by the maintainer applying the trust-approved label to that PR"
+    ],
+    "notes": "First-party server, system scope. Shares its interactive-command implementation with jarvis-shell (the shared blocks are enforced byte-identical by scripts/selftest_jobs.py); installed to /usr/share/mcp for pacman, systemctl and other privileged operations, with interactive privileged commands run as named PTY jobs answerable via send_input.",
+    "securityNotes": "System-scope shell: invoked through dmcp's elevation path, its tools run as root, so every call is equivalent to a root shell command. TLA confirmation upstream is the per-command consent boundary; polkit provides proof-of-presence per elevation window. Command output, including PTY job transcripts, is untrusted text and can carry prompt injection."
+  },
   "embeddings": {
     "nomic-embed-text": {
       "v": [
