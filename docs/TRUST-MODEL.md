@@ -127,10 +127,18 @@ refuses `removed` on the human CLI, and refuses **both** on the agent path.
 **implemented** (`install.rs::cli_trust_gate` / `agent_trust_gate`).
 
 ### Migration from legacy data — complete
-All legacy `unreviewed`/`vetted` values have been collapsed; `registry.json`
-now holds 19 entries, all `community`. No entry has yet been promoted to
-`official`. (`validate_registry.py` rejects any value outside
+All legacy `unreviewed`/`vetted` values have been collapsed.
+(`validate_registry.py` rejects any value outside
 {community, official, deprecated, removed}.)
+
+As of 2026-08-14 the registry holds 31 entries: six first-party capability
+servers (`jarvis-shell`, `jarvis-shell-system`, `email`, `caldav`, `comfyui`,
+`computer-use-linux`) are promoted to `official` via the §4 workflow — a
+maintainer-labelled promotion PR carrying the five-requirement attestation —
+and every git source is pinned to a full 40-char commit SHA. All other
+entries, first-party fixtures included, remain `community`: a fixture needs
+no endorsement, and a third-party server keeps prompting until a maintainer
+actually reads it.
 
 ---
 

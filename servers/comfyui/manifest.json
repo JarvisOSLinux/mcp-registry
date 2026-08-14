@@ -36,6 +36,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "rev": "3b42f6203ea6815364568f6d953e900fa7a844e1",
     "path": "servers/comfyui"
   },
   "setupScript": "setup.sh",
@@ -43,24 +44,29 @@
     {
       "name": "generate_image",
       "description": "Generate an image from a text prompt using a locally running ComfyUI instance. Queues a Stable Diffusion workflow, waits for completion, writes the resulting PNG to the output directory and returns its file path plus small metadata (path, width, height, format, prompt_id). The image bytes are not returned inline — read the PNG from the returned path. Runs entirely on-device — no cloud API, no data leaves the machine.",
+      "threat_level": "elevated",
       "blocking": true,
       "suggestedRemindAfter": 60
     },
     {
       "name": "list_models",
-      "description": "List the model files available in the running ComfyUI instance, grouped by type (checkpoints, loras, vae, etc.). Use to discover valid model filenames for generate_image."
+      "description": "List the model files available in the running ComfyUI instance, grouped by type (checkpoints, loras, vae, etc.). Use to discover valid model filenames for generate_image.",
+      "threat_level": "safe"
     },
     {
       "name": "get_queue",
-      "description": "Show the current ComfyUI queue: pending and running prompts."
+      "description": "Show the current ComfyUI queue: pending and running prompts.",
+      "threat_level": "safe"
     },
     {
       "name": "interrupt",
-      "description": "Stop the currently running ComfyUI generation."
+      "description": "Stop the currently running ComfyUI generation.",
+      "threat_level": "safe"
     },
     {
       "name": "get_history",
-      "description": "Return the most recent generation history from ComfyUI: prompt IDs and output filenames."
+      "description": "Return the most recent generation history from ComfyUI: prompt IDs and output filenames.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [
@@ -92,7 +98,8 @@
       "build: none — Python standard library only (urllib, json, os, re); setup.sh installs nothing",
       "no third-party Python dependencies, no subprocess calls",
       "network: only the COMFYUI_URL host (127.0.0.1:8188 by default); no other outbound calls",
-      "filesystem writes: only generated PNGs, written to COMFYUI_OUTPUT_DIR (default ~/.local/share/jarvis/comfyui/, created 0700); the tool result returns the file path, never the image bytes"
+      "filesystem writes: only generated PNGs, written to COMFYUI_OUTPUT_DIR (default ~/.local/share/jarvis/comfyui/, created 0700); the tool result returns the file path, never the image bytes",
+      "official-tier review: reviewer YakupAtahanov, 2026-08-14, reference: trust-approved promotion PR (mcp-registry) — the five TRUST-MODEL §official requirements are attested by the maintainer applying the trust-approved label to that PR"
     ],
     "notes": "First-party server. Thin HTTP bridge to a locally running ComfyUI instance. Stdlib only. The server itself is low-risk; the GPU and model resources it drives are the user's own hardware. Generated images are written to the output directory and the tool result returns only the file path plus small metadata — the image bytes never enter the model's context (they would otherwise be 0.5–2 MB of base64 per call, the 'Bloated Context' threat).",
     "securityNotes": "All requests go to COMFYUI_URL — a local endpoint by default. No credentials are required or accepted. A generated image is written to COMFYUI_OUTPUT_DIR (default ~/.local/share/jarvis/comfyui/, created 0700) under a filename derived from the ComfyUI prompt_id, and the MCP response carries only that path plus small metadata (dimensions, prompt_id) — the image bytes are never inlined, so a large PNG cannot flood the model's context. The interrupt tool can abort an in-progress generation, which is useful if the agent queues something unintended. generate_image blocks for up to 10 minutes waiting for completion; the suggestedRemindAfter hint is 60 seconds so the orchestrator can report progress. The COMFYUI_URL config allows targeting a non-local ComfyUI server — if changed to a remote URL, generation prompts and images traverse the network unencrypted unless ComfyUI is behind TLS."

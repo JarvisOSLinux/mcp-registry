@@ -18,17 +18,20 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "rev": "3b42f6203ea6815364568f6d953e900fa7a844e1",
     "path": "servers/slow-mcp"
   },
   "setupScript": "setup.sh",
   "tools": [
     {
       "name": "slow_echo",
-      "description": "Wait for a configurable number of seconds, then return the message. Triggers REMIND signals when delay exceeds remind_after."
+      "description": "Wait for a configurable number of seconds, then return the message. Triggers REMIND signals when delay exceeds remind_after.",
+      "threat_level": "safe"
     },
     {
       "name": "ping",
-      "description": "Instant response. Use as a baseline alongside slow_echo to test parallel task completion."
+      "description": "Instant response. Use as a baseline alongside slow_echo to test parallel task completion.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

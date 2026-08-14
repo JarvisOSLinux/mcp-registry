@@ -16,7 +16,8 @@
   "tools": [
     {
       "name": "hello",
-      "description": "Say hello world"
+      "description": "Say hello world",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [],

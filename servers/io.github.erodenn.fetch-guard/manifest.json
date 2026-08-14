@@ -15,12 +15,14 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/Erodenn/fetch-guard.git"
+    "url": "https://github.com/Erodenn/fetch-guard.git",
+    "rev": "9431b2c8562a4736e8251010639b441c863e2b6c"
   },
   "tools": [
     {
       "name": "fetch",
-      "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense."
+      "description": "Fetch a URL and return clean, LLM-ready markdown with metadata and prompt-injection defense.",
+      "threat_level": "elevated"
     }
   ],
   "configurableProperties": [],

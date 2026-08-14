@@ -29,31 +29,38 @@
     },
     {
       "name": "list_schemas",
-      "description": "List all schemas in the database."
+      "description": "List all schemas in the database.",
+      "threat_level": "safe"
     },
     {
       "name": "list_tables",
-      "description": "List all tables in a schema."
+      "description": "List all tables in a schema.",
+      "threat_level": "safe"
     },
     {
       "name": "describe_table",
-      "description": "Get column definitions, types, and constraints for a table."
+      "description": "Get column definitions, types, and constraints for a table.",
+      "threat_level": "safe"
     },
     {
       "name": "list_extensions",
-      "description": "List installed PostgreSQL extensions."
+      "description": "List installed PostgreSQL extensions.",
+      "threat_level": "safe"
     },
     {
       "name": "get_stats",
-      "description": "Retrieve table/index statistics for performance analysis."
+      "description": "Retrieve table/index statistics for performance analysis.",
+      "threat_level": "safe"
     },
     {
       "name": "explain",
-      "description": "Run EXPLAIN (ANALYZE) on a query to surface execution plan and cost."
+      "description": "Run EXPLAIN (ANALYZE) on a query to surface execution plan and cost.",
+      "threat_level": "safe"
     },
     {
       "name": "list_indexes",
-      "description": "List indexes for a table."
+      "description": "List indexes for a table.",
+      "threat_level": "safe"
     }
   ],
   "configurableProperties": [
@@ -77,8 +84,8 @@
       "auth: requires DATABASE_URI connection string",
       "access-mode: restricted (SELECT/EXPLAIN only via pglast AST validation)"
     ],
-    "notes": "Community PostgreSQL MCP server. Deployed in restricted mode \u2014 pglast AST validation allows only SELECT and EXPLAIN statements; DDL/DML blocked at the server layer. Note: COPY statement validation was commented out in the pglast validator as 'will be validated' but is not yet implemented; the DATABASE_URI role is the enforcement backstop.",
-    "securityNotes": "Deployed in restricted access mode (SELECT/EXPLAIN only). Use a read-only PostgreSQL role scoped to the target schema as the primary access control layer \u2014 the COPY bypass in pglast restricted mode means the role-level permission is load-bearing. DATABASE_URI is stored as a dmcp secret and never logged. Source pinned to SHA 07eb329c8c48e49640e0d1b5b35465d4d024c3ee to prevent silent supply chain updates. Prompt injection risk: untrusted data in query results can include SQL or natural language that influences subsequent LLM reasoning \u2014 treat all query results as untrusted."
+    "notes": "Community PostgreSQL MCP server. Deployed in restricted mode — pglast AST validation allows only SELECT and EXPLAIN statements; DDL/DML blocked at the server layer. Note: COPY statement validation was commented out in the pglast validator as 'will be validated' but is not yet implemented; the DATABASE_URI role is the enforcement backstop.",
+    "securityNotes": "Deployed in restricted access mode (SELECT/EXPLAIN only). Use a read-only PostgreSQL role scoped to the target schema as the primary access control layer — the COPY bypass in pglast restricted mode means the role-level permission is load-bearing. DATABASE_URI is stored as a dmcp secret and never logged. Source pinned to SHA 07eb329c8c48e49640e0d1b5b35465d4d024c3ee to prevent silent supply chain updates. Prompt injection risk: untrusted data in query results can include SQL or natural language that influences subsequent LLM reasoning — treat all query results as untrusted."
   },
   "embeddings": {
     "nomic-embed-text": {

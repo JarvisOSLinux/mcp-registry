@@ -6,7 +6,7 @@
   ],
   "name": "JARVIS Shell",
   "description": "Run programs and shell scripts as the current user, run interactive commands as named PTY jobs (run_job / send_input / read_output / kill_job), and open files, URLs, or applications with the desktop's default handler. Use for git, python, file operations, launching GUI apps, and any command that does not require elevated privileges.",
-  "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo \u2014 use jarvis-shell-system-mcp for privileged commands.",
+  "summary": "User-level shell execution and desktop opening for JARVIS. Runs programs and scripts as the logged-in user, runs interactive commands as named PTY jobs answerable mid-run via send_input, and launches files/URLs/apps in the desktop session. No sudo — use jarvis-shell-system-mcp for privileged commands.",
   "keywords": [
     "command",
     "desktop",
@@ -36,41 +36,63 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "rev": "3b42f6203ea6815364568f6d953e900fa7a844e1",
     "path": "servers/jarvis-shell"
   },
   "setupScript": "setup.sh",
   "tools": [
     {
       "name": "execute_command",
-      "description": "Execute a program and return its stdout, stderr, and exit code"
+      "description": "Execute a program and return its stdout, stderr, and exit code",
+      "threat_level": "dangerous"
     },
     {
       "name": "execute_script",
-      "description": "Execute a multi-line shell script via /bin/sh and return its output"
+      "description": "Execute a multi-line shell script via /bin/sh and return its output",
+      "threat_level": "dangerous"
     },
     {
       "name": "open_app",
-      "description": "Open a file, URL, or application with the desktop's default handler"
+      "description": "Open a file, URL, or application with the desktop's default handler",
+      "threat_level": "elevated"
     },
     {
       "name": "run_job",
       "description": "Run a command that may need interactive input under a real PTY as a named job. Blocks until the job exits, streaming live output to the task's stderr. ALWAYS dispatch this as a concurrent task WITH a remind_after (30s is the suggested interval): the call parks for as long as the command waits on input, so without a reminder nothing ever reports that a prompt is up. The intended loop: dispatch run_job as a concurrent task; when a REMIND or status tail shows the command waiting on input, call send_input with exactly what the output asked for; never guess input the output did not ask for. Returns the transcript, exit code, and job name. The transcript is what a terminal would have shown (carriage-return redraws collapsed, escape sequences removed) and is capped at its tail, with a truncation marker naming the read_output call that fetches the omitted head.",
+      "threat_level": "dangerous",
       "blocking": true,
       "suggestedRemindAfter": 30
     },
     {
       "name": "send_input",
-      "description": "Send text verbatim to a running job's terminal (the caller supplies the trailing newline). Returns immediately with a delivery confirmation. Send only what the job's output actually asked for."
+      "description": "Send text verbatim to a running job's terminal (the caller supplies the trailing newline). Returns immediately with a delivery confirmation. Send only what the job's output actually asked for.",
+      "threat_level": "dangerous"
     },
     {
       "name": "read_output",
-      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done. The output is sterilized the same way as run_job's transcript, and optional 'tail'/'offset' read just a window of it \u2014 'tail' alone gives the last N characters, which is where an unanswered prompt sits."
+      "description": "Read a job's output so far plus its running/exited state, mid-run or after exit; carries the exit code once the job is done. The output is sterilized the same way as run_job's transcript, and optional 'tail'/'offset' read just a window of it — 'tail' alone gives the last N characters, which is where an unanswered prompt sits.",
+      "threat_level": "safe"
     },
     {
       "name": "kill_job",
-      "description": "Terminate a running job's whole process group (SIGTERM, escalating to SIGKILL after a short grace) and report what happened."
+      "description": "Terminate a running job's whole process group (SIGTERM, escalating to SIGKILL after a short grace) and report what happened.",
+      "threat_level": "elevated"
     }
   ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell/server.py",
+      "https://github.com/JarvisOSLinux/mcp-registry/blob/main/servers/jarvis-shell/setup.sh"
+    ],
+    "checks": [
+      "license: same as this registry (GPL-3.0), first-party server",
+      "source: https://github.com/JarvisOSLinux/mcp-registry.git (path servers/jarvis-shell)",
+      "build: none — Python standard library only; setup.sh installs nothing",
+      "official-tier review: reviewer YakupAtahanov, 2026-08-14, reference: trust-approved promotion PR (mcp-registry) — the five TRUST-MODEL §official requirements are attested by the maintainer applying the trust-approved label to that PR"
+    ],
+    "notes": "First-party server. Reference implementation of the interactive-command pattern documented in MCP-REGISTRY-GUIDE.md: execute_command spawns with closed stdin and reports an unanswered prompt via needs_input; run_job/send_input/read_output/kill_job run interactive commands behind a detached PTY holder with the job handle on the filesystem. Gated by scripts/selftest_needs_input.py and scripts/selftest_jobs.py.",
+    "securityNotes": "Executes arbitrary shell commands, scripts and desktop launches as the logged-in user — the full user-level shell surface. Mutating calls gate through JARVIS's TLA confirmation upstream; command output, including PTY job transcripts, is untrusted text and can carry prompt injection. No sudo — privileged operations belong to jarvis-shell-system-mcp."
+  },
   "embeddings": {
     "nomic-embed-text": {
       "v": [

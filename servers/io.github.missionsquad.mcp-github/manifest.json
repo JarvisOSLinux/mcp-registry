@@ -17,49 +17,60 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/MissionSquad/mcp-github.git"
+    "url": "https://github.com/MissionSquad/mcp-github.git",
+    "rev": "e312daffca07981c02aa8ca13a9dee82ad51697c"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/setup.sh",
   "tools": [
     {
       "name": "create_or_update_file",
-      "description": "Create or update a file in a repository."
+      "description": "Create or update a file in a repository.",
+      "threat_level": "dangerous"
     },
     {
       "name": "push_files",
-      "description": "Push multiple files in a single commit."
+      "description": "Push multiple files in a single commit.",
+      "threat_level": "dangerous"
     },
     {
       "name": "get_file_contents",
-      "description": "Get contents of a file or directory."
+      "description": "Get contents of a file or directory.",
+      "threat_level": "elevated"
     },
     {
       "name": "search_repositories",
-      "description": "Search GitHub repositories."
+      "description": "Search GitHub repositories.",
+      "threat_level": "safe"
     },
     {
       "name": "create_repository",
-      "description": "Create a new repository."
+      "description": "Create a new repository.",
+      "threat_level": "dangerous"
     },
     {
       "name": "create_issue",
-      "description": "Create an issue."
+      "description": "Create an issue.",
+      "threat_level": "elevated"
     },
     {
       "name": "create_pull_request",
-      "description": "Create a pull request."
+      "description": "Create a pull request.",
+      "threat_level": "elevated"
     },
     {
       "name": "list_pull_requests",
-      "description": "List pull requests."
+      "description": "List pull requests.",
+      "threat_level": "elevated"
     },
     {
       "name": "merge_pull_request",
-      "description": "Merge a pull request."
+      "description": "Merge a pull request.",
+      "threat_level": "dangerous"
     },
     {
       "name": "get_pull_request_files",
-      "description": "List files changed in a pull request."
+      "description": "List files changed in a pull request.",
+      "threat_level": "elevated"
     }
   ],
   "configurableProperties": [

@@ -18,81 +18,100 @@
   ],
   "source": {
     "type": "git",
-    "url": "https://github.com/j0hanz/filesystem-mcp.git"
+    "url": "https://github.com/j0hanz/filesystem-mcp.git",
+    "rev": "86f6fe860b3d8071a07e333ffffa8be9493625a1"
   },
   "setupScript": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/org.modelcontextprotocol.server-filesystem/setup.sh",
   "tools": [
     {
       "name": "roots",
-      "description": "List allowed workspace roots."
+      "description": "List allowed workspace roots.",
+      "threat_level": "safe"
     },
     {
       "name": "ls",
-      "description": "List directory contents."
+      "description": "List directory contents.",
+      "threat_level": "safe"
     },
     {
       "name": "find",
-      "description": "Find files by glob pattern."
+      "description": "Find files by glob pattern.",
+      "threat_level": "safe"
     },
     {
       "name": "tree",
-      "description": "Render directory tree."
+      "description": "Render directory tree.",
+      "threat_level": "safe"
     },
     {
       "name": "read",
-      "description": "Read text file contents (supports head/tail/line ranges)."
+      "description": "Read text file contents (supports head/tail/line ranges).",
+      "threat_level": "elevated"
     },
     {
       "name": "read_many",
-      "description": "Read multiple text files in one request."
+      "description": "Read multiple text files in one request.",
+      "threat_level": "elevated"
     },
     {
       "name": "stat",
-      "description": "Get file/directory metadata."
+      "description": "Get file/directory metadata.",
+      "threat_level": "safe"
     },
     {
       "name": "stat_many",
-      "description": "Get metadata for multiple files/directories."
+      "description": "Get metadata for multiple files/directories.",
+      "threat_level": "safe"
     },
     {
       "name": "grep",
-      "description": "Search file contents (grep-like; optional regex)."
+      "description": "Search file contents (grep-like; optional regex).",
+      "threat_level": "elevated"
     },
     {
       "name": "mkdir",
-      "description": "Create directories (recursive, idempotent)."
+      "description": "Create directories (recursive, idempotent).",
+      "threat_level": "elevated"
     },
     {
       "name": "write",
-      "description": "Write file contents (overwrites existing content)."
+      "description": "Write file contents (overwrites existing content).",
+      "threat_level": "dangerous"
     },
     {
       "name": "edit",
-      "description": "Apply literal string replacements (supports dry-run preview)."
+      "description": "Apply literal string replacements (supports dry-run preview).",
+      "threat_level": "dangerous"
     },
     {
       "name": "mv",
-      "description": "Move/rename a file or directory."
+      "description": "Move/rename a file or directory.",
+      "threat_level": "dangerous"
     },
     {
       "name": "rm",
-      "description": "Delete a file or directory (irreversible)."
+      "description": "Delete a file or directory (irreversible).",
+      "threat_level": "dangerous"
     },
     {
       "name": "calculate_hash",
-      "description": "Calculate SHA-256 hash of a file or directory."
+      "description": "Calculate SHA-256 hash of a file or directory.",
+      "threat_level": "safe"
     },
     {
       "name": "diff_files",
-      "description": "Generate a unified diff between two files."
+      "description": "Generate a unified diff between two files.",
+      "threat_level": "elevated"
     },
     {
       "name": "apply_patch",
-      "description": "Apply a unified diff patch (supports dry-run validation)."
+      "description": "Apply a unified diff patch (supports dry-run validation).",
+      "threat_level": "dangerous"
     },
     {
       "name": "search_and_replace",
-      "description": "Bulk search-and-replace across files matching a glob."
+      "description": "Bulk search-and-replace across files matching a glob.",
+      "threat_level": "dangerous"
     }
   ],
   "configurableProperties": [],

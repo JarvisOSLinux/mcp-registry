@@ -23,28 +23,33 @@
   "tools": [
     {
       "name": "get_entity",
-      "description": "Get the current state and attributes of a Home Assistant entity (e.g. light.living_room, sensor.temperature)."
+      "description": "Get the current state and attributes of a Home Assistant entity (e.g. light.living_room, sensor.temperature).",
+      "threat_level": "elevated"
     },
     {
       "name": "list_entities",
-      "description": "List all entities in the Home Assistant instance, optionally filtered by domain."
+      "description": "List all entities in the Home Assistant instance, optionally filtered by domain.",
+      "threat_level": "elevated"
     },
     {
       "name": "call_service",
-      "description": "Call a Home Assistant service (e.g. light.turn_on, switch.toggle, climate.set_temperature). Triggers real home automation actuation \u2014 gates through TLA confirmation.",
+      "description": "Call a Home Assistant service (e.g. light.turn_on, switch.toggle, climate.set_temperature). Triggers real home automation actuation — gates through TLA confirmation.",
       "threat_level": "elevated"
     },
     {
       "name": "list_services",
-      "description": "List all available Home Assistant services, optionally filtered by domain."
+      "description": "List all available Home Assistant services, optionally filtered by domain.",
+      "threat_level": "safe"
     },
     {
       "name": "list_automations",
-      "description": "List all automations defined in the Home Assistant instance."
+      "description": "List all automations defined in the Home Assistant instance.",
+      "threat_level": "elevated"
     },
     {
       "name": "get_history",
-      "description": "Retrieve historical state data for an entity over a time range."
+      "description": "Retrieve historical state data for an entity over a time range.",
+      "threat_level": "elevated"
     },
     {
       "name": "render_template",
@@ -63,7 +68,7 @@
     {
       "key": "HA_TOKEN",
       "label": "Home Assistant Long-Lived Access Token",
-      "description": "Long-lived access token generated from your HA profile (Profile \u2192 Security \u2192 Long-Lived Access Tokens). Warning: HA long-lived tokens grant full HA admin access \u2014 there is no scope restriction in the HA token model.",
+      "description": "Long-lived access token generated from your HA profile (Profile → Security → Long-Lived Access Tokens). Warning: HA long-lived tokens grant full HA admin access — there is no scope restriction in the HA token model.",
       "sensitive": true,
       "required": true
     }
@@ -78,10 +83,10 @@
       "rev: 1f2bbbc74e81933a39e9c63998d1408f0c198309 (v7.0.0 tag, post-CVE-2026-32111 fix)",
       "build: npm install && npm run build",
       "auth: requires HA_BASE_URL + HA_TOKEN long-lived access token",
-      "CVE-2026-32111: SSRF via ha_url in OAuth DCR mode \u2014 fixed in v7.0.0; does not affect primary (pre-configured HA_BASE_URL) deployment"
+      "CVE-2026-32111: SSRF via ha_url in OAuth DCR mode — fixed in v7.0.0; does not affect primary (pre-configured HA_BASE_URL) deployment"
     ],
-    "notes": "Community Home Assistant MCP server. Communicates with a local HA instance over the local network \u2014 aligned with the local-first thesis. call_service triggers home automation actuators and requires TLA confirmation. render_template is rated dangerous: Jinja2 templates execute server-side with access to all HA state, secrets, and system context \u2014 a prompt-injected template can exfiltrate secrets or trigger destructive automations.",
-    "securityNotes": "HA long-lived tokens are full-admin \u2014 there is no scope restriction in the HA token model. A compromised or stolen HA_TOKEN grants complete Home Assistant control including locks, alarms, and safety systems. Source pinned to v7.0.0 SHA 1f2bbbc74e81933a39e9c63998d1408f0c198309 (fixes CVE-2026-32111 SSRF in OAuth DCR mode). CVE-2026-32111 only affects deployments using the OAuth dynamic client registration flow with attacker-controlled ha_url; primary deployment via pre-configured HA_BASE_URL env var is not affected. HA_TOKEN stored as dmcp secret. Prompt injection risk: HA entity names, automation descriptions, or template results can carry instructions that influence LLM reasoning \u2014 treat all HA state as untrusted input."
+    "notes": "Community Home Assistant MCP server. Communicates with a local HA instance over the local network — aligned with the local-first thesis. call_service triggers home automation actuators and requires TLA confirmation. render_template is rated dangerous: Jinja2 templates execute server-side with access to all HA state, secrets, and system context — a prompt-injected template can exfiltrate secrets or trigger destructive automations.",
+    "securityNotes": "HA long-lived tokens are full-admin — there is no scope restriction in the HA token model. A compromised or stolen HA_TOKEN grants complete Home Assistant control including locks, alarms, and safety systems. Source pinned to v7.0.0 SHA 1f2bbbc74e81933a39e9c63998d1408f0c198309 (fixes CVE-2026-32111 SSRF in OAuth DCR mode). CVE-2026-32111 only affects deployments using the OAuth dynamic client registration flow with attacker-controlled ha_url; primary deployment via pre-configured HA_BASE_URL env var is not affected. HA_TOKEN stored as dmcp secret. Prompt injection risk: HA entity names, automation descriptions, or template results can carry instructions that influence LLM reasoning — treat all HA state as untrusted input."
   },
   "embeddings": {
     "nomic-embed-text": {

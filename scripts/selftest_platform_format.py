@@ -72,7 +72,7 @@ def manifest(transports, platforms, **extra):
         "transports": transports,
         "source": {"type": "git", "url": "https://example.invalid/demo.git"},
         "setupScript": "setup.sh",
-        "tools": [{"name": "ping", "description": "Reply with pong"}],
+        "tools": [{"name": "ping", "description": "Reply with pong", "threat_level": "safe"}],
     }
     doc.update(extra)
     return doc

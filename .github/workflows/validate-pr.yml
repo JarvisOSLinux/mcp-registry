@@ -47,6 +47,9 @@ jobs:
       - name: Self-test the embedding-drift checks
         run: python3 scripts/selftest_embedding_drift.py
 
+      - name: Self-test the threat-level check
+        run: python3 scripts/selftest_threat_level.py
+
       - name: Self-test the jarvis-shell job model
         run: python3 scripts/selftest_jobs.py
 

@@ -83,7 +83,7 @@ def manifest(**extra):
         "keywords": ["demo"],
         "transports": [{"type": "stdio", "command": "python3", "args": ["server.py"]}],
         "source": {"type": "git", "url": "https://example.invalid/demo.git"},
-        "tools": [{"name": "ping", "description": "Reply with pong"}],
+        "tools": [{"name": "ping", "description": "Reply with pong", "threat_level": "safe"}],
     }
     doc.update(extra)
     return doc
@@ -204,7 +204,7 @@ def a_missing_embedding_is_reported():
 def an_edited_manifest_is_reported_as_stale():
     # A tool-description edit is the everyday case: it changes what the server
     # says without touching anything the integrity hashes would notice.
-    edited = manifest(tools=[{"name": "ping", "description": "Reply with pong, but faster"}])
+    edited = manifest(tools=[{"name": "ping", "description": "Reply with pong, but faster", "threat_level": "safe"}])
     stale = generate_embeddings.canonical_hash(generate_embeddings.canonical_text(manifest()))
     with fixture(edited, manifest_hash=stale, inline_version=stale[:16]):
         code, out = validate()
@@ -305,7 +305,7 @@ def the_canonical_definition_is_shared_not_copied():
         generate_embeddings.canonical_hash(generate_embeddings.canonical_text(doc))
         != generate_embeddings.canonical_hash(
             generate_embeddings.canonical_text(
-                manifest(tools=[{"name": "ping", "description": "Something else"}])
+                manifest(tools=[{"name": "ping", "description": "Something else", "threat_level": "safe"}])
             )
         ),
         "a tool-description edit changes the canonical hash the gate compares",

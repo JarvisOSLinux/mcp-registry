@@ -275,8 +275,65 @@ The `tools` array declares the tools the server exposes. This list is used for d
 | `description` | string | Yes | What the tool does. Used for semantic search. |
 | `blocking` | boolean | No | `true` if this tool can park indefinitely waiting for input. See [Blocking Tools](#blocking-tools). |
 | `suggestedRemindAfter` | integer | No | Seconds. The reminder interval the server recommends for this tool. See [Blocking Tools](#blocking-tools). |
+| `threat_level` | string | Yes¹ | `safe` \| `elevated` \| `dangerous` \| `forbidden`. What this tool can do to the host. See [Threat Level](#threat-level). |
+| `confirmation_required` | boolean | No | Legacy shorthand for `threat_level: elevated`, and accepted in its place. Prefer `threat_level`. |
 
 At least one tool is required. Descriptions should be specific enough for an LLM to determine when to use the tool.
+
+¹ Every installable entry must declare `threat_level` (or the legacy `confirmation_required: true`) on each tool; the PR gate rejects a tool that declares neither. Only a `removed` entry is exempt (dmcp refuses to install it); a `deprecated` entry is still human-installable and is not exempt. See [Threat Level](#threat-level).
+
+### Threat Level
+
+A consuming daemon decides whether a tool call needs the user's confirmation.
+JARVIS computes that as the **strictest** of three independent sources: a host
+floor keyed on well-known tool names (`bash`, `exec`, `run_job`, …), this
+manifest field, and a scan of the call's actual parameters for destructive
+payloads. **A manifest can raise a tool's level but never lower it below the
+host floor** — so under-declaring buys a server nothing, while over-declaring
+is honoured.
+
+Declare it whenever a tool's *name* would not tell a reader what it can do.
+The host floor is a list of names the daemon already knows; a genuinely
+destructive tool under an unfamiliar name (`apply`, `sync`, `type_text`) is
+invisible to it, and without this field such a tool classifies `safe` and runs
+unconfirmed.
+
+| Value | Meaning | Examples |
+|-------|---------|----------|
+| `safe` | Reads or reports; cannot alter the host or reveal arbitrary content | list windows, get status, read a public feed |
+| `elevated` | Reads arbitrary user content, or makes bounded changes — an exfiltration or nuisance surface | screenshot, read the accessibility tree, send a message |
+| `dangerous` | Can cause arbitrary effects: executes code, injects input, deletes or overwrites data | run a command, type keystrokes, click arbitrary UI, delete files |
+| `forbidden` | Must never run unattended | reserved; nothing in this registry declares it |
+
+Be proportionate rather than maximal. Marking everything `dangerous` trains a
+user to approve without reading, which costs more safety than it buys.
+
+```json
+{
+  "name": "type_text",
+  "description": "Type a string into the focused window.",
+  "threat_level": "dangerous"
+}
+```
+
+**It is required, and enforced.** Every tool of an installable entry (any
+`trustStatus` other than `removed`) must declare a `threat_level` in the enum
+above, or the legacy `confirmation_required: true`. `scripts/validate_registry.py`
+makes a tool that declares neither an **error** — the PR gate rejects it — and an
+out-of-enum value an error too. A tool the daemon's host floor does not recognise
+classifies `safe` and runs unconfirmed, so the omission is a hole in the
+confirmation gate, not a stylistic gap: leaving it to a warning would let the
+next merged server quietly reopen it. Only a `removed` entry is exempt (dmcp
+refuses to install it, so classifying a tool it will never run buys nothing),
+the same line the embedding gate draws. A `deprecated` entry is **not** exempt:
+`cli_trust_gate` only warns and the human CLI install proceeds, so its tools can
+still run and must be classified. (`remove_server.py` counts `deprecated` as
+excisable-without-`--force`, but that is a removability judgement, not an
+install one.) `scripts/selftest_threat_level.py` proves the check still fires.
+
+`servers/computer-use-linux/manifest.json` is the worked example: input
+injection is `dangerous`, arbitrary screen reads are `elevated`, and window
+enumeration stays `safe`.
 
 ### Blocking Tools
 
