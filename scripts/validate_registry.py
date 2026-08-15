@@ -13,13 +13,16 @@ Static checks (always run):
     and agrees with the manifest it was mirrored from
   - per-transport platforms (manifest transports[].platforms) use the same enum,
     and no transport is shadowed by an earlier one that already matches its hosts
-  - the manifest URL resolves to an existing servers/<dir>/manifest.json
+  - the manifest URL is hosted by this registry and resolves to an existing
+    servers/<dir>/manifest.json
   - every tool of a live entry declares a threat_level (safe/elevated/dangerous/
     forbidden) or the legacy confirmation_required: true — a tool that classifies
     what it can do to the host, so the daemon's confirmation gate is not blind to
     a destructive tool hiding under an unfamiliar name (only `removed` is exempt;
     a `deprecated` server is still installable via the human CLI)
   - integrity.manifestSha256 is present and matches the manifest file bytes
+  - an 'official' entry whose manifest has a git source pins it to a full
+    40-character commit SHA — the only pin dmcp verifies
   - setup scripts and their hashes agree in both directions: a setup.sh /
     setup.ps1 in the server directory needs a recorded hash that matches, and a
     recorded hash needs the script it claims to verify
@@ -40,8 +43,13 @@ Trust-promotion gate (when --base is given):
     a maintainer approval is REQUIRED: the run fails unless
     --approval-label-present is passed. This is the rule that stops a submitter
     from self-assigning the official tier.
+  - the same approval is REQUIRED to leave a revoked state (deprecated/removed
+    -> community/official). Revocation is the registry's only kill switch, so
+    turning it back off is a trust-raising act, not routine editing.
   - a changed or newly added setup script (setup.sh / setup.ps1) is reported as
     a warning (advisory) — both run on users' machines, so both want eyes.
+  - a changed manifest is reported the same way, naming the transport commands
+    it now carries — the manifest is what runs on every call, not just install.
 
 Usage:
   python3 scripts/validate_registry.py
@@ -72,6 +80,18 @@ MANIFEST_FILE = "manifest.json"
 
 ALLOWED_TRUST = {"community", "official", "deprecated", "removed"}
 ALLOWED_SCOPE = {"user", "system"}
+
+# Revocation is the registry's only kill switch — dmcp refuses `removed` on both
+# the human and the agent path. Leaving one of these states re-arms a server the
+# maintainers disarmed, so it needs the same signal as a promotion rather than
+# passing as an ordinary one-word edit.
+REVOKED_TRUST = {"deprecated", "removed"}
+
+# dmcp fetches this URL on every install. The recorded hash makes a substituted
+# body fail closed, so an off-registry host is not a code-execution path — but it
+# points installs at content this repo cannot review, update, or revoke, which is
+# the whole job of the catalogue.
+MANIFEST_URL_PREFIX = "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/"
 ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
 ALLOWED_THREAT_LEVELS = {"safe", "elevated", "dangerous", "forbidden"}
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
@@ -351,6 +371,64 @@ def validate_threat_levels(where: str, manifest: dict, errors: list) -> None:
                 f"{where}: tool '{name}' threat_level {level!r} not in "
                 f"{sorted(ALLOWED_THREAT_LEVELS)}"
             )
+def is_full_commit_sha(rev: str) -> bool:
+    """Mirror of dmcp's `install.rs::is_full_commit_sha` — the only pin it verifies.
+
+    dmcp checks out whatever `rev` names, but re-reads HEAD and compares it back
+    only when the rev is a full SHA. A tag or short rev is checked out and never
+    verified, so a moved tag silently substitutes different code: it reads like a
+    pin and binds nothing. Keep this predicate identical to dmcp's — a pin this
+    file accepts but dmcp does not verify is worse than no pin, because it looks
+    like one.
+    """
+    return len(rev) == 40 and all(c in "0123456789abcdefABCDEF" for c in rev)
+
+
+def validate_manifest_url(where: str, url: str, errors: list) -> None:
+    """Require the manifest to be served from this registry."""
+    if not url.startswith(MANIFEST_URL_PREFIX):
+        errors.append(
+            f"{where}: manifest URL '{url}' is not hosted by this registry — dmcp "
+            f"fetches it on every install, so it must be a "
+            f"'{MANIFEST_URL_PREFIX}...' URL whose bytes this repo controls and "
+            f"can revoke"
+        )
+
+
+def validate_source_pin(where: str, entry: dict, manifest: dict, errors: list) -> None:
+    """An `official` entry must pin the commit its review actually covered.
+
+    docs/TRUST-MODEL.md §3 makes pinning a condition of the tier, and the reason
+    is mechanical: with no `rev`, dmcp clones `--depth 1` and installs whatever
+    the branch head is on the day of the install, so the source review the tier
+    records binds none of the code the user runs. `community` is deliberately
+    exempt — that tier says "you are trusting the submitter", and tracking a
+    branch is a coherent thing for it to mean.
+    """
+    if entry.get("trustStatus") != "official":
+        return
+
+    source = manifest.get("source")
+    if not isinstance(source, dict) or not source.get("url"):
+        return
+
+    rev = source.get("rev")
+    rev = rev.strip() if isinstance(rev, str) else ""
+
+    if not rev:
+        errors.append(
+            f"{where}: trustStatus 'official' but the manifest's source has no "
+            f"'rev' — dmcp would clone the branch head, so the maintainer review "
+            f"this tier records would not bind the installed code "
+            f"(docs/TRUST-MODEL.md §3)"
+        )
+    elif not is_full_commit_sha(rev):
+        errors.append(
+            f"{where}: trustStatus 'official' but source.rev '{rev}' is not a full "
+            f"40-character commit SHA — dmcp verifies HEAD only against a full "
+            f"SHA, so a tag or short rev is checked out unverified and can move "
+            f"under the review"
+        )
 
 
 def validate_embeddings(where: str, entry: dict, manifest: dict, spec: dict, notes: list) -> None:
@@ -488,6 +566,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_platforms(where, entry, errors)
 
         manifest_url = entry.get("manifest", "")
+        validate_manifest_url(where, manifest_url, errors)
         dir_name = dir_from_url(manifest_url)
         if not dir_name:
             errors.append(f"{where}: cannot derive a local dir from manifest URL")
@@ -516,6 +595,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
             continue
 
         validate_setup_scripts(where, dir_name, manifest_url, manifest, integrity, errors)
+        validate_source_pin(where, entry, manifest, errors)
         validate_transports(where, manifest, entry, errors, warnings)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
@@ -559,10 +639,39 @@ def validate_no_orphan_dirs(registry: dict, errors: list) -> None:
             )
 
 
+def transport_commands(server_id: str, entry: dict) -> list:
+    """The command lines a manifest would launch, for the review annotation.
+
+    Read from the head manifest rather than diffed against the base: the base
+    file is registry.json alone, which carries the manifest's hash and not its
+    body. Naming what the manifest says *now* is what a reviewer needs anyway.
+    """
+    dir_name = dir_from_url(entry.get("manifest", ""))
+    if not dir_name:
+        return []
+    try:
+        manifest = json.loads((SERVERS_DIR / dir_name / MANIFEST_FILE).read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    lines = []
+    for transport in manifest.get("transports", []) or []:
+        if not isinstance(transport, dict):
+            continue
+        command = transport.get("command")
+        if not command:
+            continue
+        args = " ".join(str(a) for a in transport.get("args", []) or [])
+        lines.append(f"{command} {args}".strip())
+    return lines
+
+
 def validate_promotions(registry: dict, base: dict, approval: bool, errors: list) -> None:
     base_servers = base.get("servers", {}) if isinstance(base, dict) else {}
     promotions = []
+    revivals = []
     setup_changes = []
+    manifest_changes = []
 
     for server_id, entry in registry["servers"].items():
         head_trust = entry.get("trustStatus")
@@ -572,17 +681,41 @@ def validate_promotions(registry: dict, base: dict, approval: bool, errors: list
         if head_trust == "official" and base_trust != "official":
             promotions.append(server_id)
 
-        # Both setup scripts execute on the user's machine during install, so
-        # both need the "a human read this" signal, not just the POSIX one.
+        # A tombstone is the one state dmcp refuses outright. Lifting it hands
+        # the entry back to every client, so it is a promotion in everything but
+        # name — and unlike a promotion it needs no new field, which is exactly
+        # why it would otherwise slip through as a one-word diff.
+        if base_trust in REVOKED_TRUST and head_trust not in REVOKED_TRUST:
+            revivals.append(f"{server_id} ({base_trust}->{head_trust})")
+
         integrity = entry.get("integrity", {})
         base_integrity = (base_entry or {}).get("integrity", {})
+
+        # Both setup scripts execute on the user's machine during install, so
+        # both need the "a human read this" signal, not just the POSIX one.
         for filename, integrity_key in SETUP_SCRIPTS:
             head_setup = integrity.get(integrity_key)
             if head_setup and head_setup != base_integrity.get(integrity_key):
                 setup_changes.append((server_id, filename))
 
+        # The manifest earns the same signal for a stronger reason: a setup
+        # script runs once at install, while transports[].command is what
+        # launches on every single call. Flagging the install-time code and not
+        # the run-time code had the blast radius backwards.
+        head_manifest = integrity.get("manifestSha256")
+        if base_entry and head_manifest and head_manifest != base_integrity.get("manifestSha256"):
+            manifest_changes.append(server_id)
+
     for sid, filename in setup_changes:
         annotate("warning", f"{sid}: {filename} added/changed — review the script before merge")
+
+    for sid in manifest_changes:
+        commands = transport_commands(sid, registry["servers"][sid])
+        launches = "; ".join(commands) if commands else "(no stdio transport)"
+        annotate(
+            "warning",
+            f"{sid}: manifest changed — review it before merge; it now launches: {launches}",
+        )
 
     if promotions:
         listed = ", ".join(promotions)
@@ -593,6 +726,18 @@ def validate_promotions(registry: dict, base: dict, approval: bool, errors: list
                 "trustStatus raised to 'official' without maintainer approval for: "
                 f"{listed}. A maintainer must apply the 'trust-approved' label "
                 "(see docs/TRUST-MODEL.md §4)."
+            )
+
+    if revivals:
+        listed = ", ".join(revivals)
+        if approval:
+            annotate("notice", f"revocation lifted with maintainer label for: {listed}")
+        else:
+            errors.append(
+                "revocation lifted without maintainer approval for: "
+                f"{listed}. A maintainer must apply the 'trust-approved' label "
+                "(see docs/TRUST-MODEL.md §4) — dmcp refuses a revoked entry, so "
+                "restoring one re-arms it for every client."
             )
 
 

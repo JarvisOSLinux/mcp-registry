@@ -159,8 +159,18 @@ is what makes the mitigation real enough to publish.
      (the manifest itself is hash-checked, not schema-validated)
    • integrity.manifestSha256 / setupScriptSha256 / setupScriptWindowsSha256
      recomputed and match, in both directions (a recorded hash needs its script)
+   • the manifest URL is hosted by this registry — dmcp fetches it on every
+     install, so it must be bytes this repo can review, update and revoke
+   • an `official` entry with a git source pins it to a full 40-char commit SHA
+     (§5's "pinned to a commit" made mechanical — see the note below)
    • trustStatus is REQUIRED and CANNOT be (or become) "official" without a
      maintainer applying the `trust-approved` label
+   • the same label is REQUIRED to leave `deprecated`/`removed`: dmcp refuses a
+     revoked entry, so lifting the tombstone re-arms it for every client, and
+     unlike a promotion it needs no new field to do so
+   • a changed manifest is annotated for review naming the transport commands it
+     now launches, the same signal a changed setup script gets — the manifest is
+     what runs on every call, the setup script only at install
         │
         ▼
  trustStatus = community  (installable by humans and the agent; the agent sees
@@ -179,8 +189,29 @@ The crucial CI rule — **`trustStatus` cannot be raised except through a
 maintainer-gated approval** — is what stops a submitter from marking their own
 server `official`. This is now built: `.github/workflows/validate-pr.yml` runs
 `scripts/validate_registry.py` on every PR to `main` and fails the check if an
-entry is promoted to `official` without a maintainer applying the `trust-approved`
-label (schema, id/scope, and integrity hashes are validated in the same gate).
+entry is promoted to `official` — **or has a `deprecated`/`removed` revocation
+lifted** — without a maintainer applying the `trust-approved` label (schema,
+id/scope, and integrity hashes are validated in the same gate).
+
+**Why a tag does not count as a pin.** §3 requirement 4 says "commit or tag", but
+only one of those binds. `dmcp` checks out whatever `source.rev` names and then
+re-reads `HEAD` to compare **only when the rev is a full 40-character SHA**
+(`install.rs::is_full_commit_sha` guarding `verify_rev`). A tag is checked out
+and never verified, so a moved tag silently substitutes different code: it reads
+like a pin and binds nothing. The PR gate therefore requires a full SHA on
+`official` entries, and `validate_registry.is_full_commit_sha` is kept identical
+to dmcp's — a pin this registry accepts but the client does not verify would be
+worse than no pin, because it looks like one.
+
+**What the gate does *not* do.** The `validate` job checks out the PR's own head,
+so it runs the submitter's copy of the validator and the self-tests. That is
+sufficient against accidental regression — the self-tests build throwaway
+registries and assert the rules still fire — and insufficient against a PR that
+edits a rule and its test together. Branch protection is the control that closes
+it: the `validate` check required, a review required, and no bypass for the PR's
+author. Without that ruleset every rule in this section is advisory, including
+the approval label, which any account with write access can otherwise apply to
+its own PR.
 
 ---
 

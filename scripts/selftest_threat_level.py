@@ -45,7 +45,9 @@ import sync_registry
 import validate_registry
 
 SERVER_ID = "com.example.mcp.demo"
-MANIFEST_URL = "https://example.invalid/servers/demo/manifest.json"
+MANIFEST_URL = (
+    "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/demo/manifest.json"
+)
 MODEL = generate_embeddings.DEFAULT_MODEL
 # threat_level is not part of the canonical embedding text, so a coherent vector
 # stays coherent however a case fiddles the field — the embedding check adds no

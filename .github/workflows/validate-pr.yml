@@ -13,6 +13,14 @@ name: Validate PR
 # real stdio JSON-RPC (offline, stdlib only) so a PR cannot silently break the
 # run_job / send_input loop or the two servers' byte-identity.
 #
+# Note what these self-tests can and cannot do. They catch a gate that stopped
+# firing by accident — a refactor, a bad merge. They do not stop a PR that edits
+# the validator and its self-tests together, because this job runs both from the
+# PR's own head. The control for that is branch protection: a required check
+# plus a required review, so a diff touching scripts/ or .github/ is read by
+# someone other than its author. Without that ruleset every rule below is
+# advisory.
+#
 # Embedding drift is reported as a warning, never a failure: vectors need
 # Ollama, which only the manual Generate Embeddings workflow has, so failing
 # here would block a manifest edit until vectors were regenerated for text that
@@ -52,6 +60,9 @@ jobs:
 
       - name: Self-test the jarvis-shell job model
         run: python3 scripts/selftest_jobs.py
+
+      - name: Self-test the trust-boundary checks
+        run: python3 scripts/selftest_trust_gate.py
 
       - name: Fetch base registry.json
         run: |

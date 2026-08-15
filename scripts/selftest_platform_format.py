@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""selftest_platform_format.py — prove the platform-format checks actually fire.
+"""selftest_platform_format.py â€” prove the platform-format checks actually fire.
 
-This repo has no test suite, and the platform checks — the top-level `platforms`
+This repo has no test suite, and the platform checks â€” the top-level `platforms`
 gate, its mirror into the entry, per-transport `platforms` and their ordering,
-and the setup-script/hash bookkeeping for both `setup.sh` and `setup.ps1` — are
+and the setup-script/hash bookkeeping for both `setup.sh` and `setup.ps1` â€” are
 exactly the kind that rot unnoticed: a validator that never fires looks
 identical to a registry with nothing wrong. Each case below builds a throwaway
 registry in a temp directory, runs the real sync and validate entry points
-against it, and asserts on what they report — including the cases that must stay
+against it, and asserts on what they report â€” including the cases that must stay
 silent, so backward compatibility is checked too.
 
 Offline, stdlib only, writes nothing outside its temp directory.
@@ -29,7 +29,9 @@ import sync_registry
 import validate_registry
 
 SERVER_ID = "com.example.mcp.demo"
-MANIFEST_URL = "https://example.invalid/servers/demo/manifest.json"
+MANIFEST_URL = (
+    "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/demo/manifest.json"
+)
 
 # The embedding-drift check runs on every entry, so a fixture that is drifted by
 # construction would make the "nothing is reported" cases assert on noise from
@@ -88,9 +90,13 @@ def fixture(doc, scripts):
         server_dir.mkdir(parents=True)
         chash = generate_embeddings.canonical_hash(generate_embeddings.canonical_text(doc))
         doc = dict(doc, embeddings={EMBEDDING_MODEL: {"v": EMBEDDING_VECTOR, "hash": chash}})
-        (server_dir / "manifest.json").write_text(json.dumps(doc, indent=2) + "\n")
+        # newline="" throughout: these bytes are hashed and compared against
+        # literals, so letting the platform rewrite "\n" to "\r\n" would fail the
+        # hash assertions on Windows for a reason that has nothing to do with the
+        # checks under test.
+        (server_dir / "manifest.json").write_text(json.dumps(doc, indent=2) + "\n", newline="")
         for filename, body in scripts.items():
-            (server_dir / filename).write_text(body)
+            (server_dir / filename).write_text(body, newline="")
 
         # No integrity hashes and no mirrored platforms: sync_registry.py fills
         # both, the same way a contributor's first run does.
