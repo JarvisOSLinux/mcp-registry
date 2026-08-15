@@ -159,8 +159,18 @@ is what makes the mitigation real enough to publish.
      (the manifest itself is hash-checked, not schema-validated)
    • integrity.manifestSha256 / setupScriptSha256 / setupScriptWindowsSha256
      recomputed and match, in both directions (a recorded hash needs its script)
+   • the manifest URL is hosted by this registry — dmcp fetches it on every
+     install, so it must be bytes this repo can review, update and revoke
+   • an `official` entry with a git source pins it to a full 40-char commit SHA
+     (§5's "pinned to a commit" made mechanical — see the note below)
    • trustStatus is REQUIRED and CANNOT be (or become) "official" without a
      maintainer applying the `trust-approved` label
+   • the same label is REQUIRED to leave `deprecated`/`removed`: dmcp refuses a
+     revoked entry, so lifting the tombstone re-arms it for every client, and
+     unlike a promotion it needs no new field to do so
+   • a changed manifest is annotated for review naming the transport commands it
+     now launches, the same signal a changed setup script gets — the manifest is
+     what runs on every call, the setup script only at install
         │
         ▼
  trustStatus = community  (installable by humans and the agent; the agent sees
@@ -179,8 +189,52 @@ The crucial CI rule — **`trustStatus` cannot be raised except through a
 maintainer-gated approval** — is what stops a submitter from marking their own
 server `official`. This is now built: `.github/workflows/validate-pr.yml` runs
 `scripts/validate_registry.py` on every PR to `main` and fails the check if an
-entry is promoted to `official` without a maintainer applying the `trust-approved`
-label (schema, id/scope, and integrity hashes are validated in the same gate).
+entry is promoted to `official` — **or has a `deprecated`/`removed` revocation
+lifted** — without a maintainer applying the `trust-approved` label (schema,
+id/scope, and integrity hashes are validated in the same gate).
+
+**Why a tag does not count as a pin.** §3 requirement 4 says "commit or tag", but
+only one of those binds. `dmcp` checks out whatever `source.rev` names and then
+re-reads `HEAD` to compare **only when the rev is a full 40-character SHA**
+(`install.rs::is_full_commit_sha` guarding `verify_rev`). A tag is checked out
+and never verified, so a moved tag silently substitutes different code: it reads
+like a pin and binds nothing. The PR gate therefore requires a full SHA on
+`official` entries, and `validate_registry.is_full_commit_sha` is kept identical
+to dmcp's — a pin this registry accepts but the client does not verify would be
+worse than no pin, because it looks like one.
+
+**What the gate does *not* do.** The `validate` job checks out the PR's own head,
+so it runs the submitter's copy of the validator and the self-tests. That is
+sufficient against accidental regression — the self-tests build throwaway
+registries and assert the rules still fire — and insufficient against a PR that
+edits a rule and its test together. Branch protection is the control that closes
+that, and the `main protection` ruleset supplies it.
+
+**Exactly what the ruleset enforces, and on whom.** `validate` is a required
+status check (pinned to the GitHub Actions app, not "any source"), one approving
+review is required, stale approvals are dismissed on push, and force-pushes and
+branch deletion are blocked. **Repository admins hold a pull-request-scoped
+bypass:** they cannot push to `main` directly, but they can merge their own PR
+without the second approval.
+
+The consequence is worth stating plainly rather than leaving for a reader to
+discover:
+
+- **For an outside submission — the case the tier exists for — every rule binds.**
+  A third-party contributor has no write access and no bypass, so they cannot
+  self-promote to `official`, cannot lift a revocation, and cannot merge past a
+  red `validate`. The anti-self-promotion rule is mechanical for exactly the
+  population it is aimed at.
+- **For a maintainer-authored promotion, the label and the review are a process
+  commitment, not a mechanical one.** An admin can apply `trust-approved` to
+  their own PR and merge it. What remains mechanical there is narrower and still
+  real: every change arrives as a reviewable PR with CI run and recorded on it,
+  and nobody can rewrite `main`'s history.
+
+So `official` on a first-party server rests on the maintainers' discipline, and
+`official` on a third-party server rests on the gate. §8's warning applies to the
+first case: your most dangerous servers are your own, and this is the seam where
+that matters.
 
 ---
 

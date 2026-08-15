@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""selftest_embedding_drift.py — prove the embedding checks actually fire.
+"""selftest_embedding_drift.py â€” prove the embedding checks actually fire.
 
 Issue #72: validate_registry.py had zero embedding checks, which is how four
 servers sat silently drifted (jarvis-shell, jarvis-shell-system) or with no
 vectors at all (email, caldav) under a run that printed "registry validation
-passed". An embedding is a claim about text — this vector is what the model
-produced for THIS name, summary, keywords and tool descriptions — and editing
+passed". An embedding is a claim about text â€” this vector is what the model
+produced for THIS name, summary, keywords and tool descriptions â€” and editing
 any of them makes the claim quietly false. Nothing else in the gate can see
 that: the integrity hashes cover the file's bytes, not the meaning the vectors
 encode.
@@ -13,7 +13,7 @@ encode.
 The checks report as WARNINGS, which is the deliberate part and therefore the
 part most worth testing. Failing would deadlock the workflow: a vector can only
 be produced by Ollama, which lives solely in the manually dispatched Generate
-Embeddings workflow, and that workflow embeds what is on `main` — so an error
+Embeddings workflow, and that workflow embeds what is on `main` â€” so an error
 would block a one-word tool-description fix until someone regenerated vectors
 for text that has not merged. `--strict-embeddings` is there for anyone who
 wants the harder rule, and it is tested too.
@@ -21,7 +21,7 @@ wants the harder rule, and it is tested too.
 Each case builds a throwaway registry in a temp directory, runs the real
 validate entry point against it, and asserts on what it reports:
 
-  1. A coherent entry is silent — no warning, no error, exit 0.
+  1. A coherent entry is silent â€” no warning, no error, exit 0.
   2. A manifest with no vector at all is reported (email / caldav's shape).
   3. A manifest edited after embedding is reported as STALE (jarvis-shell's).
   4. registry.json's inline copy drifting from the manifest is reported
@@ -53,7 +53,9 @@ import sync_registry
 import validate_registry
 
 SERVER_ID = "com.example.mcp.demo"
-MANIFEST_URL = "https://example.invalid/servers/demo/manifest.json"
+MANIFEST_URL = (
+    "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/demo/manifest.json"
+)
 MODEL = generate_embeddings.DEFAULT_MODEL
 VECTOR = [0.0, 1.0, -1.0, 0.5]
 

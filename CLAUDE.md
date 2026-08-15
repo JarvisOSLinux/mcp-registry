@@ -28,6 +28,9 @@ scripts/
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   selftest_platform_format.py  Temp-dir self-test for the platform-format checks
   selftest_embedding_drift.py  Temp-dir self-test for the embedding-drift checks
+  selftest_trust_gate.py   Temp-dir self-test for the trust-boundary checks
+                           (official-tier source pin, manifest hosting,
+                           lifting a revocation, manifest-change review signal)
   selftest_needs_input.py  Self-test of the shell servers' needs_input report
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
@@ -97,17 +100,27 @@ that can prompt. Both are documented for third-party authors in
   recomputes hashes; opens PRs with updated registry.json
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
-- `validate-pr.yml` — Blocking PR gate; runs `scripts/selftest_platform_format.py`,
-  `scripts/selftest_embedding_drift.py`, `scripts/selftest_threat_level.py` and
-  `scripts/selftest_jobs.py`, then
+- `validate-pr.yml` — PR gate; runs `scripts/selftest_platform_format.py`,
+  `scripts/selftest_embedding_drift.py`, `scripts/selftest_threat_level.py`,
+  `scripts/selftest_jobs.py` and `scripts/selftest_trust_gate.py`, then
   `scripts/validate_registry.py` (schema,
   id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
-  scripts, setup-script locations, orphan directories, and a `threat_level` —
+  scripts, setup-script locations, manifest hosted by this registry, a full-SHA
+  `source.rev` on `official` entries, orphan directories, and a `threat_level` —
   `safe`/`elevated`/`dangerous`/`forbidden`, or the legacy
-  `confirmation_required: true` — on every tool of a live entry) and blocks
-  `trustStatus` promotion to `official` without the maintainer `trust-approved`
-  label.
+  `confirmation_required: true` — on every tool of a live entry) and blocks both
+  `trustStatus` promotion to `official` and lifting a `deprecated`/`removed`
+  revocation without the maintainer `trust-approved` label.
+  Enforced by the `main protection` ruleset: `validate` required, one approving
+  review, stale approvals dismissed on push, force-push and deletion blocked.
+  **Repository admins hold a pull-request-scoped bypass** — no direct pushes to
+  `main`, but they can merge their own PR without the second approval. So every
+  rule binds mechanically for an outside submission (no write access, no
+  bypass), while a maintainer-authored promotion rests on process. The job also
+  runs from the PR's own head, so the self-tests catch accidental regressions,
+  not a PR editing the gate and its tests together — see `docs/TRUST-MODEL.md`
+  §4 for the full statement of what is and is not mechanical.
   Embedding drift is checked on every entry but reported as a **warning**:
   vectors need Ollama, which only the manual `generate-embeddings.yml` has, so
   failing would block a manifest edit until vectors were regenerated for text
@@ -126,6 +139,7 @@ python scripts/validate_registry.py --strict-embeddings  # ...failing on stale/m
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
 python scripts/selftest_embedding_drift.py  # Offline self-test: stale/missing embedding detection + severity
+python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, manifest hosting, revocation lifting
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
