@@ -112,10 +112,15 @@ that can prompt. Both are documented for third-party authors in
   `confirmation_required: true` — on every tool of a live entry) and blocks both
   `trustStatus` promotion to `official` and lifting a `deprecated`/`removed`
   revocation without the maintainer `trust-approved` label.
-  Enforced by the `main protection` ruleset, which makes `validate` a required
-  check with one required review and no bypass actors — the job also runs from
-  the PR's own head, so the self-tests catch accidental regressions while the
-  required review is what covers a PR editing the gate and its tests together.
+  Enforced by the `main protection` ruleset: `validate` required, one approving
+  review, stale approvals dismissed on push, force-push and deletion blocked.
+  **Repository admins hold a pull-request-scoped bypass** — no direct pushes to
+  `main`, but they can merge their own PR without the second approval. So every
+  rule binds mechanically for an outside submission (no write access, no
+  bypass), while a maintainer-authored promotion rests on process. The job also
+  runs from the PR's own head, so the self-tests catch accidental regressions,
+  not a PR editing the gate and its tests together — see `docs/TRUST-MODEL.md`
+  §4 for the full statement of what is and is not mechanical.
   Embedding drift is checked on every entry but reported as a **warning**:
   vectors need Ollama, which only the manual `generate-embeddings.yml` has, so
   failing would block a manifest edit until vectors were regenerated for text

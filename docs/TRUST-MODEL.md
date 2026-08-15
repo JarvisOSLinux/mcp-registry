@@ -208,10 +208,33 @@ so it runs the submitter's copy of the validator and the self-tests. That is
 sufficient against accidental regression — the self-tests build throwaway
 registries and assert the rules still fire — and insufficient against a PR that
 edits a rule and its test together. Branch protection is the control that closes
-it: the `validate` check required, a review required, and no bypass for the PR's
-author. Without that ruleset every rule in this section is advisory, including
-the approval label, which any account with write access can otherwise apply to
-its own PR.
+that, and the `main protection` ruleset supplies it.
+
+**Exactly what the ruleset enforces, and on whom.** `validate` is a required
+status check (pinned to the GitHub Actions app, not "any source"), one approving
+review is required, stale approvals are dismissed on push, and force-pushes and
+branch deletion are blocked. **Repository admins hold a pull-request-scoped
+bypass:** they cannot push to `main` directly, but they can merge their own PR
+without the second approval.
+
+The consequence is worth stating plainly rather than leaving for a reader to
+discover:
+
+- **For an outside submission — the case the tier exists for — every rule binds.**
+  A third-party contributor has no write access and no bypass, so they cannot
+  self-promote to `official`, cannot lift a revocation, and cannot merge past a
+  red `validate`. The anti-self-promotion rule is mechanical for exactly the
+  population it is aimed at.
+- **For a maintainer-authored promotion, the label and the review are a process
+  commitment, not a mechanical one.** An admin can apply `trust-approved` to
+  their own PR and merge it. What remains mechanical there is narrower and still
+  real: every change arrives as a reviewable PR with CI run and recorded on it,
+  and nobody can rewrite `main`'s history.
+
+So `official` on a first-party server rests on the maintainers' discipline, and
+`official` on a third-party server rests on the gate. §8's warning applies to the
+first case: your most dangerous servers are your own, and this is the seam where
+that matters.
 
 ---
 
