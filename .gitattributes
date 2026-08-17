@@ -1,0 +1,9 @@
+# Integrity hashes in registry.json are computed over the committed bytes of
+# these files. A checkout with core.autocrlf=true rewrites them to CRLF, so
+# every hash verification false-fails. Pin them to LF so any checkout hashes
+# identically to what CI verified.
+servers/**/manifest.json text eol=lf
+servers/**/setup.sh text eol=lf
+# Not present yet, but setupScriptWindowsSha256 covers these bytes the same way.
+servers/**/*.ps1 text eol=lf
+registry.json text eol=lf
