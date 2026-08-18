@@ -6,20 +6,29 @@ name: Validate PR
 # `trust-approved` label. See docs/TRUST-MODEL.md §4 and
 # docs/REGISTRY-AUTOMATION.md §"PR gate".
 #
+# Two checkouts, and the split between them is the security property:
+#
+#   pr/    the PR's merge ref — the DATA under judgment (registry.json,
+#          servers/**), never executed as gate code
+#   gate/  the base branch — the CODE that judges: validator and self-tests
+#
 # The self-tests run first: the validation ones build throwaway registries in
 # a temp dir and assert the validator still rejects what it is supposed to
 # reject, so a gate that has quietly stopped firing fails here instead of
 # passing everything; the job-model one drives the jarvis-shell servers over
-# real stdio JSON-RPC (offline, stdlib only) so a PR cannot silently break the
-# run_job / send_input loop or the two servers' byte-identity.
+# real stdio JSON-RPC (offline, stdlib only) — its logic runs from gate/ but
+# JOBS_SELFTEST_TREE points it at pr/, so it exercises the servers the PR
+# actually ships.
 #
-# Note what these self-tests can and cannot do. They catch a gate that stopped
-# firing by accident — a refactor, a bad merge. They do not stop a PR that edits
-# the validator and its self-tests together, because this job runs both from the
-# PR's own head. The control for that is branch protection: a required check
-# plus a required review, so a diff touching scripts/ or .github/ is read by
-# someone other than its author. Without that ruleset every rule below is
-# advisory.
+# Because every script executes from gate/, a PR editing the validator and its
+# self-tests together changes nothing about how that same PR is judged — the
+# edited gate takes effect only after it merges. What this does NOT close: on
+# `pull_request` events GitHub runs THIS WORKFLOW FILE from the PR's merge
+# ref, so a diff under .github/workflows/ can still change what this job does.
+# That residue is exactly what the required review must read (the ruleset pins
+# the `validate` check to the Actions app and requires an approving review,
+# with stale approvals dismissed on push). Keep the trigger `pull_request`,
+# never `pull_request_target`: fork PRs must get a read-only, secretless token.
 #
 # Embedding drift is reported as a warning, never a failure: vectors need
 # Ollama, which only the manual Generate Embeddings workflow has, so failing
@@ -41,8 +50,16 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR head
+      - name: Checkout PR head (the tree under judgment)
         uses: actions/checkout@v6
+        with:
+          path: pr
+
+      - name: Checkout the gate from the base branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.base_ref }}
+          path: gate
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,28 +67,25 @@ jobs:
           python-version: '3.x'
 
       - name: Self-test the validation logic
-        run: python3 scripts/selftest_platform_format.py
+        run: python3 gate/scripts/selftest_platform_format.py
 
       - name: Self-test the embedding-drift checks
-        run: python3 scripts/selftest_embedding_drift.py
+        run: python3 gate/scripts/selftest_embedding_drift.py
 
       - name: Self-test the threat-level check
-        run: python3 scripts/selftest_threat_level.py
+        run: python3 gate/scripts/selftest_threat_level.py
 
       - name: Self-test the jarvis-shell job model
-        run: python3 scripts/selftest_jobs.py
+        run: python3 gate/scripts/selftest_jobs.py
+        env:
+          JOBS_SELFTEST_TREE: ${{ github.workspace }}/pr
 
       - name: Self-test the trust-boundary checks
-        run: python3 scripts/selftest_trust_gate.py
-
-      - name: Fetch base registry.json
-        run: |
-          git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
-          git show "FETCH_HEAD:registry.json" > /tmp/base_registry.json \
-            || echo '{}' > /tmp/base_registry.json
+        run: python3 gate/scripts/selftest_trust_gate.py
 
       - name: Validate registry
+        working-directory: pr
         run: |
-          python3 scripts/validate_registry.py \
-            --base /tmp/base_registry.json \
+          python3 ../gate/scripts/validate_registry.py \
+            --base ../gate/registry.json \
             ${{ contains(github.event.pull_request.labels.*.name, 'trust-approved') && '--approval-label-present' || '' }}
