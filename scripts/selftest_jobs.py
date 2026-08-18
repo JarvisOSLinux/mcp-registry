@@ -72,7 +72,15 @@ import tempfile
 import threading
 import time
 
-REPO = pathlib.Path(__file__).resolve().parent.parent
+# JOBS_SELFTEST_TREE lets the PR gate point this script at a different
+# tree than the one it was loaded from: the test logic runs from the base
+# branch while the servers under test come from the PR head, so a PR
+# cannot edit a server and this self-test together to make the edit
+# invisible. Unset, everything resolves to this checkout as before.
+REPO = pathlib.Path(
+    os.environ.get("JOBS_SELFTEST_TREE")
+    or pathlib.Path(__file__).resolve().parent.parent
+).resolve()
 USER_SERVER = REPO / "servers" / "jarvis-shell" / "server.py"
 SYSTEM_SERVER = REPO / "servers" / "jarvis-shell-system" / "server.py"
 USER_MANIFEST = REPO / "servers" / "jarvis-shell" / "manifest.json"

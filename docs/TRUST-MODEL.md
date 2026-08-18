@@ -203,12 +203,16 @@ like a pin and binds nothing. The PR gate therefore requires a full SHA on
 to dmcp's — a pin this registry accepts but the client does not verify would be
 worse than no pin, because it looks like one.
 
-**What the gate does *not* do.** The `validate` job checks out the PR's own head,
-so it runs the submitter's copy of the validator and the self-tests. That is
-sufficient against accidental regression — the self-tests build throwaway
-registries and assert the rules still fire — and insufficient against a PR that
-edits a rule and its test together. Branch protection is the control that closes
-that, and the `main protection` ruleset supplies it.
+**What the gate does *not* do.** The `validate` job executes the validator and
+every self-test from a checkout of the **base branch**, judging the PR's tree as
+data (the job-model self-test likewise runs base-branch logic against the PR's
+copy of the shell servers, via `JOBS_SELFTEST_TREE`). A PR that edits a rule and
+its test together therefore changes nothing about how that same PR is judged —
+the edited gate takes effect only after it merges. What this does **not** close:
+on `pull_request` events GitHub runs the workflow *file* from the PR's merge
+ref, so a diff under `.github/workflows/` can still change what the job does.
+That residue is what the required review exists to read, and the ruleset's
+check-source pinning plus review requirement are the controls around it.
 
 **Exactly what the ruleset enforces, and on whom.** `validate` is a required
 status check (pinned to the GitHub Actions app, not "any source"), one approving

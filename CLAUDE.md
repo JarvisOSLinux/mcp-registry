@@ -117,10 +117,14 @@ that can prompt. Both are documented for third-party authors in
   **Repository admins hold a pull-request-scoped bypass** — no direct pushes to
   `main`, but they can merge their own PR without the second approval. So every
   rule binds mechanically for an outside submission (no write access, no
-  bypass), while a maintainer-authored promotion rests on process. The job also
-  runs from the PR's own head, so the self-tests catch accidental regressions,
-  not a PR editing the gate and its tests together — see `docs/TRUST-MODEL.md`
-  §4 for the full statement of what is and is not mechanical.
+  bypass), while a maintainer-authored promotion rests on process. The job
+  executes the validator and all self-tests from a checkout of the **base
+  branch** and judges the PR's tree as data (`selftest_jobs.py` targets the
+  PR's shell servers via `JOBS_SELFTEST_TREE`), so a PR editing the gate and
+  its tests together does not change how that PR is judged; the workflow file
+  itself still runs from the PR's merge ref, which is what the required review
+  must read — see `docs/TRUST-MODEL.md` §4 for the full statement of what is
+  and is not mechanical.
   Embedding drift is checked on every entry but reported as a **warning**:
   vectors need Ollama, which only the manual `generate-embeddings.yml` has, so
   failing would block a manifest edit until vectors were regenerated for text
