@@ -24232,9 +24232,7 @@
         "illustration"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "mcp",
@@ -24243,7 +24241,7 @@
       ],
       "trustStatus": "official",
       "integrity": {
-        "manifestSha256": "2e30716104dbf853eb989e850f7218b86eca989391ffa669017fde17a35cd227",
+        "manifestSha256": "db47c57feec858a3aa35c33075b676a8df6a7e8a48f87befe03db1ec07ef7cd4",
         "setupScriptSha256": "813d536ddc2f5e7382b86bab2ca49ddfe6d76c01e6df749deaf8912b9808773a"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/comfyui/manifest.json",
