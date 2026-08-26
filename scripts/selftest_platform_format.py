@@ -335,12 +335,91 @@ def misnamed_or_missing_windows_script_is_an_error():
 
 
 @case
+def windows_without_a_windows_setup_script_is_an_error():
+    # A POSIX setupScript, 'windows' vetted, but no setup.ps1 and no
+    # setupScriptWindows: dmcp aborts on a Windows host with
+    # SetupError::NoWindowsScript, so the PR gate must reject it too. Both
+    # platforms are servable and the scripts/hashes are otherwise clean, so the
+    # only thing wrong is the missing Windows setup path.
+    doc = manifest([posix_transport(["linux"]), WINDOWS_TRANSPORT], ["linux", "windows"])
+    with fixture(doc, {"setup.sh": SETUP_SH}):
+        sync()
+        code, out = validate()
+        check(code == 1, "windows vetted with a posix setupScript and no setup.ps1 fails the gate")
+        check(
+            "SetupError::NoWindowsScript" in out,
+            "the error mirrors the dmcp runtime failure by name",
+        )
+
+
+@case
+def windows_with_a_windows_setup_script_is_ok():
+    doc = manifest(
+        [posix_transport(["linux"]), WINDOWS_TRANSPORT],
+        ["linux", "windows"],
+        setupScriptWindows="setup.ps1",
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH, "setup.ps1": SETUP_PS1}):
+        sync()
+        code, out = validate()
+        check(code == 0, "windows vetted with a committed setup.ps1 passes the gate")
+        check("NoWindowsScript" not in out, "a windows-capable entry with its setup.ps1 is not flagged")
+
+
+@case
+def windows_with_no_setup_script_at_all_is_ok():
+    # setupScript null (fetch-at-launch): nothing runs at install, so there is no
+    # POSIX script that would need a Windows counterpart — exempt, mirroring dmcp.
+    doc = manifest(
+        [posix_transport(["linux"]), WINDOWS_TRANSPORT], ["linux", "windows"], setupScript=None
+    )
+    with fixture(doc, {}):
+        sync()
+        code, out = validate()
+        check(code == 0, "a null setupScript exempts a windows entry from the setup-script gate")
+        check("NoWindowsScript" not in out, "no posix setup step means no missing windows script")
+        check("::error::" not in out, "a fetch-at-launch windows entry is clean")
+
+
+@case
+def a_posix_only_command_on_windows_is_a_warning():
+    # command == 'python3': the POSIX interpreter name, absent on Windows (which
+    # ships 'python'). A heuristic, so a warning — the entry is otherwise valid.
+    doc = manifest([BARE_TRANSPORT], ["linux", "windows"], setupScript=None)
+    with fixture(doc, {}):
+        sync()
+        code, out = validate()
+        check(code == 0, "a python3 transport on a windows entry warns, not errors")
+        check(
+            "::warning::" in out and "python3" in out,
+            "the warning names the command that will not resolve on Windows",
+        )
+        check("::error::" not in out, "the python3 heuristic is a warning, not an error")
+
+    # command contains '.venv/bin/': the POSIX venv layout, absent on Windows
+    # (which uses '.venv\\Scripts\\').
+    doc = manifest([posix_transport(["linux", "windows"])], ["linux", "windows"], setupScript=None)
+    with fixture(doc, {}):
+        sync()
+        code, out = validate()
+        check(code == 0, "a POSIX-venv command on a windows entry warns, not errors")
+        check(
+            "::warning::" in out and ".venv/bin/" in out,
+            "the warning names the POSIX venv path",
+        )
+
+
+@case
 def unservable_vetted_platform_is_a_warning():
+    # Vetting 'windows' now requires a Windows setup script (the NoWindowsScript
+    # gate), so this darwin-focused fixture ships setup.ps1 to stay valid on the
+    # windows it also lists — the unservable platform under test is darwin.
     doc = manifest(
         [posix_transport(["linux"]), WINDOWS_TRANSPORT],
         ["linux", "darwin", "windows"],
+        setupScriptWindows="setup.ps1",
     )
-    with fixture(doc, {"setup.sh": SETUP_SH}):
+    with fixture(doc, {"setup.sh": SETUP_SH, "setup.ps1": SETUP_PS1}):
         sync()
         code, out = validate()
         check(code == 0, "a vetted platform with no transport does not fail the gate")
@@ -363,8 +442,12 @@ def a_shadowed_transport_is_an_error():
             "the error names the transport dmcp can never select",
         )
 
-    doc = manifest([WINDOWS_TRANSPORT, BARE_TRANSPORT], ["linux", "windows"])
-    with fixture(doc, {"setup.sh": SETUP_SH}):
+    # Ships setup.ps1 because it vets 'windows': the ordering under test is the
+    # transports', but the entry still has to clear the NoWindowsScript gate.
+    doc = manifest(
+        [WINDOWS_TRANSPORT, BARE_TRANSPORT], ["linux", "windows"], setupScriptWindows="setup.ps1"
+    )
+    with fixture(doc, {"setup.sh": SETUP_SH, "setup.ps1": SETUP_PS1}):
         sync()
         code, out = validate()
         check(code == 0, "the same two transports, most-specific first, pass the gate")

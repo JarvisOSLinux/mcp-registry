@@ -28,11 +28,18 @@ Static checks (always run):
     recorded hash needs the script it claims to verify
   - setupScript / setupScriptWindows resolve to a committed, hashed script —
     never to an off-registry URL dmcp would fetch and execute unverified
+  - a 'windows' platform claim on an entry that HAS a POSIX setupScript carries a
+    Windows setup path too (a setupScriptWindows field or a committed setup.ps1),
+    mirroring dmcp's SetupError::NoWindowsScript so the gate catches at PR time
+    what dmcp otherwise only fails at install time (an entry with no setupScript
+    at all is exempt — fetch-at-launch runs nothing to need a Windows counterpart)
   - no orphan directory: every first-party servers/<dir>/ is referenced by an
     entry (catches a half-done removal that dropped the entry but left the dir)
 
 Warnings (reported, never fatal):
   - a vetted top-level platform that no transport can serve
+  - a 'windows' entry whose selected transport launches a POSIX-only command
+    (python3, or a .venv/bin/ path) that likely will not resolve on Windows
   - embeddings that are missing, or stale against the manifest they claim to
     describe (see validate_embeddings / report_embeddings for why these are
     warnings, and --strict-embeddings to make them errors)
@@ -323,6 +330,75 @@ def validate_setup_scripts(
             )
 
 
+def windows_transport(manifest: dict):
+    """The transport dmcp would select on a Windows host, or None.
+
+    Mirrors src/transport.rs::select: the first transport the host is in, where a
+    transport with no `platforms` matches every host. Order is load-bearing, so
+    the first match is the one that would launch.
+    """
+    for transport in manifest.get("transports", []) or []:
+        if not isinstance(transport, dict):
+            continue
+        platforms = transport.get("platforms")
+        if platforms is None or (isinstance(platforms, list) and "windows" in platforms):
+            return transport
+    return None
+
+
+def validate_windows_setup(
+    where: str, dir_name: str, entry: dict, manifest: dict, errors: list, warnings: list
+) -> None:
+    """A 'windows' platform claim must carry a runnable Windows install path.
+
+    Mirrors dmcp's runtime SetupError::NoWindowsScript (src/setup.rs): asked to
+    install on a Windows host, dmcp refuses a manifest that declares only the
+    POSIX setupScript — PowerShell's -File runs nothing but a .ps1, and Windows
+    has no shell to hand setup.sh to, so the install aborts. That is caught today
+    only at install time; gating it here catches the same claim at PR time.
+
+    An entry with no setupScript at all is exempt from the error: nothing runs at
+    install, so there is no POSIX script needing a Windows counterpart — the
+    fetch-at-launch case, which dmcp's host branch never reaches. The command
+    warning below is independent of setup and fires either way.
+    """
+    platforms = entry.get("platforms")
+    if not isinstance(platforms, list) or "windows" not in platforms:
+        return
+
+    setup_script = manifest.get("setupScript")
+    if isinstance(setup_script, str) and setup_script:
+        setup_windows = manifest.get("setupScriptWindows")
+        has_windows_field = isinstance(setup_windows, str) and bool(setup_windows)
+        has_ps1 = (SERVERS_DIR / dir_name / WINDOWS_SETUP_SCRIPT).exists()
+
+        if not has_windows_field and not has_ps1:
+            errors.append(
+                f"{where}: platforms include 'windows' and the manifest declares a "
+                f"setupScript ('{setup_script}') but neither a 'setupScriptWindows' "
+                f"field nor a committed servers/{dir_name}/{WINDOWS_SETUP_SCRIPT} — dmcp "
+                f"raises SetupError::NoWindowsScript on a Windows host (add "
+                f"{WINDOWS_SETUP_SCRIPT} + setupScriptWindows, or drop 'windows' from "
+                f"'platforms')"
+            )
+
+    # A launch command that only resolves on POSIX is a quieter form of the same
+    # claim: the host is vetted, but nothing here can start the server there. dmcp
+    # cannot know an interpreter name is wrong, so this stays a heuristic warning —
+    # 'python3' is the POSIX interpreter (Windows ships 'python'), and '.venv/bin/'
+    # is the POSIX venv layout (Windows uses '.venv\Scripts\').
+    transport = windows_transport(manifest)
+    if isinstance(transport, dict):
+        command = transport.get("command")
+        if isinstance(command, str) and (command == "python3" or ".venv/bin/" in command):
+            warnings.append(
+                f"{where}: the transport dmcp selects on a Windows host launches "
+                f"'{command}', which likely will not resolve there — 'python3' and "
+                f"the POSIX '.venv/bin/' layout are Windows-absent (it ships "
+                f"'python' and '.venv\\Scripts\\'); give Windows its own transport"
+            )
+
+
 def validate_threat_levels(where: str, manifest: dict, errors: list) -> None:
     """Every tool a live server exposes must classify what it can do to the host.
 
@@ -597,6 +673,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_setup_scripts(where, dir_name, manifest_url, manifest, integrity, errors)
         validate_source_pin(where, entry, manifest, errors)
         validate_transports(where, manifest, entry, errors, warnings)
+        validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:

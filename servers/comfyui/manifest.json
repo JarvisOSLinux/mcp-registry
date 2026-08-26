@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "JARVIS ComfyUI — On-Device Image Generation",
   "summary": "Local text-to-image generation via a running ComfyUI instance (Stable Diffusion). Queues a generation workflow, polls until completion, writes the output PNG to disk and returns its file path plus small metadata (dimensions, prompt_id) — the image bytes are never inlined into the result. Entirely on-device, no cloud API, no data leaves the machine. GPU-dependent: requires a model checkpoint loaded in ComfyUI.",
