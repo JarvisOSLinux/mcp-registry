@@ -119,6 +119,7 @@ def fixture(doc, scripts):
                             "version": "1.0.0",
                             "scope": "user",
                             "keywords": ["demo"],
+                            "categories": ["productivity"],
                             "trustStatus": "community",
                             "integrity": {},
                             "manifest": MANIFEST_URL,

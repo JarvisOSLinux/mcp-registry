@@ -83,6 +83,9 @@ jobs:
       - name: Self-test the trust-boundary checks
         run: python3 gate/scripts/selftest_trust_gate.py
 
+      - name: Self-test the category and fixture checks
+        run: python3 gate/scripts/selftest_categories.py
+
       - name: Validate registry
         working-directory: pr
         run: |

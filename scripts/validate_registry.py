@@ -101,6 +101,55 @@ REVOKED_TRUST = {"deprecated", "removed"}
 MANIFEST_URL_PREFIX = "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/"
 ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
 ALLOWED_THREAT_LEVELS = {"safe", "elevated", "dangerous", "forbidden"}
+
+# Categories are a closed vocabulary because they are a filter, not prose: a
+# typo ("mcp-utilties") does not fail anything today, it just quietly drops the
+# entry out of every view that selects on that term. The split below is the
+# useful one for a consumer catalogue — what a server does FOR SOMEONE, versus
+# what it is to this registry — because only the first half answers "what can
+# JARVIS do for me?".
+CAPABILITY_CATEGORIES = {
+    "automation",
+    "browser",
+    "calendar",
+    "communication",
+    "computer-use",
+    "creative",
+    "data-analysis",
+    "database",
+    "desktop",
+    "developer-tools",
+    "finance",
+    "home-automation",
+    "image-generation",
+    "iot",
+    "knowledge-management",
+    "media",
+    "messaging",
+    "office-docs",
+    "productivity",
+    "search",
+    "social",
+    "storage",
+    "system",
+    "team-collaboration",
+    "travel",
+    "weather",
+}
+
+# Registry-internal terms. They describe an entry's relationship to this
+# catalogue rather than a capability, so a consumer view that lists
+# CAPABILITY_CATEGORIES will not surface them.
+REGISTRY_CATEGORIES = {
+    "mcp",
+    "mcp-development",
+    "mcp-security",
+    "mcp-testing",
+    "mcp-utilities",
+    "mcp-web",
+}
+
+ALLOWED_CATEGORIES = CAPABILITY_CATEGORIES | REGISTRY_CATEGORIES
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 # Manifest field naming a setup script, paired with the only filename that field
@@ -169,6 +218,87 @@ def validate_platforms(where: str, entry: dict, errors: list) -> None:
             errors.append(
                 f"{where}: platform {value!r} not in {sorted(ALLOWED_PLATFORMS)}"
             )
+
+
+def validate_categories(where: str, entry: dict, errors: list, warnings: list) -> None:
+    """Check the entry's `categories` against the closed vocabulary.
+
+    Categories never reach the embedding text (EMBEDDING-SPEC.md), so they do
+    not move a similarity score — they are what a catalogue view selects on.
+    That makes an unrecognised term invisible rather than loud: the entry simply
+    stops appearing under the facet its author meant, and no check fails. The
+    closed set is what turns that into a build error.
+    """
+    categories = entry.get("categories")
+    if categories is None:
+        errors.append(
+            f"{where}: missing 'categories' — every entry must say what it is, "
+            f"so a consumer view can select on it"
+        )
+        return
+
+    if not isinstance(categories, list) or not categories:
+        errors.append(f"{where}: 'categories' must be a non-empty array")
+        return
+
+    # isinstance first, for the reason validate_platforms gives: an unhashable
+    # nested value would abort the whole gate instead of reporting this entry.
+    for value in categories:
+        if not isinstance(value, str) or value not in ALLOWED_CATEGORIES:
+            errors.append(
+                f"{where}: category {value!r} not in {sorted(ALLOWED_CATEGORIES)}"
+            )
+
+    # A registry-only entry is reachable by semantic search but appears under no
+    # capability facet, so a catalogue driven by CAPABILITY_CATEGORIES cannot
+    # list it at all. That is correct for a fixture and a mistake for anything
+    # else, so warn rather than fail: it is a cataloguing gap, not a break.
+    # Strings only, for the same reason the loop above checks isinstance first:
+    # a nested array is unhashable, and building a set from it would abort the
+    # whole gate with a TypeError, leaving every entry after this one unchecked.
+    # The malformed values were already reported; this check reads what is left.
+    declared = {value for value in categories if isinstance(value, str)}
+    if not entry.get("fixture") and not (declared & CAPABILITY_CATEGORIES):
+        errors.append(
+            f"{where}: no capability category — {sorted(declared)} are all "
+            f"registry-internal, so no consumer view can list this server. Add "
+            f"one of {sorted(CAPABILITY_CATEGORIES)}"
+        )
+
+
+def validate_fixture(where: str, entry: dict, errors: list) -> None:
+    """Check the entry's `fixture` flag.
+
+    A fixture exists to be run by this repo's own tests and by dmcp's, so it
+    stays installable and stays in the index; what it must not do is answer a
+    user's question. dmcp drops flagged entries from vector search, which is the
+    only reason the flag has to be exact — an entry that is a fixture and does
+    not say so competes with real servers for the top-k slots a consumer query
+    returns.
+    """
+    if "fixture" not in entry:
+        return
+
+    fixture = entry["fixture"]
+    if not isinstance(fixture, bool):
+        errors.append(
+            f"{where}: 'fixture' must be true or false, not {fixture!r} — dmcp "
+            f"reads it as a flag, and a non-boolean reads as absent"
+        )
+        return
+
+    # `official` is the one tier that lifts the TLA floor for a manifest-declared
+    # `safe` tool (Project-JARVIS #223). A fixture is written to exercise the
+    # gate — poison-mcp is an adversarial payload by construction — so promoting
+    # one to `official` would let exactly the tools built to be caught run
+    # unconfirmed. Nothing in the registry does this today; the check keeps it
+    # that way.
+    if fixture and entry.get("trustStatus") == "official":
+        errors.append(
+            f"{where}: a fixture must not be trustStatus 'official' — that tier "
+            f"lifts the threat floor for declared-safe tools, and a test payload "
+            f"must never be the thing that lifts it"
+        )
 
 
 def validate_transports(
@@ -640,6 +770,8 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
             errors.append(f"{where}: scope '{scope}' not in {sorted(ALLOWED_SCOPE)}")
 
         validate_platforms(where, entry, errors)
+        validate_categories(where, entry, errors, warnings)
+        validate_fixture(where, entry, errors)
 
         manifest_url = entry.get("manifest", "")
         validate_manifest_url(where, manifest_url, errors)
