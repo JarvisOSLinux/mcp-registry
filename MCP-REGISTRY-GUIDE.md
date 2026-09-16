@@ -111,7 +111,8 @@ The index is a single JSON file with this structure:
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
       "platforms": ["linux"],
-      "categories": ["mcp", "mcp-development"],
+      "categories": ["developer-tools"],
+      "fixture": false,
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "<sha256 of manifest.json>",
@@ -143,13 +144,66 @@ The index is a single JSON file with this structure:
 | `icon`      | string | Icon for display (Freedesktop name or URL).              |
 | `keywords`  | array  | Search keywords for discovery.                           |
 | `platforms` | array  | Mirrored from the manifest by `sync_registry.py`. Operating systems the registry vouches for; absent = unrestricted. See Platforms below. |
-| `categories`| array  | Categories for filtering (e.g. `["mcp", "mcp-development"]`). |
+| `categories`| array  | **Required.** Closed, validator-enforced vocabulary of capability terms. See Categories below. |
+| `fixture`   | bool   | Optional, default `false`. Marks a test fixture: still installable and still indexed, but dropped from consumer semantic search. See Categories below. |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
 | `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
 | `integrity` | object | Optional. Content hashes that bind vetting to specific manifest/script content. |
 | `embeddings` | object | Optional, machine-managed. Pre-computed vectors `{model, version, server, tools}` consumed by `dmcp sync-index` for semantic search — see `docs/EMBEDDING-SPEC.md`. |
 
 dmcp loads the index for display; manifests are fetched for install. Display metadata comes from the index; install metadata (transports, setupScript, tools) comes from the manifest.
+
+### Categories
+
+`categories` is a **closed vocabulary**: `scripts/validate_registry.py` rejects
+any term outside it, and `scripts/selftest_categories.py` proves that rejection
+still fires. The closed set exists because a wrong category is otherwise silent
+— categories are deliberately excluded from the embedding text
+(`docs/EMBEDDING-SPEC.md`), so a typo does not move a similarity score, it just
+drops the entry out of every catalogue view that selects on that term.
+
+Every term names a **capability** — what the server does for someone:
+
+`automation`, `browser`, `calendar`, `computer-use`, `creative`,
+`data-analysis`, `database`, `desktop`, `developer-tools`, `email`, `finance`,
+`home-automation`, `image-generation`, `iot`, `knowledge-management`, `media`,
+`messaging`, `office-docs`, `productivity`, `search`, `security`, `social`,
+`storage`, `system`, `team-collaboration`, `travel`, `weather`
+
+There is deliberately no `mcp` and no `mcp-*` term. `mcp` said only "this is an
+MCP server" — true of every entry in an MCP registry, so it divided nothing.
+`mcp-development`, `mcp-utilities` and `mcp-web` were never defined anywhere in
+this repo and had drifted into a junk drawer: `mcp-development` sat on ten test
+fixtures and on Brave Search alike, which is neither a server under development
+nor tooling for building servers. A category that does not divide the catalogue
+is not a category. What a server *is to this repo* is now carried by the fields
+that actually mean it — `fixture`, `trustStatus`, `platforms`.
+
+Adding a term means editing `ALLOWED_CATEGORIES` in the validator and this list
+together.
+
+### Test fixtures
+
+Several entries exist to exercise this repo's gates and dmcp's test suite rather
+than to answer a user's question — `poison-mcp` is an adversarial payload by
+construction, `slow-mcp` stalls on purpose. They must stay installable and stay
+in the index so those tests can reach them, so they cannot simply be deleted.
+
+`"fixture": true` is how an entry says so. dmcp drops flagged entries from
+vector search (`dmcp browse --vector`), which is the surface JARVIS reaches
+through dispatch, so a flagged server never competes for the top-k slots a
+consumer query returns. `dmcp browse --vector --include-fixtures` still reaches
+them, and every non-search path — `browse`, `install`, `info` — ignores the flag
+entirely.
+
+Two rules the validator enforces:
+
+- The flag must be a literal `true` or `false`. dmcp reads it as a flag, and
+  anything else reads as absent — which is the failure that matters, since an
+  unflagged fixture is exactly the problem.
+- A fixture must not be `trustStatus: "official"`. That tier lifts the threat
+  floor for a manifest-declared `safe` tool (Project-JARVIS #223), and a test
+  payload must never be the thing that lifts it.
 
 ### Manifest Format (Server Entry Schema)
 

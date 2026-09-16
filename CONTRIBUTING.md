@@ -13,7 +13,7 @@ The registry works like Homebrew or the AUR: you fork, add your server directory
 3. [Step 2 — Create Your Server Directory](#step-2--create-your-server-directory)
 4. [Step 3 — Write manifest.json](#step-3--write-manifestjson)
 5. [Step 4 — Write setup.sh (Optional)](#step-4--write-setupsh-optional)
-6. [Step 5 — Sync registry.json](#step-5--sync-registryjson)
+6. [Step 5 — Add your entry to registry.json](#step-5--add-your-entry-to-registryjson)
 7. [Step 6 — Open a Pull Request](#step-6--open-a-pull-request)
 8. [Trust Levels](#trust-levels)
 9. [Manifest Validation Requirements](#manifest-validation-requirements)
@@ -239,16 +239,53 @@ script under any other name would ship unverified, and the PR gate rejects it.
 
 ---
 
-## Step 5 — Sync registry.json
+## Step 5 — Add your entry to registry.json
 
-After creating your manifest, run the sync script to add your server to `registry.json` and compute integrity hashes:
+`scripts/sync_registry.py` fills in *derived* fields for entries that already
+exist. It does not create one — it iterates the entries in `registry.json`, so
+running it against a brand-new server reports "All derived fields are already up
+to date" and writes nothing. Add the entry by hand first.
+
+Add your server to the `servers` object in `registry.json`, keyed by the same ID
+as your directory name:
+
+```json
+"com.github.alice.mcp.git-summary": {
+  "id": "com.github.alice.mcp.git-summary",
+  "name": "Git Summary",
+  "summary": "Summarise the commit history of a local repository",
+  "version": "1.0.0",
+  "scope": "user",
+  "keywords": ["git", "history", "summary"],
+  "platforms": ["linux"],
+  "categories": ["developer-tools"],
+  "trustStatus": "community",
+  "integrity": {},
+  "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/com.github.alice.mcp.git-summary/manifest.json"
+}
+```
+
+`categories` is a closed, validator-enforced vocabulary. Every term names a
+**capability** — what your server does for a user, not what it is to this repo.
+There is no `mcp` category: every entry here is an MCP server, so the term
+divided nothing. The full vocabulary is in
+[MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md#categories).
+
+Leave `integrity` empty — the sync script computes it. Then run:
 
 ```bash
 # From the repo root
 python3 scripts/sync_registry.py
 ```
 
-This updates `registry.json` with your server's metadata and SHA-256 hashes. Commit the result.
+This fills in the SHA-256 hashes and mirrors `name`, `summary`, `keywords`, and
+`platforms` from your manifest. Check the result with the same gate CI runs:
+
+```bash
+python3 scripts/validate_registry.py
+```
+
+Commit both your server directory and `registry.json`.
 
 > **Note:** The `embeddings` field is populated by a separate CI job (`generate-embeddings.yml`) after merge. You do not need to generate embeddings locally.
 
@@ -406,7 +443,26 @@ Make it executable:
 chmod +x servers/com.github.alice.mcp.git-summary/setup.sh
 ```
 
-### 5. Sync registry.json
+### 5. Add the entry, then sync registry.json
+
+Add the entry to the `servers` object in `registry.json` first — the sync script
+only fills in derived fields for entries that already exist:
+
+```json
+"com.github.alice.mcp.git-summary": {
+  "id": "com.github.alice.mcp.git-summary",
+  "name": "Git Summary",
+  "summary": "Summarise the commit history of a local repository",
+  "version": "1.0.0",
+  "scope": "user",
+  "keywords": ["git"],
+  "platforms": ["linux"],
+  "categories": ["developer-tools"],
+  "trustStatus": "community",
+  "integrity": {},
+  "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/com.github.alice.mcp.git-summary/manifest.json"
+}
+```
 
 ```bash
 python3 scripts/sync_registry.py

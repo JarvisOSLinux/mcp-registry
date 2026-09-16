@@ -166,6 +166,26 @@ array>'` (or `--vectors` for a batch) ranks by cosine similarity with
 model the index expects, `dmcp server-count`/`dmcp index-server` support the
 consumer flow. The keyword path (`-k`) remains available.
 
+### Fixtures are excluded from consumer search
+
+An entry flagged `"fixture": true` in `registry.json` is indexed like any other
+— `dmcp sync-index` stores its vector, and the flag rides along on the index
+entry the same way `platforms` does — but `dmcp browse --vector` drops it from
+results by default, before the `--top-k` truncation, so a fixture never occupies
+a slot a real server would have taken. `--include-fixtures` returns them.
+
+The filter lives at search time rather than sync time for the same reason the
+platform verdict does: the index outlives the sync and can be carried to another
+machine, so what an entry *is* belongs in the index and what a caller *wants*
+belongs in the query.
+
+This matters because fixture text is not inert. Measured against this registry's
+own vectors, consumer queries put fixtures in 19 of 40 top-5 slots — "play some
+music" ranked `slow-mcp` first, "book a flight to Tokyo" ranked `hello-ws` and
+`hello-sse` first and second.
+
+---
+
 Note: dmcp's `Manifest` struct intentionally has no embeddings field — vectors
 flow from `registry.json` inline embeddings into a dedicated local vector
 index (`src/vector_index.rs`, populated by `sync_index.rs`).

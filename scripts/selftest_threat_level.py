@@ -111,6 +111,7 @@ def fixture(tools, *, trust="community"):
             "scope": "user",
             "keywords": doc["keywords"],
             "platforms": doc["platforms"],
+            "categories": ["productivity"],
             "trustStatus": trust,
             "integrity": {"manifestSha256": sync_registry.sha256_file(server_dir / "manifest.json")},
             "manifest": MANIFEST_URL,

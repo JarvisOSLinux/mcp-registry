@@ -101,6 +101,48 @@ REVOKED_TRUST = {"deprecated", "removed"}
 MANIFEST_URL_PREFIX = "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/"
 ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
 ALLOWED_THREAT_LEVELS = {"safe", "elevated", "dangerous", "forbidden"}
+
+# Categories are a closed vocabulary because they are a filter, not prose: a
+# typo ("prodcutivity") does not fail anything today, it just quietly drops the
+# entry out of every view that selects on that term.
+#
+# Every term here names a capability — what the server does FOR SOMEONE. There
+# is deliberately no `mcp` and no `mcp-*` term. `mcp` said only "this is an MCP
+# server", which is true of all 31 entries in an MCP registry and separates
+# nothing; `mcp-development`, `mcp-utilities` and `mcp-web` were never defined
+# anywhere in this repo and had drifted into a junk drawer — `mcp-development`
+# sat on ten test fixtures and on Brave Search alike, which is neither a server
+# under development nor tooling for building servers. A category that does not
+# divide the catalogue is not a category.
+ALLOWED_CATEGORIES = {
+    "automation",
+    "browser",
+    "calendar",
+    "computer-use",
+    "creative",
+    "data-analysis",
+    "database",
+    "desktop",
+    "developer-tools",
+    "email",
+    "finance",
+    "home-automation",
+    "image-generation",
+    "iot",
+    "knowledge-management",
+    "media",
+    "messaging",
+    "office-docs",
+    "productivity",
+    "search",
+    "security",
+    "social",
+    "storage",
+    "system",
+    "team-collaboration",
+    "travel",
+    "weather",
+}
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 # Manifest field naming a setup script, paired with the only filename that field
@@ -169,6 +211,72 @@ def validate_platforms(where: str, entry: dict, errors: list) -> None:
             errors.append(
                 f"{where}: platform {value!r} not in {sorted(ALLOWED_PLATFORMS)}"
             )
+
+
+def validate_categories(where: str, entry: dict, errors: list) -> None:
+    """Check the entry's `categories` against the closed vocabulary.
+
+    Categories never reach the embedding text (EMBEDDING-SPEC.md), so they do
+    not move a similarity score — they are what a catalogue view selects on.
+    That makes an unrecognised term invisible rather than loud: the entry simply
+    stops appearing under the facet its author meant, and no check fails. The
+    closed set is what turns that into a build error.
+    """
+    categories = entry.get("categories")
+    if categories is None:
+        errors.append(
+            f"{where}: missing 'categories' — every entry must say what it is, "
+            f"so a consumer view can select on it"
+        )
+        return
+
+    if not isinstance(categories, list) or not categories:
+        errors.append(f"{where}: 'categories' must be a non-empty array")
+        return
+
+    # isinstance first, for the reason validate_platforms gives: an unhashable
+    # nested value would abort the whole gate instead of reporting this entry.
+    for value in categories:
+        if not isinstance(value, str) or value not in ALLOWED_CATEGORIES:
+            errors.append(
+                f"{where}: category {value!r} not in {sorted(ALLOWED_CATEGORIES)}"
+            )
+
+
+
+def validate_fixture(where: str, entry: dict, errors: list) -> None:
+    """Check the entry's `fixture` flag.
+
+    A fixture exists to be run by this repo's own tests and by dmcp's, so it
+    stays installable and stays in the index; what it must not do is answer a
+    user's question. dmcp drops flagged entries from vector search, which is the
+    only reason the flag has to be exact — an entry that is a fixture and does
+    not say so competes with real servers for the top-k slots a consumer query
+    returns.
+    """
+    if "fixture" not in entry:
+        return
+
+    fixture = entry["fixture"]
+    if not isinstance(fixture, bool):
+        errors.append(
+            f"{where}: 'fixture' must be true or false, not {fixture!r} — dmcp "
+            f"reads it as a flag, and a non-boolean reads as absent"
+        )
+        return
+
+    # `official` is the one tier that lifts the TLA floor for a manifest-declared
+    # `safe` tool (Project-JARVIS #223). A fixture is written to exercise the
+    # gate — poison-mcp is an adversarial payload by construction — so promoting
+    # one to `official` would let exactly the tools built to be caught run
+    # unconfirmed. Nothing in the registry does this today; the check keeps it
+    # that way.
+    if fixture and entry.get("trustStatus") == "official":
+        errors.append(
+            f"{where}: a fixture must not be trustStatus 'official' — that tier "
+            f"lifts the threat floor for declared-safe tools, and a test payload "
+            f"must never be the thing that lifts it"
+        )
 
 
 def validate_transports(
@@ -640,6 +748,8 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
             errors.append(f"{where}: scope '{scope}' not in {sorted(ALLOWED_SCOPE)}")
 
         validate_platforms(where, entry, errors)
+        validate_categories(where, entry, errors)
+        validate_fixture(where, entry, errors)
 
         manifest_url = entry.get("manifest", "")
         validate_manifest_url(where, manifest_url, errors)

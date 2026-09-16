@@ -107,6 +107,7 @@ def fixture(doc, trust="community", manifest_url=MANIFEST_URL):
                             "version": "1.0.0",
                             "scope": "user",
                             "keywords": ["demo"],
+                            "categories": ["productivity"],
                             "trustStatus": trust,
                             "integrity": {},
                             "manifest": manifest_url,
