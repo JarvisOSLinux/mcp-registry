@@ -84,7 +84,18 @@ jobs:
         run: python3 gate/scripts/selftest_trust_gate.py
 
       - name: Self-test the category and fixture checks
-        run: python3 gate/scripts/selftest_categories.py
+        # Runs from the trusted base checkout like every other self-test, so a
+        # PR cannot supply the thing that judges it. The consequence is that a
+        # PR *introducing* a self-test cannot run it here — the file does not
+        # exist on the base branch until that PR merges. Reporting that beats
+        # failing a PR for the offence of adding a check; the validator itself
+        # still comes from `gate/` either way, so nothing is weakened.
+        run: |
+          if [ -f gate/scripts/selftest_categories.py ]; then
+            python3 gate/scripts/selftest_categories.py
+          else
+            echo "::notice::selftest_categories.py is not on ${{ github.base_ref }} yet - it runs from the next PR onward."
+          fi
 
       - name: Validate registry
         working-directory: pr
