@@ -29,9 +29,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-utilities",
         "productivity"
       ],
       "trustStatus": "community",
@@ -834,8 +831,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -1638,8 +1634,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -2442,8 +2437,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -3245,8 +3239,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -4049,9 +4042,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-web"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -4863,7 +4854,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
         "system"
       ],
       "trustStatus": "official",
@@ -5677,7 +5667,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
         "system"
       ],
       "trustStatus": "official",
@@ -6480,9 +6469,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-web"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -7287,9 +7274,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-testing"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -8094,9 +8079,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-testing"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -8901,10 +8884,8 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-testing",
-        "mcp-security"
+        "developer-tools",
+        "security"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -9708,9 +9689,7 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-testing"
+        "developer-tools"
       ],
       "fixture": true,
       "trustStatus": "community",
@@ -10519,9 +10498,7 @@
         "linux"
       ],
       "categories": [
-        "calendar",
-        "mcp",
-        "mcp-utilities"
+        "calendar"
       ],
       "trustStatus": "official",
       "integrity": {
@@ -11327,9 +11304,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-utilities",
         "storage"
       ],
       "trustStatus": "community",
@@ -12135,9 +12109,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "mcp-web",
         "search"
       ],
       "trustStatus": "community",
@@ -12943,9 +12914,6 @@
       ],
       "categories": [
         "developer-tools",
-        "mcp",
-        "mcp-development",
-        "mcp-web",
         "team-collaboration"
       ],
       "trustStatus": "community",
@@ -13749,8 +13717,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-utilities",
         "productivity"
       ],
       "trustStatus": "community",
@@ -14554,10 +14520,7 @@
         "linux"
       ],
       "categories": [
-        "database",
-        "mcp",
-        "mcp-development",
-        "mcp-utilities"
+        "database"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -15363,9 +15326,7 @@
       ],
       "categories": [
         "browser",
-        "mcp",
-        "mcp-security",
-        "mcp-web"
+        "security"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -16168,9 +16129,7 @@
         "linux"
       ],
       "categories": [
-        "developer-tools",
-        "mcp",
-        "mcp-development"
+        "developer-tools"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -16978,9 +16937,8 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "browser",
-        "automation"
+        "automation",
+        "browser"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -17790,8 +17748,8 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "automation"
+        "automation",
+        "creative"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -18600,10 +18558,7 @@
         "linux"
       ],
       "categories": [
-        "communication",
-        "mcp",
-        "mcp-utilities",
-        "messaging"
+        "email"
       ],
       "trustStatus": "official",
       "integrity": {
@@ -19410,9 +19365,8 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "mcp-development",
-        "automation"
+        "automation",
+        "developer-tools"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -20215,8 +20169,8 @@
         "linux"
       ],
       "categories": [
-        "database",
-        "data-analysis"
+        "data-analysis",
+        "database"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -21823,8 +21777,8 @@
         "linux"
       ],
       "categories": [
-        "productivity",
-        "knowledge-management"
+        "knowledge-management",
+        "productivity"
       ],
       "trustStatus": "community",
       "integrity": {
@@ -22627,7 +22581,6 @@
         "linux"
       ],
       "categories": [
-        "communication",
         "messaging",
         "team-collaboration"
       ],
@@ -23445,9 +23398,8 @@
         "linux"
       ],
       "categories": [
-        "mcp",
-        "desktop",
-        "computer-use"
+        "computer-use",
+        "desktop"
       ],
       "trustStatus": "official",
       "integrity": {
@@ -24257,7 +24209,6 @@
         "linux"
       ],
       "categories": [
-        "mcp",
         "creative",
         "image-generation"
       ],

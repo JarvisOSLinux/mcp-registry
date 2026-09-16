@@ -265,10 +265,10 @@ as your directory name:
 }
 ```
 
-`categories` is a closed, validator-enforced vocabulary, and at least one term
-must be a **capability** category — what your server does for a user, not what
-it is to this repo. `["mcp", "mcp-development"]` alone is rejected: no consumer
-view can list an entry that claims no capability. The full vocabulary is in
+`categories` is a closed, validator-enforced vocabulary. Every term names a
+**capability** — what your server does for a user, not what it is to this repo.
+There is no `mcp` category: every entry here is an MCP server, so the term
+divided nothing. The full vocabulary is in
 [MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md#categories).
 
 Leave `integrity` empty — the sync script computes it. Then run:

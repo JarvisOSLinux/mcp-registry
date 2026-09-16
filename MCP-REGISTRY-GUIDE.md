@@ -111,7 +111,7 @@ The index is a single JSON file with this structure:
       "icon": "https://...",
       "keywords": ["keyword1", "keyword2"],
       "platforms": ["linux"],
-      "categories": ["developer-tools", "mcp"],
+      "categories": ["developer-tools"],
       "fixture": false,
       "trustStatus": "community",
       "integrity": {
@@ -144,7 +144,7 @@ The index is a single JSON file with this structure:
 | `icon`      | string | Icon for display (Freedesktop name or URL).              |
 | `keywords`  | array  | Search keywords for discovery.                           |
 | `platforms` | array  | Mirrored from the manifest by `sync_registry.py`. Operating systems the registry vouches for; absent = unrestricted. See Platforms below. |
-| `categories`| array  | **Required.** Closed vocabulary, validator-enforced. At least one must be a capability category unless `fixture` is true. See Categories below. |
+| `categories`| array  | **Required.** Closed, validator-enforced vocabulary of capability terms. See Categories below. |
 | `fixture`   | bool   | Optional, default `false`. Marks a test fixture: still installable and still indexed, but dropped from consumer semantic search. See Categories below. |
 | `manifest`  | string | URL to the server's manifest JSON (install/run metadata).|
 | `trustStatus` | string | Optional. Review tier: `"community"` or `"official"` (see `docs/TRUST-MODEL.md`). |
@@ -162,25 +162,25 @@ still fires. The closed set exists because a wrong category is otherwise silent
 (`docs/EMBEDDING-SPEC.md`), so a typo does not move a similarity score, it just
 drops the entry out of every catalogue view that selects on that term.
 
-**Capability categories** — what the server does *for a user*. Every entry needs
-at least one, because a consumer view selects on these; an entry carrying none
-cannot be listed anywhere.
+Every term names a **capability** — what the server does for someone:
 
-`automation`, `browser`, `calendar`, `communication`, `computer-use`,
-`creative`, `data-analysis`, `database`, `desktop`, `developer-tools`,
-`finance`, `home-automation`, `image-generation`, `iot`,
-`knowledge-management`, `media`, `messaging`, `office-docs`, `productivity`,
-`search`, `social`, `storage`, `system`, `team-collaboration`, `travel`,
-`weather`
+`automation`, `browser`, `calendar`, `computer-use`, `creative`,
+`data-analysis`, `database`, `desktop`, `developer-tools`, `email`, `finance`,
+`home-automation`, `image-generation`, `iot`, `knowledge-management`, `media`,
+`messaging`, `office-docs`, `productivity`, `search`, `security`, `social`,
+`storage`, `system`, `team-collaboration`, `travel`, `weather`
 
-**Registry-internal categories** — what the entry is *to this catalogue*. These
-never substitute for a capability category.
+There is deliberately no `mcp` and no `mcp-*` term. `mcp` said only "this is an
+MCP server" — true of every entry in an MCP registry, so it divided nothing.
+`mcp-development`, `mcp-utilities` and `mcp-web` were never defined anywhere in
+this repo and had drifted into a junk drawer: `mcp-development` sat on ten test
+fixtures and on Brave Search alike, which is neither a server under development
+nor tooling for building servers. A category that does not divide the catalogue
+is not a category. What a server *is to this repo* is now carried by the fields
+that actually mean it — `fixture`, `trustStatus`, `platforms`.
 
-`mcp`, `mcp-development`, `mcp-security`, `mcp-testing`, `mcp-utilities`,
-`mcp-web`
-
-Adding a term means editing `CAPABILITY_CATEGORIES` or `REGISTRY_CATEGORIES` in
-the validator and this list together.
+Adding a term means editing `ALLOWED_CATEGORIES` in the validator and this list
+together.
 
 ### Test fixtures
 

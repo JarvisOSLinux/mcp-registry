@@ -21,14 +21,13 @@ caught too.
   3. An empty or non-list `categories` ERRORS.
   4. A term outside the closed vocabulary ERRORS — the typo case.
   5. A non-string term ERRORS without aborting the run on an unhashable value.
-  6. Registry-internal terms alone ERROR: nothing consumer-facing can list it.
-  7. A flagged fixture is exempt from 6 — being unlistable is the point.
-  8. A non-boolean `fixture` ERRORS; dmcp reads it as a flag, and anything else
+  6. A non-boolean `fixture` ERRORS; dmcp reads it as a flag, and anything else
      reads as absent.
-  9. A fixture at trustStatus `official` ERRORS — that tier lifts the threat
+  7. A fixture at trustStatus `official` ERRORS — that tier lifts the threat
      floor for declared-safe tools (Project-JARVIS #223), and a test payload
      must never be the thing that lifts it.
- 10. `fixture: false` and an absent flag behave identically.
+  8. `fixture: false` and an absent flag behave identically, and a fixture is
+     an ordinary entry to every other check.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
@@ -231,22 +230,6 @@ def a_non_string_term_does_not_abort_the_run():
 
 
 @case
-def registry_internal_terms_alone_are_an_error():
-    with fixture(("mcp", "mcp-development")):
-        code, out = validate()
-        check(code != 0, "an entry with only registry-internal terms fails the gate")
-        check("no capability category" in out, "the finding explains it cannot be listed")
-
-
-@case
-def a_flagged_fixture_may_be_registry_internal_only():
-    with fixture(("mcp", "mcp-testing"), flag=True):
-        code, out = validate()
-        check(code == 0, "a flagged fixture needs no capability category")
-        check("no capability category" not in out, "the capability check skips it")
-
-
-@case
 def a_non_boolean_fixture_flag_is_an_error():
     for value, label in (("true", "string"), (1, "int"), (None, "null")):
         with fixture(flag=value):
@@ -257,7 +240,7 @@ def a_non_boolean_fixture_flag_is_an_error():
 
 @case
 def an_official_fixture_is_an_error():
-    with fixture(("mcp", "mcp-testing"), trust="official", flag=True):
+    with fixture(("developer-tools",), trust="official", flag=True):
         code, out = validate()
         check(code != 0, "a fixture at trustStatus 'official' fails the gate")
         check(
@@ -276,10 +259,10 @@ def an_explicit_false_flag_reads_as_absent():
         code, out = validate()
         check(code == 0, "fixture: false passes like an absent flag")
         check("fixture" not in out, "it raises no fixture finding")
-    # ...and does not buy an exemption the absent flag would not buy either.
-    with fixture(("mcp", "mcp-development"), flag=False):
+    # A fixture is still an ordinary entry to every other check.
+    with fixture(OMIT, flag=True):
         code, out = validate()
-        check(code != 0, "fixture: false does not exempt the capability check")
+        check(code != 0, "a fixture still has to declare categories")
 
 
 def main() -> int:

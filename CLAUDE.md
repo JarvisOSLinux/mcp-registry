@@ -50,7 +50,7 @@ MCP-REGISTRY-GUIDE.md      Full registry and manifest specification
 
 Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
-- `keywords`, `categories` (closed vocabulary, validator-enforced; at least one must be a capability category — see MCP-REGISTRY-GUIDE.md)
+- `keywords`, `categories` (closed, validator-enforced vocabulary of capability terms; no `mcp`/`mcp-*` — see MCP-REGISTRY-GUIDE.md)
 - `fixture` (optional bool; a test fixture, dropped from consumer semantic search by dmcp but still installable and still indexed)
 - `platforms` (mirrored from the manifest; the OSes the registry vouches for — dmcp filters by host from this index alone)
 - `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)

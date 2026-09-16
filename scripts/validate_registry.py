@@ -103,22 +103,28 @@ ALLOWED_PLATFORMS = {"linux", "darwin", "windows"}
 ALLOWED_THREAT_LEVELS = {"safe", "elevated", "dangerous", "forbidden"}
 
 # Categories are a closed vocabulary because they are a filter, not prose: a
-# typo ("mcp-utilties") does not fail anything today, it just quietly drops the
-# entry out of every view that selects on that term. The split below is the
-# useful one for a consumer catalogue — what a server does FOR SOMEONE, versus
-# what it is to this registry — because only the first half answers "what can
-# JARVIS do for me?".
-CAPABILITY_CATEGORIES = {
+# typo ("prodcutivity") does not fail anything today, it just quietly drops the
+# entry out of every view that selects on that term.
+#
+# Every term here names a capability — what the server does FOR SOMEONE. There
+# is deliberately no `mcp` and no `mcp-*` term. `mcp` said only "this is an MCP
+# server", which is true of all 31 entries in an MCP registry and separates
+# nothing; `mcp-development`, `mcp-utilities` and `mcp-web` were never defined
+# anywhere in this repo and had drifted into a junk drawer — `mcp-development`
+# sat on ten test fixtures and on Brave Search alike, which is neither a server
+# under development nor tooling for building servers. A category that does not
+# divide the catalogue is not a category.
+ALLOWED_CATEGORIES = {
     "automation",
     "browser",
     "calendar",
-    "communication",
     "computer-use",
     "creative",
     "data-analysis",
     "database",
     "desktop",
     "developer-tools",
+    "email",
     "finance",
     "home-automation",
     "image-generation",
@@ -129,6 +135,7 @@ CAPABILITY_CATEGORIES = {
     "office-docs",
     "productivity",
     "search",
+    "security",
     "social",
     "storage",
     "system",
@@ -136,20 +143,6 @@ CAPABILITY_CATEGORIES = {
     "travel",
     "weather",
 }
-
-# Registry-internal terms. They describe an entry's relationship to this
-# catalogue rather than a capability, so a consumer view that lists
-# CAPABILITY_CATEGORIES will not surface them.
-REGISTRY_CATEGORIES = {
-    "mcp",
-    "mcp-development",
-    "mcp-security",
-    "mcp-testing",
-    "mcp-utilities",
-    "mcp-web",
-}
-
-ALLOWED_CATEGORIES = CAPABILITY_CATEGORIES | REGISTRY_CATEGORIES
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 # Manifest field naming a setup script, paired with the only filename that field
@@ -220,7 +213,7 @@ def validate_platforms(where: str, entry: dict, errors: list) -> None:
             )
 
 
-def validate_categories(where: str, entry: dict, errors: list, warnings: list) -> None:
+def validate_categories(where: str, entry: dict, errors: list) -> None:
     """Check the entry's `categories` against the closed vocabulary.
 
     Categories never reach the embedding text (EMBEDDING-SPEC.md), so they do
@@ -249,21 +242,6 @@ def validate_categories(where: str, entry: dict, errors: list, warnings: list) -
                 f"{where}: category {value!r} not in {sorted(ALLOWED_CATEGORIES)}"
             )
 
-    # A registry-only entry is reachable by semantic search but appears under no
-    # capability facet, so a catalogue driven by CAPABILITY_CATEGORIES cannot
-    # list it at all. That is correct for a fixture and a mistake for anything
-    # else, so warn rather than fail: it is a cataloguing gap, not a break.
-    # Strings only, for the same reason the loop above checks isinstance first:
-    # a nested array is unhashable, and building a set from it would abort the
-    # whole gate with a TypeError, leaving every entry after this one unchecked.
-    # The malformed values were already reported; this check reads what is left.
-    declared = {value for value in categories if isinstance(value, str)}
-    if not entry.get("fixture") and not (declared & CAPABILITY_CATEGORIES):
-        errors.append(
-            f"{where}: no capability category — {sorted(declared)} are all "
-            f"registry-internal, so no consumer view can list this server. Add "
-            f"one of {sorted(CAPABILITY_CATEGORIES)}"
-        )
 
 
 def validate_fixture(where: str, entry: dict, errors: list) -> None:
@@ -770,7 +748,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
             errors.append(f"{where}: scope '{scope}' not in {sorted(ALLOWED_SCOPE)}")
 
         validate_platforms(where, entry, errors)
-        validate_categories(where, entry, errors, warnings)
+        validate_categories(where, entry, errors)
         validate_fixture(where, entry, errors)
 
         manifest_url = entry.get("manifest", "")
