@@ -66,36 +66,28 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Self-test the validation logic
-        run: python3 gate/scripts/selftest_platform_format.py
-
-      - name: Self-test the embedding-drift checks
-        run: python3 gate/scripts/selftest_embedding_drift.py
-
-      - name: Self-test the threat-level check
-        run: python3 gate/scripts/selftest_threat_level.py
-
-      - name: Self-test the jarvis-shell job model
-        run: python3 gate/scripts/selftest_jobs.py
+      - name: Self-test the gate
+        # Discovers gate/scripts/selftest_*.py instead of listing steps by hand.
+        # Fixes two gaps (#98): a self-test lands and starts running the moment
+        # it merges to the base branch, with no workflow edit required; and one
+        # that is present but never wired into a step can no longer run for
+        # nobody. `found -gt 0` keeps the loop itself from becoming a check
+        # that silently passes when the glob matches nothing. Every script
+        # still executes from gate/ (the base branch), so a PR cannot supply
+        # the thing that judges it.
         env:
           JOBS_SELFTEST_TREE: ${{ github.workspace }}/pr
-
-      - name: Self-test the trust-boundary checks
-        run: python3 gate/scripts/selftest_trust_gate.py
-
-      - name: Self-test the category and fixture checks
-        # Runs from the trusted base checkout like every other self-test, so a
-        # PR cannot supply the thing that judges it. The consequence is that a
-        # PR *introducing* a self-test cannot run it here — the file does not
-        # exist on the base branch until that PR merges. Reporting that beats
-        # failing a PR for the offence of adding a check; the validator itself
-        # still comes from `gate/` either way, so nothing is weakened.
         run: |
-          if [ -f gate/scripts/selftest_categories.py ]; then
-            python3 gate/scripts/selftest_categories.py
-          else
-            echo "::notice::selftest_categories.py is not on ${{ github.base_ref }} yet - it runs from the next PR onward."
-          fi
+          shopt -s nullglob
+          found=0
+          for t in gate/scripts/selftest_*.py; do
+            echo "::group::$(basename "$t")"
+            python3 "$t" || exit 1
+            echo "::endgroup::"
+            found=$((found + 1))
+          done
+          [ "$found" -gt 0 ] || { echo "::error::no self-tests found in gate/scripts"; exit 1; }
+          echo "ran $found self-test(s)"
 
       - name: Validate registry
         working-directory: pr
