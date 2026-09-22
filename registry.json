@@ -25026,7 +25026,7 @@
       "categories": [
         "weather"
       ],
-      "trustStatus": "official",
+      "trustStatus": "community",
       "integrity": {
         "manifestSha256": "5ac358b8de9d2df28035e6d26114fbdb319eecbde954df8f6f1e25095f4fbfb1",
         "setupScriptSha256": "7413c8582019a78155f36778f4fa39837beb00a7b375f84ad7564ad44eb5f607",
