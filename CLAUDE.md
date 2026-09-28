@@ -34,6 +34,11 @@ scripts/
   selftest_needs_input.py  Self-test of the shell servers' needs_input report
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
+  selftest_categories.py   Temp-dir self-test for the category vocabulary and
+                           fixture flag checks
+  selftest_system_status.py  Synthetic-/proc and /sys self-test of the
+                           system-status server's parsing (btrfs, batteries,
+                           /proc/pid/stat, sensors, health thresholds)
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -101,9 +106,8 @@ that can prompt. Both are documented for third-party authors in
   recomputes hashes; opens PRs with updated registry.json
 - `generate-embeddings.yml` — Manual dispatch; generates embeddings via Ollama;
   only re-embeds servers with changed canonical text
-- `validate-pr.yml` — PR gate; runs `scripts/selftest_platform_format.py`,
-  `scripts/selftest_embedding_drift.py`, `scripts/selftest_threat_level.py`,
-  `scripts/selftest_jobs.py` and `scripts/selftest_trust_gate.py`, then
+- `validate-pr.yml` — PR gate; runs every `scripts/selftest_*.py` it finds
+  (discovered, not listed, so a new self-test needs no workflow edit — #100), then
   `scripts/validate_registry.py` (schema,
   id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
@@ -121,7 +125,8 @@ that can prompt. Both are documented for third-party authors in
   bypass), while a maintainer-authored promotion rests on process. The job
   executes the validator and all self-tests from a checkout of the **base
   branch** and judges the PR's tree as data (`selftest_jobs.py` targets the
-  PR's shell servers via `JOBS_SELFTEST_TREE`), so a PR editing the gate and
+  PR's shell servers via `JOBS_SELFTEST_TREE`, as does
+  `selftest_system_status.py` for that server), so a PR editing the gate and
   its tests together does not change how that PR is judged; the workflow file
   itself still runs from the PR's merge ref, which is what the required review
   must read — see `docs/TRUST-MODEL.md` §4 for the full statement of what is
@@ -148,6 +153,8 @@ python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, 
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
+python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
+python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 ```
 
 ## Adding a Server
