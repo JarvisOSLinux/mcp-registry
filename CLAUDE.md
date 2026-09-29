@@ -16,6 +16,9 @@ vectors for semantic search when the LLM needs to discover tools by capability.
 
 ```
 registry.json              Main index (server metadata + embeddings)
+providers/                 Sign-in providers (<id>.json: OAuth endpoints, public
+                           client id, scope catalogue), mirrored into
+                           registry.json `providers` by sync_registry.py
 servers/                   Per-server directories (dir name from the entry's
   <dir>/                   manifest URL — first-party dirs use short names,
     manifest.json          third-party dirs the full reverse-domain id)
@@ -39,6 +42,8 @@ scripts/
   selftest_system_status.py  Synthetic-/proc and /sys self-test of the
                            system-status server's parsing (btrfs, batteries,
                            /proc/pid/stat, sensors, health thresholds)
+  selftest_credentials.py  Temp-dir self-test for the provider, credential and
+                           login checks and the provider-change approval gate
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -63,6 +68,10 @@ Main index. Each server entry contains:
 - `manifest` URL pointing to the server's manifest.json
 - `embeddings` (model, version, `server` vector [768d], `tools` per-tool vector map)
 
+Top level, beside `servers`: `providers` — a verbatim mirror of `providers/*.json`,
+so dmcp learns how to sign a user in from the same fetch as the catalogue. Any
+diff to it needs the `trust-approved` label.
+
 ### manifest.json (per server)
 
 - `platforms` — OSes vetted on (`linux` / `darwin` / `windows`); required in this registry, absent = unrestricted
@@ -70,6 +79,8 @@ Main index. Each server entry contains:
 - `setupScriptWindows` — PowerShell script (`setup.ps1`) run instead of `setupScript` on Windows hosts; like `setupScript`, it must name a committed script in the server directory, never an off-registry URL
 - `source` — git repo to clone for local servers (optional `rev` pin — a full 40-char SHA is binding)
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
+- `credentials` — signed-in accounts the server needs: `provider` (a `providers/` id), `scopes` (from that provider's catalogue), `inject` (property key → `access_token`/`refresh_token`/`client_id`/`account`; tokens only into `sensitive` properties). User scope + a stdio transport only. dmcp delivers them at spawn to servers the user granted the account to (Project-JARVIS#229)
+- `login` — `{"tool": "<name>"}`, a server's own sign-in tool; must be one of its `tools`
 - `tools` — list of tools the server exposes; a tool that can park awaiting input
   declares `blocking: true` plus an optional `suggestedRemindAfter` (seconds),
   the reminder interval an orchestrator applies when the caller set none
@@ -114,9 +125,11 @@ that can prompt. Both are documented for third-party authors in
   scripts, setup-script locations, manifest hosted by this registry, a full-SHA
   `source.rev` on `official` entries, orphan directories, and a `threat_level` —
   `safe`/`elevated`/`dangerous`/`forbidden`, or the legacy
-  `confirmation_required: true` — on every tool of a live entry) and blocks both
-  `trustStatus` promotion to `official` and lifting a `deprecated`/`removed`
-  revocation without the maintainer `trust-approved` label.
+  `confirmation_required: true` — on every tool of a live entry, well-formed
+  https-only `providers/` mirrored into registry.json, and `credentials`/`login`
+  declarations that resolve against them) and blocks `trustStatus` promotion to
+  `official`, lifting a `deprecated`/`removed` revocation, and adding, changing
+  or removing a sign-in provider without the maintainer `trust-approved` label.
   Enforced by the `main protection` ruleset: `validate` required, one approving
   review, stale approvals dismissed on push, force-push and deletion blocked.
   **Repository admins hold a pull-request-scoped bypass** — no direct pushes to
@@ -155,6 +168,7 @@ python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell intera
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
+python scripts/selftest_credentials.py  # Offline self-test: providers, credentials, login, provider-change approval
 ```
 
 ## Adding a Server

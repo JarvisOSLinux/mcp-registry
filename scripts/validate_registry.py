@@ -35,6 +35,11 @@ Static checks (always run):
     at all is exempt — fetch-at-launch runs nothing to need a Windows counterpart)
   - no orphan directory: every first-party servers/<dir>/ is referenced by an
     entry (catches a half-done removal that dropped the entry but left the dir)
+  - every providers/<id>.json is a well-formed sign-in provider (https-only
+    endpoints, a scope catalogue) and registry.json's `providers` mirrors them
+  - a manifest's `credentials` name a known provider and catalogued scopes,
+    inject only into declared sensitive configurableProperties, stay on user
+    scope and a stdio transport; a `login` names one of the server's tools
 
 Warnings (reported, never fatal):
   - a vetted top-level platform that no transport can serve
@@ -57,6 +62,11 @@ Trust-promotion gate (when --base is given):
     a warning (advisory) — both run on users' machines, so both want eyes.
   - a changed manifest is reported the same way, naming the transport commands
     it now carries — the manifest is what runs on every call, not just install.
+  - a new or changed manifest that requests account access is reported naming
+    the provider and scopes it asks for.
+  - adding, changing or removing a sign-in provider REQUIRES the same approval:
+    a provider decides where a user's sign-in is sent and where the resulting
+    token goes, for every server that declares it.
 
 Usage:
   python3 scripts/validate_registry.py
@@ -67,6 +77,7 @@ Usage:
 import argparse
 import json
 import pathlib
+import re
 import sys
 
 # Imported, never re-derived: canonical_text is the definition of "the text that
@@ -74,10 +85,12 @@ import sys
 # — leaving a gate that passes stale vectors while looking like it checked them.
 from generate_embeddings import DEFAULT_MODEL, canonical_hash, canonical_text
 from sync_registry import (
+    PROVIDERS_DIR,
     POSIX_SETUP_SCRIPT,
     SETUP_SCRIPTS,
     WINDOWS_SETUP_SCRIPT,
     dir_from_url,
+    load_providers,
     sha256_file,
 )
 
@@ -143,6 +156,22 @@ ALLOWED_CATEGORIES = {
     "travel",
     "weather",
 }
+# Sign-in providers (#229). A provider id is what dmcp keys a stored account by
+# and what a credential names, so it is held to a plain slug.
+PROVIDER_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+PROVIDER_FIELDS = ("id", "name", "oauth", "identity", "scopes")
+PROVIDER_ENDPOINTS = ("deviceAuthorizationEndpoint", "tokenEndpoint")
+
+# What dmcp can hand a server from a signed-in account. Closed, so a manifest
+# asking for a field dmcp does not have fails here instead of launching the
+# server with that variable silently unset.
+CREDENTIAL_FIELDS = {"access_token", "refresh_token", "client_id", "account"}
+# Fields that are secrets: they may only land in a property the manifest marks
+# `sensitive`, which is what keeps every config UI from displaying them.
+SECRET_CREDENTIAL_FIELDS = {"access_token", "refresh_token"}
+CREDENTIAL_KEYS = {"provider", "scopes", "inject"}
+LOGIN_KEYS = {"tool"}
+
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
 # Manifest field naming a setup script, paired with the only filename that field
@@ -718,6 +747,211 @@ def report_embeddings(notes: list, strict: bool, errors: list, warnings: list) -
     annotate("error" if strict else "warning", EMBEDDING_SUMMARY.format(count=len(notes)))
 
 
+def https_url(value) -> bool:
+    return isinstance(value, str) and value.startswith("https://") and len(value) > len("https://")
+
+
+def validate_providers(registry: dict, errors: list) -> dict:
+    """Check providers/<id>.json and the registry's mirror of them.
+
+    A provider is where dmcp sends a user to sign in and where it exchanges the
+    code for a token, and the identity URL is sent that token. Every endpoint is
+    therefore https: over plain http the token itself crosses the wire in clear.
+
+    Returns the providers that passed, for the credential checks to resolve
+    against — a manifest naming a malformed provider is reported once, here,
+    and then as unknown.
+    """
+    valid = {}
+    if PROVIDERS_DIR.is_dir():
+        for path in sorted(PROVIDERS_DIR.iterdir()):
+            where = f"providers/{path.name}"
+            if path.suffix != ".json" or not path.is_file():
+                errors.append(f"{where}: only <id>.json provider files belong in providers/")
+                continue
+            try:
+                provider = json.loads(path.read_text())
+            except (OSError, json.JSONDecodeError) as e:
+                errors.append(f"{where}: failed to parse: {e}")
+                continue
+            if not isinstance(provider, dict):
+                errors.append(f"{where}: must be a JSON object")
+                continue
+
+            before = len(errors)
+            for field in PROVIDER_FIELDS:
+                if field not in provider:
+                    errors.append(f"{where}: missing required field '{field}'")
+
+            pid = provider.get("id")
+            if pid is not None and pid != path.stem:
+                errors.append(f"{where}: id {pid!r} != file name {path.stem!r}")
+            if not PROVIDER_ID.match(path.stem):
+                errors.append(f"{where}: provider id must be a lowercase slug ([a-z0-9-])")
+            if "name" in provider and not (isinstance(provider["name"], str) and provider["name"]):
+                errors.append(f"{where}: 'name' must be a non-empty string")
+
+            oauth = provider.get("oauth")
+            if oauth is not None and not isinstance(oauth, dict):
+                errors.append(f"{where}: 'oauth' must be an object")
+            elif isinstance(oauth, dict):
+                for endpoint in PROVIDER_ENDPOINTS:
+                    if not https_url(oauth.get(endpoint)):
+                        errors.append(f"{where}: oauth.{endpoint} must be an https:// URL")
+                # Public clients only: the client id ships to every machine, so
+                # a secret beside it would be a secret nobody can keep.
+                if "clientSecret" in oauth:
+                    errors.append(f"{where}: oauth.clientSecret must not be published in a registry")
+                client_id = oauth.get("clientId")
+                if client_id is not None and not (isinstance(client_id, str) and client_id):
+                    errors.append(f"{where}: oauth.clientId must be a non-empty string when present")
+
+            identity = provider.get("identity")
+            if identity is not None and not isinstance(identity, dict):
+                errors.append(f"{where}: 'identity' must be an object")
+            elif isinstance(identity, dict):
+                if not https_url(identity.get("url")):
+                    errors.append(f"{where}: identity.url must be an https:// URL")
+                if not (isinstance(identity.get("field"), str) and identity.get("field")):
+                    errors.append(f"{where}: identity.field must name the account field")
+
+            scopes = provider.get("scopes")
+            if scopes is not None and not (
+                isinstance(scopes, dict)
+                and all(isinstance(k, str) and k and isinstance(v, str) and v for k, v in scopes.items())
+            ):
+                errors.append(
+                    f"{where}: 'scopes' must map each scope to the description a user "
+                    f"is shown when a server asks for it"
+                )
+
+            if len(errors) == before:
+                valid[path.stem] = provider
+
+    mirrored = registry.get("providers", {})
+    if not isinstance(mirrored, dict):
+        errors.append("registry.json: 'providers' must be an object")
+    elif mirrored != load_providers():
+        errors.append(
+            "registry.json: 'providers' does not match providers/ — run sync_registry.py"
+        )
+    return valid
+
+
+def has_stdio_transport(manifest: dict) -> bool:
+    transports = manifest.get("transports")
+    return isinstance(transports, list) and any(
+        isinstance(t, dict) and t.get("type") == "stdio" for t in transports
+    )
+
+
+def validate_credentials(
+    where: str, entry: dict, manifest: dict, providers: dict, errors: list
+) -> None:
+    """A server's request for a signed-in account, and where dmcp puts it.
+
+    dmcp injects a granted account's token into the server's environment at
+    spawn, under the names `inject` maps. Everything here keeps that narrow:
+    only a declared property can receive a value (so `dmcp config set` still
+    overrides it and every config UI already knows it), a token only ever lands
+    in a `sensitive` one, and the request is for a provider and scopes this
+    registry has reviewed.
+    """
+    credentials = manifest.get("credentials")
+    if credentials is None:
+        return
+    if not isinstance(credentials, list) or not credentials:
+        errors.append(f"{where}: 'credentials' must be a non-empty array when present")
+        return
+
+    # A system-scope server runs as root, which cannot read the signed-in
+    # user's keyring — the account would be requested and never delivered.
+    if entry.get("scope") != "user" or manifest.get("scope", "user") != "user":
+        errors.append(f"{where}: 'credentials' are only supported on user-scope servers")
+    # Hosted servers take the token as a bearer header on the connection, which
+    # dmcp does not do yet (#229); an env mapping would reach no process.
+    if not has_stdio_transport(manifest):
+        errors.append(
+            f"{where}: 'credentials' need a stdio transport — hosted-server sign-in is not supported yet"
+        )
+
+    properties = {
+        p.get("key"): p
+        for p in manifest.get("configurableProperties") or []
+        if isinstance(p, dict) and isinstance(p.get("key"), str)
+    }
+    seen_providers = set()
+    injected = set()
+
+    for position, credential in enumerate(credentials):
+        at = f"{where}: credentials[{position}]"
+        if not isinstance(credential, dict):
+            errors.append(f"{at}: must be an object")
+            continue
+        unknown = set(credential) - CREDENTIAL_KEYS
+        if unknown:
+            errors.append(f"{at}: unknown field(s) {sorted(unknown)} (allowed: {sorted(CREDENTIAL_KEYS)})")
+
+        provider_id = credential.get("provider")
+        provider = providers.get(provider_id) if isinstance(provider_id, str) else None
+        if provider is None:
+            errors.append(f"{at}: provider {provider_id!r} is not a provider in providers/")
+        elif provider_id in seen_providers:
+            errors.append(f"{at}: provider {provider_id!r} is requested twice")
+        seen_providers.add(provider_id if isinstance(provider_id, str) else None)
+
+        scopes = credential.get("scopes", [])
+        if not isinstance(scopes, list) or not all(isinstance(x, str) for x in scopes):
+            errors.append(f"{at}: 'scopes' must be an array of scope names")
+        elif provider is not None:
+            catalogue = provider.get("scopes", {})
+            for scope in scopes:
+                if scope not in catalogue:
+                    errors.append(
+                        f"{at}: scope {scope!r} is not in the {provider_id} provider's catalogue"
+                    )
+
+        inject = credential.get("inject")
+        if not isinstance(inject, dict) or not inject:
+            errors.append(f"{at}: 'inject' must map at least one property key to a credential field")
+            continue
+        for key, field in inject.items():
+            if field not in CREDENTIAL_FIELDS:
+                errors.append(
+                    f"{at}: inject[{key!r}] = {field!r} is not one of {sorted(CREDENTIAL_FIELDS)}"
+                )
+            prop = properties.get(key)
+            if prop is None:
+                errors.append(
+                    f"{at}: inject target {key!r} is not a declared configurableProperties key"
+                )
+            elif field in SECRET_CREDENTIAL_FIELDS and prop.get("sensitive") is not True:
+                errors.append(
+                    f"{at}: inject target {key!r} receives the {field} but is not marked sensitive"
+                )
+            if key in injected:
+                errors.append(f"{at}: property {key!r} is injected by two credentials")
+            injected.add(key)
+
+
+def validate_login(where: str, manifest: dict, errors: list) -> None:
+    """A server that signs in its own way names the tool that does it."""
+    login = manifest.get("login")
+    if login is None:
+        return
+    if not isinstance(login, dict):
+        errors.append(f"{where}: 'login' must be an object")
+        return
+    unknown = set(login) - LOGIN_KEYS
+    if unknown:
+        errors.append(f"{where}: login has unknown field(s) {sorted(unknown)}")
+    tool_names = {
+        t.get("name") for t in manifest.get("tools") or [] if isinstance(t, dict)
+    }
+    if login.get("tool") not in tool_names:
+        errors.append(f"{where}: login.tool {login.get('tool')!r} is not one of the server's tools")
+
+
 def validate_static(registry: dict, errors: list, warnings: list, embeddings: list) -> None:
     if "servers" not in registry or not isinstance(registry["servers"], dict):
         errors.append("registry.json: missing or malformed 'servers' object")
@@ -726,6 +960,8 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
     spec = registry.get("embedding_spec")
     if not isinstance(spec, dict):
         spec = {}
+
+    providers = validate_providers(registry, errors)
 
     for server_id, entry in registry["servers"].items():
         where = f"servers['{server_id}']"
@@ -784,6 +1020,8 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_source_pin(where, entry, manifest, errors)
         validate_transports(where, manifest, entry, errors, warnings)
         validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
+        validate_credentials(where, entry, manifest, providers, errors)
+        validate_login(where, manifest, errors)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:
@@ -853,12 +1091,30 @@ def transport_commands(server_id: str, entry: dict) -> list:
     return lines
 
 
+def credential_requests(entry: dict) -> list:
+    """What account access a manifest asks for, e.g. "github (repo)"."""
+    dir_name = dir_from_url(entry.get("manifest", ""))
+    if not dir_name:
+        return []
+    try:
+        manifest = json.loads((SERVERS_DIR / dir_name / MANIFEST_FILE).read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+    requests = []
+    for credential in manifest.get("credentials") or []:
+        if isinstance(credential, dict):
+            scopes = ", ".join(str(x) for x in credential.get("scopes") or []) or "no scopes"
+            requests.append(f"{credential.get('provider')} ({scopes})")
+    return requests
+
+
 def validate_promotions(registry: dict, base: dict, approval: bool, errors: list) -> None:
     base_servers = base.get("servers", {}) if isinstance(base, dict) else {}
     promotions = []
     revivals = []
     setup_changes = []
     manifest_changes = []
+    account_requests = []
 
     for server_id, entry in registry["servers"].items():
         head_trust = entry.get("trustStatus")
@@ -893,8 +1149,48 @@ def validate_promotions(registry: dict, base: dict, approval: bool, errors: list
         if base_entry and head_manifest and head_manifest != base_integrity.get("manifestSha256"):
             manifest_changes.append(server_id)
 
+        # A grant is the user's call, but it is made on the strength of this
+        # review: the prompt names the server and the scopes, and nothing else.
+        if head_manifest != base_integrity.get("manifestSha256"):
+            for request in credential_requests(entry):
+                account_requests.append((server_id, request))
+
     for sid, filename in setup_changes:
         annotate("warning", f"{sid}: {filename} added/changed — review the script before merge")
+
+    for sid, request in account_requests:
+        annotate(
+            "warning",
+            f"{sid}: requests sign-in access to {request} — check the scopes are "
+            f"the least its tools need",
+        )
+
+    # A provider decides where a user is sent to sign in and where the token it
+    # yields goes — for every server that names it, installed or not. Adding
+    # one, repointing one, or dropping one out from under its servers all move
+    # that trust, so each needs the same maintainer label a promotion does.
+    base_providers = base.get("providers", {}) if isinstance(base, dict) else {}
+    head_providers = registry.get("providers", {})
+    if not isinstance(base_providers, dict):
+        base_providers = {}
+    if not isinstance(head_providers, dict):
+        head_providers = {}
+    provider_changes = sorted(
+        pid
+        for pid in set(base_providers) | set(head_providers)
+        if base_providers.get(pid) != head_providers.get(pid)
+    )
+    if provider_changes:
+        listed = ", ".join(provider_changes)
+        if approval:
+            annotate("notice", f"sign-in provider change approved by maintainer label: {listed}")
+        else:
+            errors.append(
+                f"sign-in provider added, changed or removed without maintainer approval: "
+                f"{listed}. A maintainer must apply the 'trust-approved' label "
+                "(see docs/TRUST-MODEL.md §4) — a provider decides where users sign in "
+                "and where their tokens go."
+            )
 
     for sid in manifest_changes:
         commands = transport_commands(sid, registry["servers"][sid])

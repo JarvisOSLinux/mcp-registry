@@ -8,6 +8,9 @@ For each server entry in registry.json:
   - Recomputes integrity.setupScriptWindowsSha256 if setup.ps1 exists, and drops
     the recorded hash when the script is gone
   - Syncs name, summary, keywords, platforms from the manifest into the entry
+
+And registry-wide:
+  - Mirrors providers/<id>.json into the top-level `providers` map
   - Updates the top-level updated timestamp
 
 Usage:
@@ -23,6 +26,7 @@ import argparse
 
 REGISTRY = pathlib.Path("registry.json")
 SERVERS_DIR = pathlib.Path("servers")
+PROVIDERS_DIR = pathlib.Path("providers")
 
 # Fields copied verbatim from the manifest into the index entry. 'platforms' is
 # mirrored because dmcp filters by host from registry.json alone — browse and
@@ -66,6 +70,43 @@ def move_after(entry: dict, field: str, anchor: str) -> None:
             reordered[field] = value
     entry.clear()
     entry.update(reordered)
+
+
+def load_providers() -> dict:
+    """providers/<id>.json, keyed by file stem, in a stable order.
+
+    A provider is mirrored into registry.json for the same reason `platforms`
+    is: dmcp fetches that one file, and signing someone in must not need a
+    second fetch per provider. The file stays the source of truth — it is what a
+    reviewer reads — and a file that does not parse is left for the validator
+    to report rather than silently dropped from the mirror.
+    """
+    if not PROVIDERS_DIR.is_dir():
+        return {}
+    providers = {}
+    for path in sorted(PROVIDERS_DIR.glob("*.json")):
+        try:
+            providers[path.stem] = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            print(f"  SKIP provider {path.name}: {e}")
+    return providers
+
+
+def place_providers(registry: dict, providers: dict) -> None:
+    """Set the top-level `providers` map just ahead of `servers`.
+
+    Ahead, not after: `servers` is thousands of lines of vectors, and a provider
+    change is exactly the diff a reviewer must not have to scroll to find.
+    """
+    reordered = {}
+    for key, value in registry.items():
+        if key == "providers":
+            continue
+        if key == "servers" and providers:
+            reordered["providers"] = providers
+        reordered[key] = value
+    registry.clear()
+    registry.update(reordered)
 
 
 def dir_from_url(url: str) -> str | None:
@@ -137,6 +178,14 @@ def main() -> None:
                 if is_new and field in FIELD_ANCHOR:
                     move_after(entry, field, FIELD_ANCHOR[field])
                 changed = True
+
+    providers = load_providers()
+    if providers != registry.get("providers", {}) or (
+        not providers and "providers" in registry
+    ):
+        print("  providers: mirrored from providers/")
+        place_providers(registry, providers)
+        changed = True
 
     if changed:
         if args.check:

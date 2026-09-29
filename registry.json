@@ -1,9 +1,39 @@
 {
   "version": "1.0",
-  "updated": "2026-09-28T01:29:00Z",
+  "updated": "2026-09-29T12:44:43Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
+  },
+  "providers": {
+    "github": {
+      "id": "github",
+      "name": "GitHub",
+      "homepage": "https://github.com",
+      "oauth": {
+        "deviceAuthorizationEndpoint": "https://github.com/login/device/code",
+        "tokenEndpoint": "https://github.com/login/oauth/access_token"
+      },
+      "identity": {
+        "url": "https://api.github.com/user",
+        "field": "login"
+      },
+      "scopes": {
+        "repo": "Full control of your repositories, public and private",
+        "public_repo": "Read and write your public repositories",
+        "read:org": "Read your organization and team membership",
+        "read:user": "Read your profile",
+        "user:email": "Read your email addresses",
+        "gist": "Create and edit your gists",
+        "notifications": "Read and manage your notifications",
+        "workflow": "Change GitHub Actions workflow files",
+        "project": "Read and write your projects",
+        "read:project": "Read your projects",
+        "read:packages": "Download packages from GitHub Packages",
+        "write:packages": "Publish packages to GitHub Packages",
+        "delete_repo": "Delete your repositories"
+      }
+    }
   },
   "servers": {
     "org.modelcontextprotocol.server-sequential-thinking": {
@@ -12918,7 +12948,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "5db97e2c349ce921702f64744defedaa4bd0f60a40def39e9366cba6fc17b68a",
+        "manifestSha256": "c5f62dcaa95a058ab2bfa799fa27db4d2e46fa23057e356add40ce4558e66ce7",
         "setupScriptSha256": "43c12a871e79aff0eae9bcbbdb587006639cb9c11cc77d42e9f227bb1ce611d9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.missionsquad.mcp-github/manifest.json",

@@ -77,9 +77,20 @@
     {
       "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
       "label": "GitHub Personal Access Token",
-      "description": "Token used to call GitHub API. Fine-grained or classic PAT supported depending on operations.",
+      "description": "Token used to call the GitHub API. Filled in for you when you sign in with 'dmcp login github'; set it here only to use a PAT instead.",
       "sensitive": true,
       "required": true
+    }
+  ],
+  "credentials": [
+    {
+      "provider": "github",
+      "scopes": [
+        "repo"
+      ],
+      "inject": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "access_token"
+      }
     }
   ],
   "trust": {

@@ -20,6 +20,8 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `setupScript` | string | No | For local servers: filename (e.g. `"setup.sh"`). For remote: full HTTPS URL — in this registry, only the one naming the committed `servers/<id>/setup.sh`. See [Setup Script](#setup-script). |
 | `setupScriptWindows` | string | No | PowerShell script run instead of `setupScript` on Windows hosts. The value must be `"setup.ps1"` (or the registry-hosted URL for it). See [Windows Setup Script](#windows-setup-script). |
 | `configurableProperties` | array | No | User-configurable properties (API keys, endpoints). See [Configurable Properties](#configurable-properties). |
+| `credentials` | array | No | Accounts the server needs a signed-in user for (GitHub, Google, …), and which properties dmcp fills from them. See [Credentials](#credentials). |
+| `login` | object | No | Names the server's own sign-in tool, for servers that sign in their own way. See [Login](#login). |
 | `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
 | `name` | string | No | Display name. Synced into `registry.json` by `sync_registry.py`. |
@@ -511,6 +513,112 @@ Declares user-configurable values (API keys, endpoint URLs, options). These are 
 
 Never hardcode API keys or tokens directly in the manifest. All secrets must be declared here as `"required": true, "sensitive": true` properties.
 
+A property a [credential](#credentials) injects into is still declared here, and
+still `required`: the server cannot start without it. What changes is where the
+value comes from — a signed-in account instead of the user typing it — so a
+config form should not demand it when the credential can supply it. A value set
+by hand (`dmcp config set`) always wins over the injected one, which is how a
+user keeps using a personal access token.
+
+---
+
+## Credentials
+
+A server that works on the user's behalf in an account — GitHub, Google, Slack —
+declares which account it needs instead of asking the user to paste a token.
+dmcp signs the user in once per provider and account (`dmcp login github`),
+keeps the token in the OS keyring, and at spawn injects it into the properties
+named here — but only into servers the user has granted that account to. See
+Project-JARVIS#229 for the whole design.
+
+```json
+"configurableProperties": [
+  { "key": "GITHUB_PERSONAL_ACCESS_TOKEN", "label": "GitHub token", "sensitive": true, "required": true }
+],
+"credentials": [
+  {
+    "provider": "github",
+    "scopes": ["repo"],
+    "inject": { "GITHUB_PERSONAL_ACCESS_TOKEN": "access_token" }
+  }
+]
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `provider` | string | Yes | A provider id from this registry's `providers/` (e.g. `"github"`). Each provider appears at most once per manifest. |
+| `scopes` | array | No | The scopes the server's tools need, from that provider's catalogue. Shown to the user when they grant the account; ask for the least the tools need. |
+| `inject` | object | Yes | Property key → credential field. Keys must be declared in `configurableProperties`; a property can be filled by only one credential. |
+
+Credential fields dmcp can inject:
+
+| Field | Value | Target must be `sensitive` |
+|-------|-------|----------------------------|
+| `access_token` | The current access token, refreshed by dmcp before spawn when it has expired | Yes |
+| `refresh_token` | The refresh token, for servers that refresh on their own | Yes |
+| `client_id` | The provider's public OAuth client id | No |
+| `account` | The account name (e.g. the GitHub login or Google email) | No |
+
+Rules the PR gate enforces:
+
+- **User scope only.** A system-scope server runs as root, which cannot read
+  the signed-in user's keyring.
+- **A stdio transport is required.** A hosted server takes its token on the
+  connection rather than in an environment variable, and dmcp does not do that
+  yet.
+- **Tokens only go into `sensitive` properties**, so no config UI shows them.
+- **No unknown fields.** A misspelt `scope` would otherwise be silently ignored.
+
+A new or changed manifest with `credentials` gets a review annotation naming the
+provider and scopes it requests.
+
+### Providers
+
+A provider is one file, `providers/<id>.json`, mirrored into `registry.json`'s
+top-level `providers` map by `sync_registry.py`:
+
+```json
+{
+  "id": "github",
+  "name": "GitHub",
+  "oauth": {
+    "clientId": "0123456789abcdef0123",
+    "deviceAuthorizationEndpoint": "https://github.com/login/device/code",
+    "tokenEndpoint": "https://github.com/login/oauth/access_token"
+  },
+  "identity": { "url": "https://api.github.com/user", "field": "login" },
+  "scopes": { "repo": "Full control of your repositories, public and private" }
+}
+```
+
+- `oauth.clientId` is a **public** client id. It is optional until one is
+  registered; dmcp reads `DMCP_OAUTH_CLIENT_ID_<ID>` in the meantime. A client
+  secret must never be published here.
+- Every endpoint is `https://`. The token crosses the token endpoint, and the
+  identity endpoint is called with it to name the account.
+- `scopes` maps each scope to the sentence a user is shown when a server asks
+  for it.
+- Adding, changing or removing a provider needs the maintainer `trust-approved`
+  label, like a promotion to `official`: a provider decides where users sign in
+  and where their tokens go (see `docs/TRUST-MODEL.md` §4).
+
+---
+
+## Login
+
+Some servers sign in their own way — a tool that runs the provider's login and
+keeps the result itself. That is allowed. The server names the tool, so JARVIS
+can offer it when the user needs to sign in:
+
+```json
+"login": { "tool": "login" }
+```
+
+`tool` must be one of the server's declared `tools`, and it is reviewed and
+threat-classified like any other. What it stores, and where, is the server's
+own business. When a server declares both `credentials` and `login`, JARVIS
+offers `dmcp login` first.
+
 ---
 
 ## Stateful
@@ -631,5 +739,7 @@ A Python stdio server with one required API key:
 ## Changelog — corrected claims
 
 *2026-07-22:* `sensitive` values are stored in plaintext today (masking is UI-only; encryption planned); setup scripts run by default with `sh` (`--no-setup` to skip, `dmcp setup <id>` to re-run) and receive `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; registry-hosted `setup.sh` location and SHA-256 verification documented; machine-managed `embeddings` field documented; embedding canonical text corrected.
+
+*2026-09-29:* `credentials`, `login` and `providers/` added (Project-JARVIS#229). The `sensitive` row above still says values are stored in plaintext in the installed manifest — true for values set by hand; a value that comes from a credential is kept in the OS keyring and never written to the manifest.
 
 *2026-07-25:* setup scripts run under the interpreter their shebang names (bash for `#!/usr/bin/env bash`, otherwise `sh`), superseding the 2026-07-22 "runs with `sh`" note; transport order documented as load-bearing and enforced (a transport an earlier one already matches is rejected); `setupScript` / `setupScriptWindows` in URL form must resolve to the committed script beside the manifest, since dmcp cannot hash-verify anything else.
