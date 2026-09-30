@@ -40,6 +40,8 @@ Static checks (always run):
   - a manifest's `credentials` name a known provider and catalogued scopes,
     inject only into declared sensitive configurableProperties, stay on user
     scope and a stdio transport; a `login` names one of the server's tools
+  - every transport `type` is one dmcp can run, and `auth` appears only as
+    "oauth" on an https Streamable HTTP transport
 
 Warnings (reported, never fatal):
   - a vetted top-level platform that no transport can serve
@@ -63,7 +65,7 @@ Trust-promotion gate (when --base is given):
   - a changed manifest is reported the same way, naming the transport commands
     it now carries — the manifest is what runs on every call, not just install.
   - a new or changed manifest that requests account access is reported naming
-    the provider and scopes it asks for.
+    the provider and scopes it asks for, or the host whose own sign-in it uses.
   - adding, changing or removing a sign-in provider REQUIRES the same approval:
     a provider decides where a user's sign-in is sent and where the resulting
     token goes, for every server that declares it.
@@ -170,6 +172,15 @@ CREDENTIAL_FIELDS = {"access_token", "refresh_token", "client_id", "account"}
 # `sensitive`, which is what keeps every config UI from displaying them.
 SECRET_CREDENTIAL_FIELDS = {"access_token", "refresh_token"}
 CREDENTIAL_KEYS = {"provider", "scopes", "inject"}
+
+# Transport types dmcp deserializes. `http` and its spellings are Streamable
+# HTTP; dmcp speaks the same protocol to `sse`. Anything else would make the
+# manifest unloadable on every client.
+STDIO_TRANSPORT = "stdio"
+HTTP_TRANSPORTS = {"http", "streamable-http", "streamable_http", "sse"}
+ALLOWED_TRANSPORT_TYPES = {STDIO_TRANSPORT, "websocket"} | HTTP_TRANSPORTS
+# A hosted server's own sign-in (MCP authorization spec). The only value.
+ALLOWED_TRANSPORT_AUTH = {"oauth"}
 LOGIN_KEYS = {"tool"}
 
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
@@ -934,6 +945,51 @@ def validate_credentials(
             injected.add(key)
 
 
+def validate_transport_types(where: str, manifest: dict, errors: list) -> None:
+    """Every transport names a type dmcp runs; `auth` only where it means something.
+
+    `auth: "oauth"` makes dmcp run a browser sign-in against whatever
+    authorization server the endpoint names, and then send that server a
+    bearer token on every call. Over plain http the token crosses the network
+    in the clear, so the endpoint must be https. On stdio or WebSocket the
+    field has no meaning, and a value dmcp does not know reads as absent there:
+    both are review mistakes worth failing on.
+    """
+    transports = manifest.get("transports")
+    if not isinstance(transports, list):
+        return
+    for position, transport in enumerate(transports):
+        if not isinstance(transport, dict):
+            continue
+        at = f"{where}: transports[{position}]"
+        kind = transport.get("type")
+        if kind not in ALLOWED_TRANSPORT_TYPES:
+            errors.append(f"{at}: type {kind!r} not in {sorted(ALLOWED_TRANSPORT_TYPES)}")
+            continue
+        if "auth" not in transport:
+            continue
+        auth = transport["auth"]
+        if auth not in ALLOWED_TRANSPORT_AUTH:
+            errors.append(f"{at}: auth {auth!r} not in {sorted(ALLOWED_TRANSPORT_AUTH)}")
+        elif kind not in HTTP_TRANSPORTS:
+            errors.append(f"{at}: auth is only meaningful on an http transport, not {kind!r}")
+        elif not https_url(transport.get("url")):
+            errors.append(
+                f"{at}: a transport that signs the user in must be https — the token "
+                f"is sent to it on every call"
+            )
+
+
+def hosted_sign_ins(manifest: dict) -> list:
+    """Hosts of the transports that run their own sign-in."""
+    hosts = []
+    for transport in manifest.get("transports") or []:
+        if isinstance(transport, dict) and transport.get("auth") == "oauth":
+            url = str(transport.get("url", ""))
+            hosts.append(url.split("://", 1)[-1].split("/", 1)[0] or url)
+    return hosts
+
+
 def validate_login(where: str, manifest: dict, errors: list) -> None:
     """A server that signs in its own way names the tool that does it."""
     login = manifest.get("login")
@@ -1020,6 +1076,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_source_pin(where, entry, manifest, errors)
         validate_transports(where, manifest, entry, errors, warnings)
         validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
+        validate_transport_types(where, manifest, errors)
         validate_credentials(where, entry, manifest, providers, errors)
         validate_login(where, manifest, errors)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
@@ -1092,7 +1149,7 @@ def transport_commands(server_id: str, entry: dict) -> list:
 
 
 def credential_requests(entry: dict) -> list:
-    """What account access a manifest asks for, e.g. "github (repo)"."""
+    """What account access a manifest asks for, phrased for the review note."""
     dir_name = dir_from_url(entry.get("manifest", ""))
     if not dir_name:
         return []
@@ -1104,7 +1161,15 @@ def credential_requests(entry: dict) -> list:
     for credential in manifest.get("credentials") or []:
         if isinstance(credential, dict):
             scopes = ", ".join(str(x) for x in credential.get("scopes") or []) or "no scopes"
-            requests.append(f"{credential.get('provider')} ({scopes})")
+            requests.append(
+                f"requests sign-in access to {credential.get('provider')} ({scopes}) — "
+                f"check the scopes are the least its tools need"
+            )
+    for host in hosted_sign_ins(manifest):
+        requests.append(
+            f"signs users in itself at {host} and receives their token — check the "
+            f"host is the vendor's own"
+        )
     return requests
 
 
@@ -1159,11 +1224,7 @@ def validate_promotions(registry: dict, base: dict, approval: bool, errors: list
         annotate("warning", f"{sid}: {filename} added/changed — review the script before merge")
 
     for sid, request in account_requests:
-        annotate(
-            "warning",
-            f"{sid}: requests sign-in access to {request} — check the scopes are "
-            f"the least its tools need",
-        )
+        annotate("warning", f"{sid}: {request}")
 
     # A provider decides where a user is sent to sign in and where the token it
     # yields goes — for every server that names it, installed or not. Adding

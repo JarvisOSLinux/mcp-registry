@@ -121,6 +121,32 @@ Runs the server as a local subprocess. Requires a `source` block.
 
 The command and args run from the project root (the `source.path` directory or the repo root if `path` is omitted). Use a venv-relative path like `.venv/bin/python3` if your `setup.sh` creates a virtual environment.
 
+### HTTP (Streamable HTTP)
+
+A hosted server. No local clone occurs. This is the current MCP remote
+transport; dmcp also speaks it to `sse` endpoints.
+
+```json
+{
+  "type": "http",
+  "url": "https://mcp.notion.com/mcp",
+  "auth": "oauth",
+  "description": "Notion's hosted server"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | string | Yes | `"http"` (`"streamable-http"` and `"streamable_http"` are accepted too). |
+| `url` | string | Yes | Full URL of the MCP endpoint. |
+| `auth` | string | No | `"oauth"` when the server signs its caller in under the MCP authorization spec. dmcp then signs the user in with `dmcp login --for <id>` (browser, PKCE, no app registration needed where the server supports dynamic client registration) and sends the token on every call. The PR gate requires an `https` URL, and a new or changed manifest gets a review annotation naming the host. |
+| `description` | string | No | Human-readable label. |
+| `platforms` | array | No | Hosts this endpoint is for. Absent = every host. |
+
+`servers/com.notion.mcp/manifest.json` is the worked example. The PR gate
+rejects a `type` dmcp cannot run and an `auth` value other than `"oauth"`, and
+`auth` on anything but an http transport.
+
 ### SSE (Server-Sent Events)
 
 Connects to a remote HTTP endpoint. No local clone occurs.
@@ -739,6 +765,8 @@ A Python stdio server with one required API key:
 ## Changelog — corrected claims
 
 *2026-07-22:* `sensitive` values are stored in plaintext today (masking is UI-only; encryption planned); setup scripts run by default with `sh` (`--no-setup` to skip, `dmcp setup <id>` to re-run) and receive `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; registry-hosted `setup.sh` location and SHA-256 verification documented; machine-managed `embeddings` field documented; embedding canonical text corrected.
+
+*2026-09-30:* `http` transport and `auth: "oauth"` (hosted sign-in) documented; transport `type` is now checked against what dmcp runs.
 
 *2026-09-29:* `credentials`, `login` and `providers/` added (Project-JARVIS#229). The `sensitive` row above still says values are stored in plaintext in the installed manifest — true for values set by hand; a value that comes from a credential is kept in the OS keyring and never written to the manifest.
 
