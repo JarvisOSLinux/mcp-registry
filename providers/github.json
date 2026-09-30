@@ -1,0 +1,28 @@
+{
+  "id": "github",
+  "name": "GitHub",
+  "homepage": "https://github.com",
+  "oauth": {
+    "deviceAuthorizationEndpoint": "https://github.com/login/device/code",
+    "tokenEndpoint": "https://github.com/login/oauth/access_token"
+  },
+  "identity": {
+    "url": "https://api.github.com/user",
+    "field": "login"
+  },
+  "scopes": {
+    "repo": "Full control of your repositories, public and private",
+    "public_repo": "Read and write your public repositories",
+    "read:org": "Read your organization and team membership",
+    "read:user": "Read your profile",
+    "user:email": "Read your email addresses",
+    "gist": "Create and edit your gists",
+    "notifications": "Read and manage your notifications",
+    "workflow": "Change GitHub Actions workflow files",
+    "project": "Read and write your projects",
+    "read:project": "Read your projects",
+    "read:packages": "Download packages from GitHub Packages",
+    "write:packages": "Publish packages to GitHub Packages",
+    "delete_repo": "Delete your repositories"
+  }
+}

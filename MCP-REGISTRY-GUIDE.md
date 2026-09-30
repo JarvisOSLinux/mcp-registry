@@ -238,6 +238,8 @@ Each server folder contains a `manifest.json` with **install and run metadata on
 | `setupScriptWindows`    | string | PowerShell setup script used on Windows hosts instead of `setupScript`. For local servers the value must be `"setup.ps1"`. See Setup Script below. |
 | `homepage`              | string | URL to the project homepage.                                    |
 | `configurableProperties`| array  | Configuration properties (required and optional, see below).   |
+| `credentials`           | array  | Signed-in accounts the server needs (e.g. GitHub) and which properties dmcp fills from them. See [Accounts and Sign-in](#accounts-and-sign-in). |
+| `login`                 | object | `{"tool": "<name>"}` — the server's own sign-in tool, for servers that sign in their own way. |
 | `stateful`              | boolean| `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection); makes it eligible for dmcp session-scoped calls, which are **user scope only**. Absent/`false` = stateless — every call is a fresh process, see [stdin, stdout, and the Process Lifecycle](#stdin-stdout-and-the-process-lifecycle). |
 | `trust`                 | object | Optional. Human-readable review details (no status). Useful for community registries. |
 
@@ -818,6 +820,40 @@ dmcp does not prompt or validate `required` properties itself — it stores conf
 | `required`    | boolean | If `true`, must be filled before installation.             |
 
 User-provided values are stored in the per-server manifest at `<installDir>/manifest.json` in the `config` object and injected into the server process as **environment variables** — the `key` IS the env var name (e.g. `BRAVE_API_KEY`). Defaults are not auto-applied.
+
+## Accounts and Sign-in
+
+A server that acts in the user's account on some service should not ask the user
+to paste a token. It declares the account instead, and dmcp signs the user in:
+
+```json
+"credentials": [
+  {
+    "provider": "github",
+    "scopes": ["repo"],
+    "inject": { "GITHUB_PERSONAL_ACCESS_TOKEN": "access_token" }
+  }
+]
+```
+
+- `provider` names a file in this registry's `providers/` directory. A provider
+  holds the sign-in endpoints, a public client id and the scopes users can grant.
+- `scopes` are what the server's tools need. The user sees them when granting
+  the account, so ask for the least that works.
+- `inject` maps each declared `configurableProperties` key to a field of the
+  signed-in account: `access_token`, `refresh_token`, `client_id` or `account`.
+  Tokens may only go into `sensitive` properties.
+
+The user signs in once per account (`dmcp login github`) and grants it to a
+server. dmcp keeps the token in the OS keyring and sets the mapped environment
+variables when it starts the server. A value set by hand with `dmcp config set`
+still wins, so a personal access token keeps working.
+
+A server that signs in its own way can name its tool with `"login": {"tool":
+"<name>"}` instead, so JARVIS can offer it.
+
+Credentials are supported on user-scope servers with a stdio transport. Full
+field reference: [`docs/manifest-reference.md`](docs/manifest-reference.md#credentials).
 
 Use `keywords` to make your server discoverable via `dmcp browse -k <keyword>` and semantic search.
 

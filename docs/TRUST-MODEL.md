@@ -171,6 +171,11 @@ is what makes the mitigation real enough to publish.
    • a changed manifest is annotated for review naming the transport commands it
      now launches, the same signal a changed setup script gets — the manifest is
      what runs on every call, the setup script only at install
+   • adding, changing or removing a sign-in provider (providers/<id>.json)
+     needs the same `trust-approved` label: a provider decides where users sign
+     in and where their tokens go, for every server that names it
+   • a new or changed manifest that declares `credentials` is annotated naming
+     the provider and scopes it requests
         │
         ▼
  trustStatus = community  (installable by humans and the agent; the agent sees
@@ -192,6 +197,13 @@ server `official`. This is now built: `.github/workflows/validate-pr.yml` runs
 entry is promoted to `official` — **or has a `deprecated`/`removed` revocation
 lifted** — without a maintainer applying the `trust-approved` label (schema,
 id/scope, and integrity hashes are validated in the same gate).
+
+**Sign-in providers are gated the same way.** A server's `credentials` only
+*request* an account; the user grants it per server, so a community server
+cannot take a token nobody gave it. A provider is different: it is shared by
+every server that names it, and its endpoints decide where the user is sent to
+sign in and where the token is exchanged. Repointing one would quietly move
+every future sign-in, so any provider diff needs the `trust-approved` label.
 
 **Why a tag does not count as a pin.** §3 requirement 4 says "commit or tag", but
 only one of those binds. `dmcp` checks out whatever `source.rev` names and then

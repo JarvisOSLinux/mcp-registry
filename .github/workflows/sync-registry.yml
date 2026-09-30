@@ -1,6 +1,6 @@
 name: Sync Registry
 
-# Runs when manifests or setup scripts change on main, or on manual dispatch.
+# Runs when manifests, setup scripts or providers change on main, or on manual dispatch.
 # Recomputes integrity hashes and syncs descriptive fields, then opens a PR
 # with the diff rather than pushing directly to main.
 #
@@ -19,6 +19,7 @@ on:
       - 'servers/*/manifest.json'
       - 'servers/*/setup.sh'
       - 'servers/*/setup.ps1'
+      - 'providers/*.json'
   workflow_dispatch:
 
 jobs:
