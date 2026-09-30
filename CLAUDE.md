@@ -81,6 +81,7 @@ diff to it needs the `trust-approved` label.
 - `configurableProperties` — user-configurable fields (API keys, endpoints); each has key/label/description/sensitive/required/default (see `docs/manifest-reference.md`)
 - `credentials` — signed-in accounts the server needs: `provider` (a `providers/` id), `scopes` (from that provider's catalogue), `inject` (property key → `access_token`/`refresh_token`/`client_id`/`account`; tokens only into `sensitive` properties). User scope + a stdio transport only. dmcp delivers them at spawn to servers the user granted the account to (Project-JARVIS#229)
 - `login` — `{"tool": "<name>"}`, a server's own sign-in tool; must be one of its `tools`
+- `transports[].auth` — `"oauth"` on an https `http` transport: a hosted server that signs users in itself (MCP authorization spec; dmcp#70). `servers/com.notion.mcp` is the example
 - `tools` — list of tools the server exposes; a tool that can park awaiting input
   declares `blocking: true` plus an optional `suggestedRemindAfter` (seconds),
   the reminder interval an orchestrator applies when the caller set none
@@ -127,7 +128,8 @@ that can prompt. Both are documented for third-party authors in
   `safe`/`elevated`/`dangerous`/`forbidden`, or the legacy
   `confirmation_required: true` — on every tool of a live entry, well-formed
   https-only `providers/` mirrored into registry.json, and `credentials`/`login`
-  declarations that resolve against them) and blocks `trustStatus` promotion to
+  declarations that resolve against them, transport `type`s dmcp can run, and
+  `auth: "oauth"` only on https http transports) and blocks `trustStatus` promotion to
   `official`, lifting a `deprecated`/`removed` revocation, and adding, changing
   or removing a sign-in provider without the maintainer `trust-approved` label.
   Enforced by the `main protection` ruleset: `validate` required, one approving

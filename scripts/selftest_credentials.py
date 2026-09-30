@@ -29,6 +29,9 @@ asserts on what it reports, including the cases that must stay silent.
      the provider and scopes; an unchanged one is not.
  11. sync_registry.py mirrors providers/ into registry.json and drops the map
      when providers/ is gone.
+ 12. A hosted server's own sign-in (`auth: "oauth"`) passes on an https http
+     transport, and ERRORS on plain http, on stdio, or with an unknown value;
+     an unknown transport type ERRORS; a new hosted sign-in is reported.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
@@ -380,6 +383,58 @@ def sync_mirrors_providers():
         run(sync_registry)
         reg = json.loads((root / "registry.json").read_text())
         check("providers" not in reg, "sync drops the map when providers/ is gone")
+
+
+def hosted(transport):
+    """A remote-only manifest: a hosted server with no local credentials."""
+
+    def edit(m):
+        m["transports"] = [transport]
+        del m["credentials"]
+        m["configurableProperties"] = []
+
+    return edit
+
+
+@case
+def a_hosted_sign_in_must_be_https_http():
+    https = {"type": "http", "url": "https://mcp.example.invalid/mcp", "auth": "oauth"}
+    with fixture(hosted(https)):
+        code, out = validate()
+        check(code == 0, "an https http transport with auth: oauth passes")
+        check("::error::" not in out, "and raises nothing")
+
+    expect_error(
+        hosted(dict(https, url="http://mcp.example.invalid/mcp")),
+        needle="must be https",
+        label="a plain-http hosted sign-in",
+    )
+    expect_error(
+        hosted({"type": "stdio", "command": "python3", "args": ["s.py"], "auth": "oauth"}),
+        needle="only meaningful on an http transport",
+        label="auth on stdio",
+    )
+    expect_error(
+        hosted(dict(https, auth="basic")),
+        needle="auth 'basic' not in",
+        label="an unknown auth value",
+    )
+    expect_error(
+        hosted({"type": "grpc", "url": "https://x.invalid"}),
+        needle="type 'grpc' not in",
+        label="an unknown transport type",
+    )
+
+
+@case
+def a_new_hosted_sign_in_is_reported():
+    https = {"type": "http", "url": "https://mcp.example.invalid/mcp", "auth": "oauth"}
+    with fixture(hosted(https)) as root:
+        code, out = validate("--base", write_base(root, lambda b: b["servers"].clear()))
+        check(
+            "signs users in itself at mcp.example.invalid" in out,
+            "a new server's own sign-in is named with its host",
+        )
 
 
 def main() -> int:

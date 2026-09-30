@@ -625,6 +625,20 @@ filesystem. That is the constraint behind [The Job Pattern](#the-job-pattern),
 which is how a tool starts a program that asks questions and lets a *later* call
 answer them.
 
+### http (Streamable HTTP)
+
+A hosted server: nothing is installed locally. Add `"auth": "oauth"` when the
+server signs its users in itself, per the MCP authorization spec; the URL must
+then be `https`. See [`docs/manifest-reference.md`](docs/manifest-reference.md#http-streamable-http).
+
+```json
+{
+  "type": "http",
+  "url": "https://mcp.notion.com/mcp",
+  "auth": "oauth"
+}
+```
+
 ### sse (Server-Sent Events)
 
 Remote endpoint. No local installation.
