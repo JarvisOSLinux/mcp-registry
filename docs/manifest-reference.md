@@ -305,7 +305,27 @@ unconfirmed.
 | `safe` | Reads or reports; cannot alter the host or reveal arbitrary content | list windows, get status, read a public feed |
 | `elevated` | Reads arbitrary user content, or makes bounded changes — an exfiltration or nuisance surface | screenshot, read the accessibility tree, send a message |
 | `dangerous` | Can cause arbitrary effects: executes code, injects input, deletes or overwrites data | run a command, type keystrokes, click arbitrary UI, delete files |
-| `forbidden` | Must never run unattended | reserved; nothing in this registry declares it |
+| `forbidden` | Never runs, even when the user confirms it (policy, #88) | irreversible money movement, mass or permanent deletion, account-security changes — see [Forbidden tier](#forbidden-tier) |
+
+### Forbidden tier
+
+`forbidden` means the tool never runs, even when the user confirms it. It is
+about blast radius, not provenance: an `official` server can still declare
+`forbidden` tools, and `official` never implies a tool is safe to automate.
+
+These classes belong in it:
+
+- irreversible money movement: payments, transfers, order placement beyond a cart;
+- mass or permanent deletion;
+- account-security changes: password, recovery, 2FA;
+- ToS-violating tool classes, such as cookie-scraping "unofficial API" servers,
+  regardless of what the individual tools do.
+
+**Current state.** The daemon does not yet enforce this. `smart` mode confirms a
+`forbidden` call like any call at `elevated` or above, and `allow_all` bypasses
+it. The unconditional block is a deliberate daemon behavior change that is
+tracked separately. Until it ships, do not onboard servers with tools in these
+classes. Read-only finance (the Plaid/Teller class) is unaffected.
 
 Be proportionate rather than maximal. Marking everything `dangerous` trains a
 user to approve without reading, which costs more safety than it buys.
