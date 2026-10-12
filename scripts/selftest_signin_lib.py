@@ -43,9 +43,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SERVERS = ROOT / "servers"
-sys.path.insert(0, str(SERVERS))
+# Last inserted wins: servers/ must come first so `_lib` is the canonical source,
+# not the wrapper's vendored copy (the drift check covers that copy separately).
 sys.path.insert(0, str(SERVERS / "github"))
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(SERVERS))
 
 from _lib import devicecode, hostpin, proxy, tokenstore  # noqa: E402
 import sync_lib  # noqa: E402
@@ -439,7 +441,10 @@ def main() -> int:
     for fn in CASES:
         running = fn.__name__
         print(f"  {running}")
-        fn()
+        try:
+            fn()
+        except Exception as err:
+            check(False, f"crashed: {type(err).__name__}: {err}")
 
     if FAILURES:
         print(f"\nFAIL: {len(FAILURES)} sign-in self-test assertion(s) failed.")
