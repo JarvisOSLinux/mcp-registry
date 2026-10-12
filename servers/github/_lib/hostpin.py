@@ -15,6 +15,7 @@ from typing import Any, Iterable
 
 MAX_RESPONSE_BYTES = 1 << 20
 TIMEOUT_SECONDS = 20
+STREAM_TIMEOUT_SECONDS = 600
 USER_AGENT = "jarvis-signin/1.0 (+https://github.com/JarvisOSLinux/mcp-registry)"
 
 
@@ -46,7 +47,7 @@ def check_url(url: str, allowed_hosts: Iterable[str]) -> str:
     return url
 
 
-class _PinnedRedirects(urllib.request.HTTPRedirectHandler):
+class PinnedRedirects(urllib.request.HTTPRedirectHandler):
     def __init__(self, allowed_hosts: Iterable[str]):
         self._allowed = tuple(allowed_hosts)
 
@@ -57,7 +58,7 @@ class _PinnedRedirects(urllib.request.HTTPRedirectHandler):
 
 def _request(req: urllib.request.Request, allowed_hosts: Iterable[str]) -> Any:
     check_url(req.full_url, allowed_hosts)
-    opener = urllib.request.build_opener(_PinnedRedirects(allowed_hosts))
+    opener = urllib.request.build_opener(PinnedRedirects(allowed_hosts))
     try:
         with opener.open(req, timeout=TIMEOUT_SECONDS) as resp:
             body = resp.read(MAX_RESPONSE_BYTES + 1)
@@ -92,3 +93,33 @@ def get_json(url: str, allowed_hosts: Iterable[str], headers: dict | None = None
         headers={"Accept": "application/json", "User-Agent": USER_AGENT, **(headers or {})},
     )
     return _request(req, allowed_hosts)
+
+
+def post_json(url: str, obj: Any, allowed_hosts: Iterable[str], headers: dict | None = None) -> Any:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(obj).encode("utf-8"),
+        method="POST",
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+            **(headers or {}),
+        },
+    )
+    return _request(req, allowed_hosts)
+
+
+def open_stream(req: urllib.request.Request, allowed_hosts: Iterable[str]):
+    """Open a request whose body may stream (server-sent events).
+
+    Returns (status, headers, file-like). An HTTP error status is returned, not
+    raised, so the caller can read a 401's headers.
+    """
+    check_url(req.full_url, allowed_hosts)
+    opener = urllib.request.build_opener(PinnedRedirects(allowed_hosts))
+    try:
+        resp = opener.open(req, timeout=STREAM_TIMEOUT_SECONDS)
+        return resp.status, resp.headers, resp
+    except urllib.error.HTTPError as err:
+        return err.code, err.headers, err

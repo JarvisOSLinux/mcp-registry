@@ -19,8 +19,8 @@ registry.json              Main index (server metadata + embeddings)
 providers/                 Sign-in providers (<id>.json: OAuth endpoints, public
                            client id, scope catalogue), mirrored into
                            registry.json `providers` by sync_registry.py
-servers/_lib/              Shared sign-in helper (host pinning, device flow, token
-                           store, stdio proxy). Canonical source only: dmcp installs
+servers/_lib/              Shared sign-in helper (host pinning, device flow, browser
+                           OAuth, token store, stdio and HTTP proxies). Canonical source only: dmcp installs
                            just a server's own directory, so each wrapper carries a
                            byte-identical copy at servers/<wrapper>/_lib/
                            (scripts/sync_lib.py; the PR gate fails on drift)
@@ -53,6 +53,9 @@ scripts/
   selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
                            GitHub wrapper (host pinning, device flow, token store,
                            stdio proxy, vendored-copy drift)
+  selftest_signin_hosted.py  Loopback self-test for the hosted-server sign-in (PKCE,
+                           registration, `resource`, refresh) and the HTTP relay,
+                           against a fake that enforces them
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -111,8 +114,17 @@ does not name, including ones the provider advertises or redirects to. The
 GitHub OAuth App client id is read from `GITHUB_OAUTH_CLIENT_ID` until the
 JarvisOS app is registered and its id is set as `DEFAULT_CLIENT_ID`.
 
+`servers/notion/` is the hosted variant. Notion leaves sign-in to the client (the
+MCP authorization spec), so the wrapper runs the browser flow itself
+(`_lib.oauthbrowser`: discovery, dynamic registration, PKCE S256, `resource`, a
+one-shot 127.0.0.1 listener that ignores any callback without its `state`) and
+relays calls to `mcp.notion.com` (`_lib.httpproxy`). While signed out it still
+answers `initialize` and `tools/list` itself, so `login` is reachable; it
+connects the hosted server, replaying the client's initialize, the first time a
+call needs it. A 401 triggers one refresh and one retry.
+
 Edit `servers/_lib/`, then run `python scripts/sync_lib.py`. Gated by
-`scripts/selftest_signin_lib.py`.
+`scripts/selftest_signin_lib.py` and `scripts/selftest_signin_hosted.py`.
 
 ### servers/jarvis-shell{,-system}/server.py — the interactive-command pattern
 
@@ -200,6 +212,7 @@ python scripts/selftest_categories.py   # Offline self-test: closed category voc
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_credentials.py  # Offline self-test: providers, credentials, login, provider-change approval
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
+python scripts/selftest_signin_hosted.py  # Offline self-test: hosted OAuth sign-in + HTTP relay (loopback fake)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
