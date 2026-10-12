@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-09-29T12:44:43Z",
+  "updated": "2026-10-12T21:37:32Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -27476,6 +27476,39 @@
         ],
         "tools": {}
       }
+    },
+    "com.github.jarvisoslinux.mcp.github": {
+      "id": "com.github.jarvisoslinux.mcp.github",
+      "name": "GitHub (sign-in wrapper)",
+      "summary": "GitHub repo, issue, PR and search tools with a built-in device-flow login: no token to create or paste.",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+      "icon": "vcs-git",
+      "keywords": [
+        "github",
+        "git",
+        "repo",
+        "issues",
+        "pull-requests",
+        "search",
+        "login",
+        "sign in",
+        "oauth"
+      ],
+      "platforms": [
+        "linux"
+      ],
+      "categories": [
+        "developer-tools",
+        "team-collaboration"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "4809b0a26ff198d329e2ef221087825add441bab92536f04aac869bb53582d8f",
+        "setupScriptSha256": "8ddfb9b3460aa9e8f8a747dfb6d828072799391a04f2602eba2674697742b2b9"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/github/manifest.json"
     }
   },
   "embedding_spec": {

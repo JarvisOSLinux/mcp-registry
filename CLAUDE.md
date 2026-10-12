@@ -19,6 +19,11 @@ registry.json              Main index (server metadata + embeddings)
 providers/                 Sign-in providers (<id>.json: OAuth endpoints, public
                            client id, scope catalogue), mirrored into
                            registry.json `providers` by sync_registry.py
+servers/_lib/              Shared sign-in helper (host pinning, device flow, token
+                           store, stdio proxy). Canonical source only: dmcp installs
+                           just a server's own directory, so each wrapper carries a
+                           byte-identical copy at servers/<wrapper>/_lib/
+                           (scripts/sync_lib.py; the PR gate fails on drift)
 servers/                   Per-server directories (dir name from the entry's
   <dir>/                   manifest URL — first-party dirs use short names,
     manifest.json          third-party dirs the full reverse-domain id)
@@ -26,6 +31,7 @@ servers/                   Per-server directories (dir name from the entry's
     setup.ps1              Optional PowerShell setup script for Windows hosts
 scripts/
   sync_registry.py         Recompute integrity hashes (SHA-256)
+  sync_lib.py              Refresh the vendored servers/<wrapper>/_lib/ copies (--check for CI)
   generate_embeddings.py   Generate embedding vectors via Ollama
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
@@ -44,6 +50,9 @@ scripts/
                            /proc/pid/stat, sensors, health thresholds)
   selftest_credentials.py  Temp-dir self-test for the provider, credential and
                            login checks and the provider-change approval gate
+  selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
+                           GitHub wrapper (host pinning, device flow, token store,
+                           stdio proxy, vendored-copy drift)
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -85,6 +94,26 @@ diff to it needs the `trust-approved` label.
   declares `blocking: true` plus an optional `suggestedRemindAfter` (seconds),
   the reminder interval an orchestrator applies when the caller set none
 
+### servers/github/ and servers/_lib/ — the sign-in wrapper pattern
+
+Design v3 of Project-JARVIS#229: a server owns its sign-in. Where an upstream
+server has none, a per-server wrapper adds it. `servers/github/server.py` is the
+reference: it starts the upstream GitHub server (fetched at a pinned commit by
+`setup.sh`) through `_lib.proxy`, adds `login` / `status` / `logout`, and runs
+the upstream with the stored token. `login` is one blocking call
+(`blocking: true`): it prints the link and device code to stderr (dmcp relays it
+live), opens the browser, and polls. The token is stored in the keyring
+(`secret-tool`) or an owner-only file, and is never returned in a tool result.
+A token set by hand in `GITHUB_PERSONAL_ACCESS_TOKEN` still wins.
+
+Every link and endpoint goes through `_lib.hostpin`: a wrapper refuses hosts it
+does not name, including ones the provider advertises or redirects to. The
+GitHub OAuth App client id is read from `GITHUB_OAUTH_CLIENT_ID` until the
+JarvisOS app is registered and its id is set as `DEFAULT_CLIENT_ID`.
+
+Edit `servers/_lib/`, then run `python scripts/sync_lib.py`. Gated by
+`scripts/selftest_signin_lib.py`.
+
 ### servers/jarvis-shell{,-system}/server.py — the interactive-command pattern
 
 Reference implementation of the two shapes a server uses when it wraps a command
@@ -123,7 +152,8 @@ that can prompt. Both are documented for third-party authors in
   id/scope/trustStatus/platforms
   enums incl. per-transport, transport order, integrity hashes for both setup
   scripts, setup-script locations, manifest hosted by this registry, a full-SHA
-  `source.rev` on `official` entries, orphan directories, and a `threat_level` —
+  `source.rev` on `official` entries, orphan directories, vendored `_lib` copies
+  identical to `servers/_lib`, and a `threat_level` —
   `safe`/`elevated`/`dangerous`/`forbidden`, or the legacy
   `confirmation_required: true` — on every tool of a live entry, well-formed
   https-only `providers/` mirrored into registry.json, and `credentials`/`login`
@@ -169,6 +199,8 @@ python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_lev
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_credentials.py  # Offline self-test: providers, credentials, login, provider-change approval
+python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
+python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
 ## Adding a Server

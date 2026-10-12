@@ -1,0 +1,143 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "name": "GitHub (sign-in wrapper)",
+  "description": "GitHub API server with built-in sign-in. Wraps MissionSquad/mcp-github and adds login, status and logout tools, so the user signs in through GitHub's device flow instead of creating and pasting a personal access token. Repo and file operations, issues, pull requests and search. Use for 'sign in to GitHub', 'open an issue', 'list my pull requests', 'search repositories'.",
+  "summary": "GitHub repo, issue, PR and search tools with a built-in device-flow login: no token to create or paste.",
+  "keywords": [
+    "github",
+    "git",
+    "repo",
+    "issues",
+    "pull-requests",
+    "search",
+    "login",
+    "sign in",
+    "oauth"
+  ],
+  "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "server.py"
+      ],
+      "description": "GitHub wrapper (stdio): sign-in tools plus the upstream GitHub server."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "path": "servers/github"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    {
+      "name": "login",
+      "description": "Sign in to GitHub. Prints a link and a short code, opens the browser, and blocks until the user approves, declines or the code expires. Dispatch it as a concurrent task with a reminder, and tell the user to open the link and enter the code when it appears in the output. Returns who signed in; the token is never returned.",
+      "threat_level": "elevated",
+      "blocking": true,
+      "suggestedRemindAfter": 30
+    },
+    {
+      "name": "status",
+      "description": "Report whether JARVIS is signed in to GitHub, and as whom. No network call.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "logout",
+      "description": "Forget the stored GitHub sign-in on this machine. Does not revoke the token at GitHub.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create_or_update_file",
+      "description": "Create or update a file in a repository.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "push_files",
+      "description": "Push multiple files in a single commit.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get_file_contents",
+      "description": "Get contents of a file or directory.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "search_repositories",
+      "description": "Search GitHub repositories.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create_repository",
+      "description": "Create a new repository.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create_issue",
+      "description": "Create an issue.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create_pull_request",
+      "description": "Create a pull request.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list_pull_requests",
+      "description": "List pull requests.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "merge_pull_request",
+      "description": "Merge a pull request.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get_pull_request_files",
+      "description": "List files changed in a pull request.",
+      "threat_level": "elevated"
+    }
+  ],
+  "login": {
+    "tool": "login"
+  },
+  "configurableProperties": [
+    {
+      "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
+      "label": "GitHub Personal Access Token",
+      "description": "Optional. A token set by hand wins over the stored sign-in. Leave empty and use the login tool instead.",
+      "sensitive": true,
+      "required": false
+    },
+    {
+      "key": "GITHUB_OAUTH_CLIENT_ID",
+      "label": "GitHub OAuth App client id",
+      "description": "Optional. Overrides the built-in public client id of the JarvisOS GitHub OAuth App. Public, not a secret.",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/MissionSquad/mcp-github",
+      "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow",
+      "https://github.com/JarvisOSLinux/mcp-registry/tree/main/servers/github",
+      "https://github.com/JarvisOSLinux/Project-JARVIS/issues/229"
+    ],
+    "checks": [
+      "wrapper: first-party stdlib Python in this repository; shared sign-in helper vendored from servers/_lib, identical copy enforced by the PR gate",
+      "upstream: MissionSquad/mcp-github fetched by setup.sh at pinned commit e312daffca07981c02aa8ca13a9dee82ad51697c, HEAD verified against the pin; build: yarn install --frozen-lockfile && yarn build",
+      "network (wrapper): HTTPS to github.com and api.github.com only; verification links and redirects are host-pinned",
+      "secrets: the token is stored in the OS keyring (secret-tool) or an owner-only file; it is never returned in a tool result or logged",
+      "login prints a link and device code to stderr and opens the browser; it sends no secret"
+    ],
+    "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The tool list is the same minimal subset as that entry plus login/status/logout; the upstream exposes more tools, which the host floor classifies. Until a JarvisOS GitHub OAuth App client id is configured, login needs GITHUB_OAUTH_CLIENT_ID.",
+    "securityNotes": "Powerful GitHub API access, repo scope by default. Sign in with the least privilege you need; a token set by hand in config takes precedence over the stored sign-in."
+  }
+}
