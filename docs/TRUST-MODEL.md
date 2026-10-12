@@ -119,6 +119,18 @@ trusting the submitter, not the registry maintainers.
 - Human CLI: installs cleanly.
 - Autonomous agent: installable.
 
+### Tier is provenance, not blast radius
+
+`community` / `official` says who reviewed a server and what they checked. It
+says nothing about how much damage a tool can do when it works as described.
+`official` therefore never implies "safe to automate money" or "safe to delete
+things". That axis is the per-tool `threat_level`
+(`docs/manifest-reference.md` §Threat Level). Its top value, `forbidden`, marks
+tool classes that must never run, even when confirmed: irreversible money
+movement, mass or permanent deletion, account-security changes, and ToS-violating
+servers. Until the daemon enforces it with an unconditional block, servers with
+tools in those classes are not onboarded.
+
 ### Revocation (`deprecated` / `removed`)
 Orthogonal to the two tiers. Set when a security issue is found, the upstream
 disappears or is taken over, or the server misbehaves. Entries are kept (not
