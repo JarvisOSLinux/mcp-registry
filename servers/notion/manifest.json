@@ -1,0 +1,264 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux",
+    "darwin"
+  ],
+  "name": "Notion (sign-in wrapper)",
+  "description": "Notion's official hosted MCP server with built-in sign-in. Adds login, status and logout tools in front of mcp.notion.com, so the user signs in through Notion's own browser flow without creating an app or token. Search, read and edit pages, databases and task lists. Use for 'sign in to Notion', 'find my meeting notes', 'add a task', 'update that page'.",
+  "summary": "Search, read and edit your Notion pages, databases and task lists, through Notion's official hosted server and a browser sign-in",
+  "keywords": [
+    "notion",
+    "notes",
+    "docs",
+    "wiki",
+    "tasks",
+    "databases",
+    "pages",
+    "knowledge-base",
+    "meeting-notes",
+    "login",
+    "sign in",
+    "oauth"
+  ],
+  "homepage": "https://developers.notion.com/docs/mcp",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "server.py"
+      ],
+      "description": "Notion wrapper (stdio): sign-in tools plus a relay to Notion's hosted server."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "path": "servers/notion"
+  },
+  "setupScript": "setup.sh",
+  "tools": [
+    {
+      "name": "login",
+      "description": "Sign in to Notion. Prints a sign-in link, opens the browser, and blocks until the user approves, declines or it times out. Dispatch it as a concurrent task with a reminder, and tell the user to open the link when it appears in the output. The user chooses which pages Notion shares during sign-in. The token is never returned.",
+      "threat_level": "elevated",
+      "blocking": true,
+      "suggestedRemindAfter": 30
+    },
+    {
+      "name": "status",
+      "description": "Report whether JARVIS is signed in to Notion. No network call.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "logout",
+      "description": "Forget the stored Notion sign-in on this machine. Does not revoke it at Notion.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-search",
+      "description": "Search the workspace's pages and databases by keyword, location, author, date or status.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-fetch",
+      "description": "Read a page, database, data source or saved view by URL or ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-create-pages",
+      "description": "Create one or more pages with properties, content, icon and cover.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-update-page",
+      "description": "Change a page's properties, content, icon, cover or Skill status.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-query-data-sources",
+      "description": "Query database rows with SQL, or run a saved view.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-create-database",
+      "description": "Create a database with properties and an initial view.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-update-data-source",
+      "description": "Change a database's schema: its properties, name or description. Removing a property drops that column's data across every row.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-create-view",
+      "description": "Create a database view (table, board, calendar, timeline, and others).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-update-view",
+      "description": "Change a view's name, filters, sorts or layout.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-ai-search",
+      "description": "Natural-language search across Notion and the sources connected to it (Slack, mail, calendar, Google Drive, Jira).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-query-meeting-notes",
+      "description": "Query the current user's meeting notes by their properties.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-create-comment",
+      "description": "Comment on a page, a block, or an existing discussion.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-comments",
+      "description": "List the comments and discussions on a page.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-move-pages",
+      "description": "Move pages or databases under a new parent.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-duplicate-page",
+      "description": "Copy a page within the workspace.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-create-folder",
+      "description": "Create an empty folder under a page.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-users",
+      "description": "List workspace members and guests with their contact details.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-teams",
+      "description": "List the teamspaces in the workspace.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-create-attachment",
+      "description": "Create an attachment from text, a public URL, or a finished upload.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-download-attachment",
+      "description": "Download the text of an attachment (up to 200 KiB).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-tool-access",
+      "description": "Report which tools the workspace's plan allows and which parameters are restricted.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-get-async-task",
+      "description": "Check the status of an operation another tool started asynchronously.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-download-skill",
+      "description": "Download a Notion Skill and its files as a tar.gz archive.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-convert-page-to-skill",
+      "description": "Mark a page as a Notion Skill without changing its content.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-create-file-upload",
+      "description": "Create a short-lived URL for uploading a local file to Notion.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-list-agents",
+      "description": "List the workspace's Custom Agents.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-search-agents",
+      "description": "Find a Custom Agent's URL, needed to start a session with it.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-query-sessions",
+      "description": "List Custom Agent sessions.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-search-sessions",
+      "description": "Search past Custom Agent sessions.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-session-status",
+      "description": "Get a Custom Agent session's current status.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-list-session-events",
+      "description": "List the events of a Custom Agent session.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-read-session-event",
+      "description": "Read one event of a Custom Agent session.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-wait-session",
+      "description": "Wait for a Custom Agent session to finish.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-spawn-session",
+      "description": "Start a Custom Agent session. The agent acts in the workspace, and its connected tools, on its own.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-send-message-to-session",
+      "description": "Send a follow-up instruction to a running Custom Agent session.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-stop-session",
+      "description": "Stop a running Custom Agent session.",
+      "threat_level": "elevated"
+    }
+  ],
+  "login": {
+    "tool": "login"
+  },
+  "trust": {
+    "reviewReferences": [
+      "https://developers.notion.com/docs/mcp",
+      "https://developers.notion.com/docs/mcp-supported-tools",
+      "https://github.com/makenotion/notion-mcp-server",
+      "https://github.com/JarvisOSLinux/mcp-registry/tree/main/servers/notion",
+      "https://github.com/JarvisOSLinux/Project-JARVIS/issues/229"
+    ],
+    "checks": [
+      "vendor: first-party, hosted by Notion at mcp.notion.com; the wrapper runs locally and relays to it",
+      "wrapper: first-party stdlib Python in this repository; shared sign-in helper vendored from servers/_lib, identical copy enforced by the PR gate",
+      "auth: MCP authorization spec, checked live 2026-10-12: protected-resource metadata names mcp.notion.com as authorization server; dynamic client registration; PKCE S256; public clients; scopes_supported [default]",
+      "network: HTTPS to mcp.notion.com only; discovered endpoints and redirects are host-pinned",
+      "secrets: the token is stored in the OS keyring (secret-tool) or an owner-only file; it is never returned in a tool result or logged",
+      "access: the integration only sees the pages and databases the user shares with it during sign-in",
+      "tools: 36 from Notion's supported-tools page plus login/status/logout; some are plan-restricted (notion-get-tool-access reports which); rate limits: notion-search and notion-query-data-sources, 20 calls per 10 seconds"
+    ],
+    "notes": "Replaces the draft mcp-registry#105 entry, which relied on dmcp's hosted sign-in (dmcp#70); under design v3 the wrapper owns the sign-in and dmcp stays generic. The tool list is Notion's documentation, not a live tools/list: after the first sign-in, compare the live list with it. A tool missing here is still gated, at elevated, by JARVIS's registry-tier floor. Linux and macOS only until the token store has a Windows backend.",
+    "securityNotes": "Reads are elevated because page content, comments and ai-search results can carry text anyone with edit access wrote (prompt-injection surface). Page edits are elevated rather than dangerous because Notion keeps page history. Schema changes and Custom Agent sessions are dangerous: the first can drop a property's data across a whole database, the second hands an autonomous agent the workspace and its connected tools."
+  }
+}

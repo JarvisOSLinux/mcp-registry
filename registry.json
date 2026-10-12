@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-12T21:37:32Z",
+  "updated": "2026-10-12T21:43:45Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -27509,6 +27509,43 @@
         "setupScriptSha256": "8ddfb9b3460aa9e8f8a747dfb6d828072799391a04f2602eba2674697742b2b9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/github/manifest.json"
+    },
+    "com.github.jarvisoslinux.mcp.notion": {
+      "id": "com.github.jarvisoslinux.mcp.notion",
+      "name": "Notion (sign-in wrapper)",
+      "summary": "Search, read and edit your Notion pages, databases and task lists, through Notion's official hosted server and a browser sign-in",
+      "version": "1.0.0",
+      "scope": "user",
+      "homepage": "https://developers.notion.com/docs/mcp",
+      "icon": "notion",
+      "keywords": [
+        "notion",
+        "notes",
+        "docs",
+        "wiki",
+        "tasks",
+        "databases",
+        "pages",
+        "knowledge-base",
+        "meeting-notes",
+        "login",
+        "sign in",
+        "oauth"
+      ],
+      "platforms": [
+        "linux",
+        "darwin"
+      ],
+      "categories": [
+        "knowledge-management",
+        "productivity"
+      ],
+      "trustStatus": "community",
+      "integrity": {
+        "manifestSha256": "c31e0b32a97a7cddfa0526bd4006cbd92ab4e1332ff04378e7263a3c82f0b5cd",
+        "setupScriptSha256": "e10c0ce38b51fe635ea1e8fe801f5408206a1f19b36dce11a915b0c1bff90ea2"
+      },
+      "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/notion/manifest.json"
     }
   },
   "embedding_spec": {

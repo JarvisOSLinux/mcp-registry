@@ -18,6 +18,92 @@ class ToolError(Exception):
     """A local tool failed; the message is safe to show the model."""
 
 
+class LocalLayer:
+    """The wrapper's own tools, shared by the stdio and HTTP proxies.
+
+    `intercept` takes each client message and says whether the layer consumed it
+    (a local tool call, or a forwarded call the guard refused). `augment` adds
+    the local tools to the final page of a tools/list response.
+    """
+
+    def __init__(self, local_tools, handlers, guard, emit):
+        self.local_tools = local_tools
+        self.handlers = handlers
+        self.guard = guard
+        self.emit = emit
+        self._list_ids: set = set()
+        self._lock = threading.Lock()
+
+    def reply_tool(self, msg_id, text: str, is_error: bool = False) -> None:
+        result = {"content": [{"type": "text", "text": text}]}
+        if is_error:
+            result["isError"] = True
+        self.emit({"jsonrpc": "2.0", "id": msg_id, "result": result})
+
+    def _run_local(self, msg_id, name: str, args: dict) -> None:
+        try:
+            self.reply_tool(msg_id, self.handlers[name](args))
+        except ToolError as err:
+            self.reply_tool(msg_id, str(err), True)
+        except Exception as err:  # never let a handler bug kill the relay
+            print(f"local tool {name!r} crashed: {err!r}", file=sys.stderr, flush=True)
+            self.reply_tool(msg_id, f"{name} failed unexpectedly ({type(err).__name__})", True)
+
+    def local_list(self, msg_id) -> None:
+        """Answer tools/list with the local tools alone (upstream unavailable)."""
+        self.emit({"jsonrpc": "2.0", "id": msg_id, "result": {"tools": list(self.local_tools)}})
+
+    def intercept(self, msg) -> bool:
+        if not isinstance(msg, dict) or "id" not in msg:
+            return False
+        method = msg.get("method")
+        if method == "tools/list":
+            with self._lock:
+                self._list_ids.add(msg["id"])
+        elif method == "tools/call":
+            params = msg.get("params") or {}
+            name = params.get("name")
+            args = params.get("arguments") or {}
+            if name in self.handlers:
+                threading.Thread(target=self._run_local, args=(msg["id"], name, args), daemon=True).start()
+                return True
+            refusal = self.guard(name, args) if self.guard else None
+            if refusal:
+                self.reply_tool(msg["id"], refusal, True)
+                return True
+        return False
+
+    def forget_list(self, msg_id) -> None:
+        with self._lock:
+            self._list_ids.discard(msg_id)
+
+    def augment(self, msg):
+        """Return `msg` with the local tools added if it answers a tools/list, else None."""
+        if not (isinstance(msg, dict) and "result" in msg and "id" in msg):
+            return None
+        with self._lock:
+            if msg["id"] not in self._list_ids:
+                return None
+            self._list_ids.discard(msg["id"])
+        result = msg["result"]
+        if isinstance(result, dict) and not result.get("nextCursor"):
+            result["tools"] = [*result.get("tools", []), *self.local_tools]
+            return msg
+        return None
+
+
+def make_emitter():
+    lock = threading.Lock()
+
+    def emit(obj_or_line) -> None:
+        line = obj_or_line if isinstance(obj_or_line, str) else json.dumps(obj_or_line, separators=(",", ":"))
+        with lock:
+            sys.stdout.write(line.rstrip("\n") + "\n")
+            sys.stdout.flush()
+
+    return emit
+
+
 def run_proxy(
     *,
     upstream_argv: list[str],
@@ -47,30 +133,8 @@ def run_proxy(
         print(f"cannot start the upstream server: {err}", file=sys.stderr, flush=True)
         return 1
 
-    out_lock = threading.Lock()
-    list_ids: set = set()
-    ids_lock = threading.Lock()
-
-    def emit(obj_or_line) -> None:
-        line = obj_or_line if isinstance(obj_or_line, str) else json.dumps(obj_or_line, separators=(",", ":"))
-        with out_lock:
-            sys.stdout.write(line.rstrip("\n") + "\n")
-            sys.stdout.flush()
-
-    def reply_tool(msg_id, text: str, is_error: bool = False) -> None:
-        result = {"content": [{"type": "text", "text": text}]}
-        if is_error:
-            result["isError"] = True
-        emit({"jsonrpc": "2.0", "id": msg_id, "result": result})
-
-    def run_local(msg_id, name: str, args: dict) -> None:
-        try:
-            reply_tool(msg_id, handlers[name](args))
-        except ToolError as err:
-            reply_tool(msg_id, str(err), True)
-        except Exception as err:  # never let a handler bug kill the relay
-            print(f"local tool {name!r} crashed: {err!r}", file=sys.stderr, flush=True)
-            reply_tool(msg_id, f"{name} failed unexpectedly ({type(err).__name__})", True)
+    emit = make_emitter()
+    layer = LocalLayer(local_tools, handlers, guard, emit)
 
     def pump_upstream() -> None:
         assert child.stdout is not None
@@ -80,16 +144,7 @@ def run_proxy(
             except json.JSONDecodeError:
                 emit(line)
                 continue
-            if isinstance(msg, dict) and "result" in msg and "id" in msg:
-                with ids_lock:
-                    is_list = msg["id"] in list_ids
-                    list_ids.discard(msg["id"])
-                result = msg["result"]
-                if is_list and isinstance(result, dict) and not result.get("nextCursor"):
-                    result["tools"] = [*result.get("tools", []), *local_tools]
-                    emit(msg)
-                    continue
-            emit(line)
+            emit(layer.augment(msg) or line)
         code = child.wait()
         os._exit(code)  # upstream gone: the client's stdin read cannot be interrupted
 
@@ -103,24 +158,9 @@ def run_proxy(
         try:
             msg = json.loads(line)
         except json.JSONDecodeError:
-            child.stdin.write(line)
-            child.stdin.flush()
+            msg = None
+        if layer.intercept(msg):
             continue
-        method = msg.get("method") if isinstance(msg, dict) else None
-        if method == "tools/list" and "id" in msg:
-            with ids_lock:
-                list_ids.add(msg["id"])
-        elif method == "tools/call" and "id" in msg:
-            params = msg.get("params") or {}
-            name = params.get("name")
-            args = params.get("arguments") or {}
-            if name in handlers:
-                threading.Thread(target=run_local, args=(msg["id"], name, args), daemon=True).start()
-                continue
-            refusal = guard(name, args) if guard else None
-            if refusal:
-                reply_tool(msg["id"], refusal, True)
-                continue
         try:
             child.stdin.write(line if line.endswith("\n") else line + "\n")
             child.stdin.flush()
