@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-14T10:53:40Z",
+  "updated": "2026-10-14T11:09:11Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -28319,7 +28319,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "49fae51ea0c1f97d6871979a4459f6d9b138552214752073895687ac5023aa83",
+        "manifestSha256": "0be1b26a281fc462c02a1e2b97458edc779af27f4e3c1d106edb465cc0a2c066",
         "setupScriptSha256": "83621e459dbe0cca7c01879a80264043d659269155572ae4c9cfc1abd4c91407"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/microsoft-365/manifest.json",
