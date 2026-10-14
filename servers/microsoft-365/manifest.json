@@ -1,0 +1,1033 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "name": "Microsoft 365",
+  "summary": "Outlook mail and calendar, OneDrive, contacts, To Do and OneNote in your Microsoft account, with a built-in Microsoft sign-in",
+  "keywords": [
+    "microsoft",
+    "outlook",
+    "email",
+    "calendar",
+    "meetings",
+    "onedrive",
+    "office",
+    "microsoft-365",
+    "contacts",
+    "todo",
+    "onenote",
+    "excel"
+  ],
+  "homepage": "https://github.com/Softeria/ms-365-mcp-server",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "server.py"
+      ],
+      "description": "Microsoft 365 wrapper (stdio): Softeria's server with a sign-in that completes under dmcp."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "path": "servers/microsoft-365"
+  },
+  "setupScript": "setup.sh",
+  "login": {
+    "tool": "login"
+  },
+  "configurableProperties": [
+    {
+      "key": "MS365_PRESET",
+      "label": "Tool presets",
+      "description": "Comma-separated Softeria presets to expose: mail, calendar, files, contacts, tasks, onenote, excel, search, personal, or all. More presets means more tools and wider sign-in permissions; sign in again after changing it.",
+      "default": "mail,calendar",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_READ_ONLY",
+      "label": "Read-only",
+      "description": "true to start the server read-only: every tool that would change, send or delete is disabled.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_MCP_ORG_MODE",
+      "label": "Work account mode",
+      "description": "true for a work or school account, to add Teams, SharePoint and shared mailboxes. Personal Microsoft accounts leave it off.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_MCP_CLIENT_ID",
+      "label": "Microsoft Entra app client id",
+      "description": "Optional. Your own Entra app registration's public client id, for organisations that do not allow Softeria's app. Public, not a secret.",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "tools": [
+    {
+      "name": "login",
+      "description": "Sign in to Microsoft 365 (Outlook mail, calendar, OneDrive and more). Starts Microsoft's device sign-in: prints a link and a short code, opens the browser, and waits until the user approves. Blocks until approved, declined or expired, so dispatch it as a concurrent task with a reminder, and tell the user the link and code when they show up in the output. Does nothing if already signed in, unless force is true. Returns who signed in; tokens are never returned.",
+      "threat_level": "elevated",
+      "blocking": true,
+      "suggestedRemindAfter": 5
+    },
+    {
+      "name": "list-mail-messages",
+      "description": "List, search, and filter Outlook email messages in the signed-in user's mailbox across all folders. Returns message metadata (subject, from, receivedDateTime, isRead, hasAttachments) plus a body previ",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-mail-message",
+      "description": "Get a single Outlook email message by its message ID, including full subject, sender, recipients, body, and attachment flags. Use list-mail-messages first to obtain the message ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "send-mail",
+      "description": "Send the message specified in the request body using either JSON or MIME format. When using JSON format, you can include a file attachment in the same sendMail action call. When using MIME format: Thi",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "reply-mail-message",
+      "description": "Reply to the sender of a message using either JSON or MIME format. When using JSON format:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-draft-email",
+      "description": "Create a draft Outlook email message in the signed-in user's Drafts folder. Set subject, body, toRecipients, ccRecipients, and importance. The draft is saved, not sent \u2014 use send-mail to send a messag",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-calendar-events",
+      "description": "Get a list of event objects in the user's mailbox. The list contains single",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-calendar-view",
+      "description": "Get the occurrences, exceptions, and single instances of events in a calendar view defined by a time range, from the user's default calendar,",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-calendar-event",
+      "description": "Create (schedule) a new calendar event \u2014 a meeting or appointment \u2014 on the user's calendar. Times use nested objects, not flat fields: start: {dateTime, timeZone}, end: {dateTime, timeZone}. Do NOT us",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-calendar-event",
+      "description": "Update an event on the default calendar. Requires eventId (the event's ID from get-calendar-view or list-calendar-events). Times use nested {dateTime, timeZone} objects. UTC is simplest for one-off ev",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "search-onedrive-files",
+      "description": "Search the hierarchy of items for items matching a query.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-folder-files",
+      "description": "Return a collection of DriveItems in the children relationship of a DriveItem. DriveItems with a non-null folder or package facet can have one or more child DriveItems.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-outlook-contacts",
+      "description": "Get a contact collection from the default contacts folder of the signed-in user. There are two scenarios where an app can get contacts in another user's contact folder:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-todo-tasks",
+      "description": "Get the todoTask resources from the tasks navigation property of a specified todoTaskList.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-task",
+      "description": "Create a new task object in a specified todoTaskList.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-pages",
+      "description": "Retrieve a list of page objects.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-onenote-page",
+      "description": "Create a new OneNote page in the default section of the default notebook. To create a page in a different section in the default notebook, you can use the sectionName query parameter.  Example: ../one",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-excel-range",
+      "description": "Get an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "move-mail-message",
+      "description": "Move a message to another folder within the specified user's mailbox. This creates a new copy of the message in the destination folder and removes the original message.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "accept-calendar-event",
+      "description": "Accept the specified event in a user calendar.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "logout",
+      "description": "Log out from Microsoft account",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "verify-login",
+      "description": "Check current Microsoft authentication status",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-accounts",
+      "description": "List all Microsoft accounts configured in this server. Use this to discover available account emails before making tool calls. Reflects accounts added mid-session via --login.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "select-account",
+      "description": "Select a Microsoft account as the default. Accepts email address (e.g. user@outlook.com) or account ID. Use list-accounts to discover available accounts.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "remove-account",
+      "description": "Remove a Microsoft account from the cache. Accepts email address (e.g. user@outlook.com) or account ID. Use list-accounts to discover available accounts.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-item",
+      "description": "All items contained in the drive. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "move-rename-onedrive-item",
+      "description": "Move or rename a OneDrive item.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-onedrive-file",
+      "description": "Delete a OneDrive file.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-onedrive-folder",
+      "description": "Create a OneDrive folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "upload-file-content",
+      "description": "The content stream, if the item represents a file.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "copy-drive-item",
+      "description": "Copy a drive item.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-drive-item-share-link",
+      "description": "Create a link to share a driveItem driveItem. The createLink action creates a new sharing link if the specified link type doesn't already exist for the calling application.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-upload-session",
+      "description": "Create an upload session.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-delta",
+      "description": "Track changes in a driveItem and its children over time. Your app begins by calling delta without any parameters.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "share-drive-item",
+      "description": "Send a sharing invitation for a driveItem. A sharing invitation provides permissions to the recipients and, optionally, sends them an email to notify them that the item was shared.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-drive-item-permissions",
+      "description": "The set of permissions for the item. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-drive-item-permission",
+      "description": "Delete a drive item permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-drive-item-preview",
+      "description": "Create a drive item preview.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-drive-item-thumbnails",
+      "description": "Collection of thumbnailSet objects associated with the item. For more information, see getting thumbnails. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-drive-item-versions",
+      "description": "The list of previous versions of the item. For more info, see getting previous versions. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-excel-tables",
+      "description": "Represents a collection of tables associated with the workbook. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-excel-table",
+      "description": "Represents a collection of tables associated with the workbook. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-excel-table-rows",
+      "description": "The list of all the rows in the table. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "add-excel-table-rows",
+      "description": "Add Excel table rows.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-excel-table-row",
+      "description": "Update an Excel table row.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-excel-table-row",
+      "description": "Delete an Excel table row.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-excel-worksheets",
+      "description": "Represents a collection of worksheets associated with the workbook. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-excel-chart",
+      "description": "Creates a new chart.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "sort-excel-range",
+      "description": "Sort an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-excel-range",
+      "description": "Update an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "clear-excel-range",
+      "description": "Clear an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-excel-range",
+      "description": "Delete an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-excel-range-format",
+      "description": "Returns a format object, encapsulating the range's font, fill, borders, alignment, and other properties. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range",
+      "description": "Format an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-border",
+      "description": "Format an Excel range border.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-fill",
+      "description": "Format an Excel range fill.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-font",
+      "description": "Format an Excel range font.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "insert-excel-range",
+      "description": "Insert an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "merge-excel-range",
+      "description": "Merge an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "unmerge-excel-range",
+      "description": "Unmerge an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-excel-table",
+      "description": "Create a new table. The range source address determines the worksheet under which the table will be added. If the table can't be added (for example, because the address is invalid, or the table would",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-excel-used-range",
+      "description": "Get an Excel used range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-root-item",
+      "description": "The root folder of the drive. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-current-user",
+      "description": "Retrieve the properties and relationships of user object. This operation returns by default only a subset of the more commonly used properties for each user. These default properties are noted in the",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-my-calendar-permissions",
+      "description": "The permissions of the users with whom the calendar is shared.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-my-calendar-permission",
+      "description": "Create a calendarPermission resource to specify the identity and role of the user with whom the specified calendar is being shared or delegated.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-my-calendar-permission",
+      "description": "Update my calendar permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-my-calendar-permission",
+      "description": "Delete my calendar permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendars",
+      "description": "Get all the user's calendars (/calendars navigation property), get the calendars from the default calendar group or from a specific calendar group.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-calendar",
+      "description": "Create a new calendar for a user.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-calendar",
+      "description": "Update a calendar.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-specific-calendar-view",
+      "description": "List the occurrences, exceptions, and single instances of events over a time range, from one of the signed-in user's calendars addressed by calendar ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-specific-calendar-events",
+      "description": "List events from one of the signed-in user's calendars, addressed by calendar ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-specific-calendar-event",
+      "description": "Create a calendar event on a specific calendar. Requires calendarId (the target calendar's ID). Times use nested {dateTime, timeZone} objects \u2014 do NOT use startDateTime/startTimeZone. UTC is simplest",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-specific-calendar-event",
+      "description": "Get a single event from one of the signed-in user's calendars, addressed by calendar ID and event ID. Any calendar can be addressed this way, including the default one.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-specific-calendar-event",
+      "description": "Update a specific calendar event. Requires calendarId (from list-calendars) and eventId (from list-specific-calendar-events or get-specific-calendar-view for that same calendar). Times use nested {dat",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-specific-calendar-event",
+      "description": "Delete a specific calendar event. Requires calendarId (the target calendar's ID) and eventId (the event's own ID).",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendar-event-instances",
+      "description": "The occurrences of a recurring series, if the event is a series master. This property includes occurrences that are part of the recurrence pattern, and exceptions modified, but doesn't include occurre",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-calendar-view-delta",
+      "description": "Get a set of event resources that have been added, deleted, or updated in a calendarView (a range of events defined by start and end dates) of the user's primary calendar. Typically, synchronizing eve",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folders",
+      "description": "Get the contact folder collection in the default Contacts folder of the signed-in user.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-contact-folder",
+      "description": "Create a new contactFolder under the user's default contacts folder. You can also create a new contactfolder as a child of any specified contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-contact-folder",
+      "description": "Update the properties of contactfolder object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folder-child-folders",
+      "description": "Get a collection of child folders under the specified contact folder.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-contact-child-folder",
+      "description": "Create a new contactFolder as a child of a specified folder.  You can also create a new contactFolder under the user's default contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folder-contacts",
+      "description": "Get a contact collection from the default Contacts folder of the signed-in user (.../me/contacts), or from the specified contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-contact-in-folder",
+      "description": "Add a contact to the root Contacts folder or to the contacts endpoint of another contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-outlook-contact",
+      "description": "Add a contact to the root Contacts folder or to the contacts endpoint of another contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-outlook-contact",
+      "description": "Retrieve the properties and relationships of a contact object. There are two scenarios where an app can get a contact in another user's contact folder:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-outlook-contact",
+      "description": "Update the properties of a contact object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-outlook-contact",
+      "description": "Delete a contact.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-drives",
+      "description": "Retrieve the list of Drive resources available for a target User, Group, or Site.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-calendar-event",
+      "description": "Get the properties and relationships of the specified event object. Currently, this operation returns event bodies in only HTML format. There are two scenarios where an app can get an event in another",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-calendar-event",
+      "description": "Removes the specified event from the containing calendar.  If the event is a meeting, deleting the event on the organizer's calendar sends a cancellation message to the meeting attendees.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "add-calendar-event-attachment",
+      "description": "Use this API to add an attachment to an existing event. This operation limits the size of the attachment you can add to under 3 MB. If an organizer adds an attachment to a meeting event, the organizer",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-calendar-event-attachment-upload-session",
+      "description": "Create an upload session that allows an app to iteratively upload ranges of a file, so as to attach the file to the specified Outlook item. The item can be a message or event. Use this approach to att",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "cancel-calendar-event",
+      "description": "This action allows the organizer of a meeting to send a cancellation message and cancel the event.  The action moves the event to the Deleted Items folder. The organizer can also cancel an occurrence",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "decline-calendar-event",
+      "description": "Decline invitation to the specified event in a user calendar. If the event allows proposals for new times, on declining the event, an invitee can choose to suggest an alternative time by including the",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "dismiss-calendar-event-reminder",
+      "description": "Dismiss a reminder that has been triggered for an event in a user calendar.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "forward-calendar-event",
+      "description": "This action allows the organizer or attendee of a meeting event to forward the",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "snooze-calendar-event-reminder",
+      "description": "Postpone a reminder for an event in a user calendar until a new time.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "tentatively-accept-calendar-event",
+      "description": "Tentatively accept the specified event in a user calendar. If the event allows proposals for new times, on responding tentative to the event, an invitee can choose to suggest an alternative time by in",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendar-events-delta",
+      "description": "Get a set of event resources that have been added, deleted, or updated in a calendarView (a range of events defined by start and end dates) of the user's primary calendar. Typically, synchronizing eve",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-mail-tips",
+      "description": "Get the MailTips of one or more recipients as available to the signed-in user. Note that by making a POST call to the getMailTips action, you can request specific types of MailTips to",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-focused-inbox-overrides",
+      "description": "Get the overrides that a user has set up to always classify messages from certain senders in specific ways. Each override corresponds to an SMTP address of a sender. Initially, a user doesn't have any",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-focused-inbox-override",
+      "description": "Create an override for a sender identified by an SMTP address. Future messages from that SMTP address will be consistently classified",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-focused-inbox-override",
+      "description": "Change the classifyAs field of an override as specified. You cannot use PATCH to change any other fields in an inferenceClassificationOverride instance. If an override exists for a sender and the send",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-focused-inbox-override",
+      "description": "Delete an override specified by its ID.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mailbox-settings",
+      "description": "Get the user's mailboxSettings. You can view all mailbox settings, or get specific settings. Users can set the following settings for their mailboxes through an Outlook client: Users can set their pre",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mailbox-settings",
+      "description": "Enable, configure, or disable one or more of the following settings as part of a user's mailboxSettings: When updating the preferred date or time format for a user, specify it in respectively, the sho",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-mail-folders",
+      "description": "Get the mail folder collection directly under the root folder of the signed-in user. The returned collection includes any mail search folders directly under the root. By default, this operation doesn'",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-mail-folder",
+      "description": "Use this API to create a new mail folder in the root folder of the user's mailbox. If you intend a new folder to be hidden, you must set the isHidden property to true on creation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mail-folder",
+      "description": "Update the properties of mailfolder object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-child-folders",
+      "description": "Get the folder collection under the specified folder. You can use the .../me/mailFolders shortcut to get the top-level",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-mail-child-folder",
+      "description": "Use this API to create a new child mailFolder. If you intend a new folder to be hidden, you must set the isHidden property to true on creation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-rules",
+      "description": "Get all the messageRule objects defined for the user's inbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-mail-rule",
+      "description": "Create a messageRule object by specifying a set of conditions and actions. Outlook carries out those actions if an incoming message in the user's Inbox meets the specified conditions.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-mail-rule",
+      "description": "Change writable properties on a messageRule object and save the changes.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-mail-rule",
+      "description": "Delete the specified messageRule object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-mail-folder-messages",
+      "description": "Get all the messages in the specified user's mailbox, or those messages in a specified folder in the mailbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-folder-messages-delta",
+      "description": "Get a set of messages added, deleted, or updated in a specified folder. A delta function call for messages in a folder is similar to a GET request, except that by appropriately",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mail-message",
+      "description": "Update an existing Outlook email message by its message ID \u2014 for example mark it read or unread (isRead), flag it (flag), change its categories, importance, or edit a draft's subject, body, or recipie",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-mail-message",
+      "description": "Delete an Outlook email message by its message ID. This is a soft delete that moves the message to Deleted Items.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mail-message-mime",
+      "description": "Download the raw MIME source (RFC 5322 .eml content) of an Outlook email message by its message ID. Returns the complete original message including headers and encoded attachments.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-attachments",
+      "description": "Retrieve a list of attachment objects.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "add-mail-attachment",
+      "description": "Use this API to create a new Attachment. An attachment can be one of the following types: All these types of attachment resources are derived from the attachment",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-mail-attachment",
+      "description": "Delete a mail attachment.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mail-attachment-content",
+      "description": "Download the raw bytes of a file attachment of an Outlook message in the signed-in user's mailbox, by message ID and attachment ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-mail-attachment-upload-session",
+      "description": "Create an upload session that allows an app to iteratively upload ranges of a file, so as to attach the file to the specified Outlook item. The item can be a message or event. Use this approach to att",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "copy-mail-message",
+      "description": "Copy a message to a folder within the user's mailbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-forward-draft",
+      "description": "Create a forward draft.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-reply-draft",
+      "description": "Create a draft to reply to the sender of a message in either JSON or MIME format. When using JSON format:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-reply-all-draft",
+      "description": "Create a draft to reply to the sender and all recipients of a message in either JSON or MIME format. When using JSON format:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "forward-mail-message",
+      "description": "Forward a message using either JSON or MIME format. When using JSON format, you can:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "reply-all-mail-message",
+      "description": "Reply to all recipients of a message using either JSON or MIME format. When using JSON format:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "send-draft-message",
+      "description": "Send an existing draft message. The draft message can be a new message draft, reply draft, reply-all draft, or a forward draft. This method saves the message in the Sent Items folder. Alternatively, s",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-onenote-notebooks",
+      "description": "Retrieve a list of notebook objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-onenote-notebook",
+      "description": "Create a new OneNote notebook.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-notebook-sections",
+      "description": "Retrieve a list of onenoteSection objects from the specified notebook.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-onenote-section",
+      "description": "Create a new onenoteSection in the specified notebook.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-onenote-page",
+      "description": "Delete a OneNote page.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-onenote-page-content",
+      "description": "The page's HTML content.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-section-groups",
+      "description": "Retrieve a list of sectionGroup objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-all-onenote-sections",
+      "description": "Retrieve a list of onenoteSection objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-onenote-section-pages",
+      "description": "Retrieve a list of page objects from the specified section.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-onenote-section-page",
+      "description": "Create a new page in the specified section.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-outlook-categories",
+      "description": "Get all the categories that have been defined for a user.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-outlook-category",
+      "description": "Create an outlookCategory object in the user's master list of categories.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-supported-languages",
+      "description": "Get the list of locales and languages that are supported for the user, as configured on the user's mailbox server. When setting up an Outlook client, the user selects the preferred language from this",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-supported-time-zones",
+      "description": "Get the list of time zones that are supported for the user, as configured on the user's mailbox server. You can explicitly specify to have time zones returned in the Windows time zone format or  Inter",
+      "threat_level": "safe"
+    },
+    {
+      "name": "upload-my-profile-photo",
+      "description": "Update the photo for the specified contact, group, team, or user in a tenant. The size of the photo you can update to is limited to 4 MB. You can use either PATCH or PUT for this operation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-planner-tasks",
+      "description": "Retrieve a list of plannertask objects assigned to a User.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-todo-task-lists",
+      "description": "Get a list of the todoTaskList objects and their properties.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-todo-task-list",
+      "description": "Create a new lists object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-task-list",
+      "description": "Update the properties of a todoTaskList object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-todo-task",
+      "description": "Read the properties and relationships of a todoTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-task",
+      "description": "Update the properties of a todoTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-task",
+      "description": "Delete a todoTask object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-todo-checklist-items",
+      "description": "Get the checklistItem resources associated to a todoTask from the checklistItems navigation property.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-checklist-item",
+      "description": "Create a new checklistItem object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-checklist-item",
+      "description": "Update the properties of a checklistItem object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-checklist-item",
+      "description": "Delete a checklistItem object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-todo-linked-resources",
+      "description": "Get information of one or more items in a partner application, based on which a specified task was created. The information is represented in a linkedResource object for each item. It includes an exte",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-linked-resource",
+      "description": "Create a linkedResource object to associate a specified task with an item in a partner application. For example, you can associate a task with an email item in Outlook that spurred the task, and you c",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-linked-resource",
+      "description": "Delete a linkedResource object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-planner-bucket",
+      "description": "Create a new plannerBucket object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-bucket",
+      "description": "Retrieve the properties and relationships of a plannerBucket object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "update-planner-bucket",
+      "description": "Update the properties of plannerbucket object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-plan",
+      "description": "Retrieve the properties and relationships of a plannerplan object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-plan-buckets",
+      "description": "Retrieve a list of plannerBucket objects contained by a plannerPlan object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-plan-tasks",
+      "description": "Retrieve a list of plannerTask objects associated with a plannerPlan object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-planner-task",
+      "description": "Create a new plannerTask.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-task",
+      "description": "Retrieve the properties and relationships of plannerTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-planner-task",
+      "description": "Update the properties of plannerTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-task-details",
+      "description": "Retrieve the properties and relationships of a plannerTaskDetails object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-planner-task-details",
+      "description": "Update the properties of plannerTaskDetails object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-subscriptions",
+      "description": "Retrieve the properties and relationships of webhook subscriptions, based on the app ID, the user, and the user's role with a tenant. The content of the response depends on the context in which the ap",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-subscription",
+      "description": "Retrieve the properties and relationships of a subscription. See the table in the Permissions section for the list of resources that support subscribing to change notifications.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "delete-subscription",
+      "description": "Delete a subscription. For the list of resources that support subscribing to change notifications, see the table in the Permissions section.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-my-profile",
+      "description": "[beta] Retrieve the properties and relationships of a profile object for a given user. The profile resource exposes various rich properties that are descriptive of the user as relationships, for examp",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-planner-task-messages",
+      "description": "[beta] Retrieve a list of plannerTaskChatMessage objects associated with a plannerTask.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-planner-task-message",
+      "description": "[beta] Create a new plannerTaskChatMessage on a plannerTask.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-planner-task-message",
+      "description": "[beta] Delete a plannerTaskChatMessage object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-upload-url",
+      "description": "Mint a short-lived, single-use URL that this server serves for uploading a file as an attachment to a draft message or an event, so the bytes go straight from the caller to Microsoft Graph instead of",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "parse-teams-url",
+      "description": "Converts any Teams meeting URL format (short /meet/, full /meetup-join/, or recap ?threadId=) into a standard joinWebUrl. Use this before list-online-meetings when the user provides a recap or short U",
+      "threat_level": "safe"
+    },
+    {
+      "name": "download-bytes",
+      "description": "Download binary content from Microsoft Graph and return it as base64. Single tool for any binary read: drive file content, mail attachment, profile photo, Teams hosted content, meeting recording. Retu",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "download-bytes-to-file",
+      "description": "Write authenticated Microsoft Graph byte content to a local file on the server, returning { path, contentType, bytesWritten } instead of base64. The only out-of-band way to save mail attachments and m",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-download-url",
+      "description": "Resolve a short-lived, pre-authenticated download URL for Microsoft Graph binary content that exposes one (drive/SharePoint file content). The returned URL streams the bytes with NO Authorization head",
+      "threat_level": "elevated"
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/Softeria/ms-365-mcp-server",
+      "https://www.npmjs.com/package/@softeria/ms-365-mcp-server",
+      "https://github.com/JarvisOSLinux/mcp-registry/issues/91",
+      "https://github.com/JarvisOSLinux/Project-JARVIS/issues/229"
+    ],
+    "checks": [
+      "upstream: @softeria/ms-365-mcp-server 0.166.0, MIT, npm package with SLSA provenance built from commit 675b82198701b9565ab3cdd836d1a2c7aac4f8c9 (the v0.166.0 tag)",
+      "install: npm ci from the committed package-lock.json (211 packages, each verified by sha512), --ignore-scripts, optional packages (keytar, Azure Key Vault) omitted",
+      "wrapper: first-party stdlib Python in this repository; shared sign-in helper vendored from servers/_lib, identical copy enforced by the PR gate",
+      "sign-in: Softeria's own device-code login, run as one blocking call; the link must be on a Microsoft sign-in host or it is refused; the browser opener is detached from the MCP wire",
+      "tokens: Softeria's MSAL cache is kept through cache_store.py in the OS keyring (secret-tool) or an owner-only file; tokens never appear in a tool result",
+      "withheld: graph-batch, the container deletes (calendar, mail folder, contact folder, planner bucket, To Do list) and webhook subscription creation are hidden and refused by the wrapper"
+    ],
+    "notes": "Defaults to the mail and calendar presets (83 tools). MS365_PRESET widens it; every tool Softeria exposes outside work mode is classified here (187). Work-mode tools (Teams, SharePoint) are not declared individually, so JARVIS gates them at elevated or above. Microsoft's official Work IQ servers (agent365) are the door for tenants with a Copilot licence and admin consent; they are documented in #91, not required.",
+    "securityNotes": "The widest blast radius in the registry: mail, calendar and files in the user's account. Reads are elevated (mail and documents carry text anyone can send); anything that sends, notifies attendees, shares, forwards, changes permissions or rules, overwrites, deletes or touches local files is dangerous. Sign-in goes through Softeria's multi-tenant Entra app unless MS365_MCP_CLIENT_ID names your own."
+  }
+}
