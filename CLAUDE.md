@@ -108,8 +108,8 @@ A token set by hand in `GITHUB_PERSONAL_ACCESS_TOKEN` still wins.
 
 Every link and endpoint goes through `_lib.hostpin`: a wrapper refuses hosts it
 does not name, including ones the provider advertises or redirects to. The
-GitHub OAuth App client id is read from `GITHUB_OAUTH_CLIENT_ID` until the
-JarvisOS app is registered and its id is set as `DEFAULT_CLIENT_ID`.
+GitHub wrapper signs in through the JarvisOS OAuth App, whose public client id
+is `DEFAULT_CLIENT_ID`; `GITHUB_OAUTH_CLIENT_ID` overrides it.
 
 Edit `servers/_lib/`, then run `python scripts/sync_lib.py`. Gated by
 `scripts/selftest_signin_lib.py`.
