@@ -126,7 +126,9 @@ def upstream_env() -> dict:
 
 def _account(result: dict) -> str:
     user = result.get("userData") if isinstance(result.get("userData"), dict) else {}
-    name, upn = user.get("displayName"), user.get("userPrincipalName")
+    # Personal accounts often carry a blank display name.
+    name = str(user.get("displayName") or "").strip()
+    upn = str(user.get("userPrincipalName") or "").strip()
     if name and upn:
         return f" as {name} ({upn})"
     return f" as {name or upn}" if (name or upn) else ""

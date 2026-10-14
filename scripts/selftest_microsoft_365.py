@@ -185,6 +185,14 @@ def case_login():
                   "an expired sign-in ends at the timeout, and says it expired")
 
 
+def case_account_name():
+    blank = {"userData": {"displayName": " ", "userPrincipalName": "ada@example.com"}}
+    check(server._account(blank) == " as ada@example.com", "a blank display name falls back to the address alone")
+    both = {"userData": {"displayName": "Ada", "userPrincipalName": "ada@example.com"}}
+    check(server._account(both) == " as Ada (ada@example.com)", "name and address when both exist")
+    check(server._account({}) == "", "nothing when the result names no account")
+
+
 def case_arguments():
     with sandbox():
         check(server.upstream_args() == ["--preset", "mail,calendar"], "mail and calendar by default")
@@ -326,7 +334,7 @@ def case_manifest_and_vendoring():
 
 def main() -> int:
     global running
-    for fn in (case_cache_store, case_login, case_arguments, case_proxy, case_browser, case_manifest_and_vendoring):
+    for fn in (case_cache_store, case_login, case_account_name, case_arguments, case_proxy, case_browser, case_manifest_and_vendoring):
         running = fn.__name__
         print(f"  {running}")
         fn()
