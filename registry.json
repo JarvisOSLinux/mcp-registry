@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-14T13:31:26Z",
+  "updated": "2026-10-14T13:35:00Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -27505,7 +27505,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "45159e8c56036f7e77845d0a49e58b9ae1044cf3f60ab6c2a41cc1db104d0db2",
+        "manifestSha256": "65b2d3b7a28f02ece9658160db086d8d32b8902c710f7d29c812fc7bbeca9e5c",
         "setupScriptSha256": "8ddfb9b3460aa9e8f8a747dfb6d828072799391a04f2602eba2674697742b2b9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/github/manifest.json"
