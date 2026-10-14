@@ -84,6 +84,7 @@ import sys
 # was embedded", and a second copy of it here would drift from the generator's
 # — leaving a gate that passes stale vectors while looking like it checked them.
 from generate_embeddings import DEFAULT_MODEL, canonical_hash, canonical_text
+from sync_lib import differing as differing_lib_copies
 from sync_registry import (
     PROVIDERS_DIR,
     POSIX_SETUP_SCRIPT,
@@ -1057,11 +1058,30 @@ def validate_no_orphan_dirs(registry: dict, errors: list) -> None:
     referenced.discard(None)
 
     for child in sorted(SERVERS_DIR.iterdir()):
+        # `_lib` is the shared sign-in helper's canonical source, not a server.
+        if child.name.startswith("_"):
+            continue
         if child.is_dir() and child.name not in referenced:
             errors.append(
                 f"servers/{child.name}/: orphan directory — no registry entry "
                 f"references it (remove the directory, or add its entry)"
             )
+
+
+def validate_vendored_lib(errors: list) -> None:
+    """Every servers/<wrapper>/_lib/ must be a byte-identical copy of servers/_lib/.
+
+    dmcp installs only a server's own directory, so wrappers vendor the shared
+    sign-in helper. A copy that drifted is code the review of servers/_lib/ never
+    covered; `python scripts/sync_lib.py` refreshes them.
+    """
+    if not (SERVERS_DIR / "_lib").is_dir():
+        return
+    for copy in differing_lib_copies(SERVERS_DIR):
+        errors.append(
+            f"{copy.relative_to(SERVERS_DIR.parent)}: differs from servers/_lib — "
+            f"run python scripts/sync_lib.py"
+        )
 
 
 def transport_commands(server_id: str, entry: dict) -> list:
@@ -1251,6 +1271,7 @@ def main() -> int:
 
     validate_static(registry, errors, warnings, embeddings)
     validate_no_orphan_dirs(registry, errors)
+    validate_vendored_lib(errors)
 
     if args.base:
         try:
