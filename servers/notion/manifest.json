@@ -31,7 +31,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "e1da9cc37c52b9885bd5e5abbda7258cbd3f640f",
+    "rev": "592f074ce97afd0ed7ab9d970e7f5aab412d8a73",
     "path": "servers/notion"
   },
   "login": {
@@ -219,6 +219,101 @@
       "threat_level": "elevated"
     },
     {
+      "name": "notion-get-self",
+      "description": "Get the connected workspace and the signed-in user's name and email.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-check-mcp-next-steps",
+      "description": "Follow-up guidance Notion asks for after certain fetch results.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-show-advanced-analysis-next-steps",
+      "description": "Explains what a cross-database query needs when the plan lacks it.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-list-favorite-pages",
+      "description": "List the user's favorite pages and databases.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-list-private-pages",
+      "description": "List the top-level pages in the user's Private section.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-list-recent-pages",
+      "description": "List pages the user viewed recently.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-list-shared-pages",
+      "description": "List pages and databases shared directly with the user.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-memory-search",
+      "description": "Search memories that the user's connected agents saved in earlier sessions.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-query-multiple-data-sources",
+      "description": "Run a read-only SQL query across several databases (Business or Enterprise).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-file-download-urls",
+      "description": "Get signed download URLs for files that fetched pages reference.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-get-enabled-skills",
+      "description": "List the Notion Skills enabled for MCP clients, with when to use each (their text reaches the model).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-restore-pages",
+      "description": "Restore pages or databases from Trash to where they were.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-set-comment-reaction",
+      "description": "Add or remove your emoji reaction on a comment (Business or Enterprise).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-set-discussion-resolved",
+      "description": "Resolve or reopen a comment discussion.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-update-comment",
+      "description": "Replace the text of a comment you wrote.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-update-enabled-skills",
+      "description": "Enable or disable Notion Skills for MCP clients and Notion AI.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-delete-comment",
+      "description": "Delete a comment you wrote; the last comment removes its discussion.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-update-folder",
+      "description": "Add or remove files and subfolders in a Notion Folder.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-upload-skill",
+      "description": "Import an Agent Skills directory into a page: persistent instructions for AI agents.",
+      "threat_level": "dangerous"
+    },
+    {
       "name": "login",
       "description": "Sign in to Notion. Opens Notion's sign-in page in the browser (the link is also printed) and waits until the user approves which pages and databases to share. Blocks until approved, declined or timed out, so dispatch it as a concurrent task with a reminder, and tell the user about the link when it shows up in the output. Returns which workspace was connected; tokens are never returned.",
       "threat_level": "elevated",
@@ -249,9 +344,9 @@
       "pinning: discovery, registration, token exchange, renewal and every forwarded call are pinned to mcp.notion.com; the redirect lands on a one-shot 127.0.0.1 listener that ignores requests without the sign-in's state",
       "tokens: kept in the OS keyring (secret-tool) or an owner-only file, renewed before expiry or after a 401, never returned in a tool result or logged",
       "access: the integration only sees the pages and databases the user shares with it during sign-in",
-      "tools: 36 from Notion's supported-tools page plus the wrapper's login/status/logout; some are plan-restricted (notion-get-tool-access reports which)"
+      "tools: 58 declared: Notion's 36 documented tools, the 19 more its live tools/list exposes (2 withheld deletes excluded), and the wrapper's login/status/logout; checked against the live server 2026-10-14"
     ],
-    "notes": "Supersedes the hosted-transport draft (#105): the sign-in lives in this wrapper, not in dmcp (Project-JARVIS#229 v3). The tool list is Notion's documentation, not a live tools/list: after the first sign-in, compare `dmcp tools` with it. A tool missing here is still gated at elevated by JARVIS's registry-tier floor.",
+    "notes": "Supersedes the hosted-transport draft (#105): the sign-in lives in this wrapper, not in dmcp (Project-JARVIS#229 v3). The tool list was checked against Notion's live tools/list on 2026-10-14: the live server exposes 58 tools, 21 beyond its documentation. 19 of those are declared here; notion-delete-pages and notion-delete-databases are withheld by the wrapper (mass moves to Trash, the forbidden tier's class). notion-ai-search and notion-list-agents are documented but were not live on the tested plan. A live tool missing here is still gated at elevated by JARVIS's registry-tier floor.",
     "securityNotes": "Reads are elevated because page content, comments and ai-search results can carry text anyone with edit access wrote (prompt-injection surface). Page edits are elevated rather than dangerous because Notion keeps page history. Schema changes and Custom Agent sessions are dangerous: the first can drop a property's data across a whole database, the second hands an autonomous agent the workspace and its connected tools."
   },
   "embeddings": {
