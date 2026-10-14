@@ -162,6 +162,7 @@ class FakeNotion:
                             "serverInfo": {"name": "fake-notion", "version": "0"}}}, {"Mcp-Session-Id": "sess-1"})
                     if msg["method"] == "tools/list":
                         tools = [{"name": "notion-search", "inputSchema": {"type": "object"}},
+                                 {"name": "notion-delete-pages", "inputSchema": {"type": "object"}},
                                  {"name": "notion-fetch", "inputSchema": {"type": "object"}}]
                         events = (f"event: message\ndata: {json.dumps({'jsonrpc': '2.0', 'method': 'notifications/message', 'params': {}})}\n\n"
                                   f"event: message\ndata: {json.dumps({'jsonrpc': '2.0', 'id': msg['id'], 'result': {'tools': tools}})}\n\n")
@@ -316,9 +317,7 @@ PROXY_MAIN = textwrap.dedent(
     sys.path.insert(0, {wrapper!r})
     import server
     server.RESOURCE, server.ALLOWED_HOSTS = {resource!r}, ("127.0.0.1",)
-    sys.exit(server.httpproxy.run_http_proxy(url=server.RESOURCE, allowed_hosts=server.ALLOWED_HOSTS,
-             get_token=server.get_token, local_tools=server.LOCAL_TOOLS, handlers=server.HANDLERS,
-             server_info=server.SERVER_INFO, not_signed_in=server.NOT_SIGNED_IN))
+    sys.exit(server.main())
     """
 )
 
@@ -364,7 +363,11 @@ def case_proxy():
         store({"access_token": "at-1", "refresh_token": "rt-1", "client_id": "client-1", "token_endpoint": f"{fake.base}/token",
                "resource": resource, "expires_at": int(time.time()) + 3600})
         names = [t["name"] for t in client.ask("tools/list")["result"]["tools"]]
-        check(names == ["notion-search", "notion-fetch", "login", "status", "logout"], "signed in, Notion's tools come through (SSE) plus the wrapper's")
+        check(names == ["notion-search", "notion-fetch", "login", "status", "logout"],
+              "signed in, Notion's tools come through (SSE), withheld ones dropped, plus the wrapper's")
+        refused = client.ask("tools/call", {"name": "notion-delete-pages", "arguments": {"page_ids": ["x"]}})["result"]
+        check(refused.get("isError") and not any(e.get("rpc") == "tools/call" for e in fake.log),
+              "a withheld delete is refused before anything reaches Notion")
         call = client.ask("tools/call", {"name": "notion-search", "arguments": {"query": "x"}})["result"]
         check(call["content"][0]["text"] == "searched with at-1", "a call is forwarded with the token (JSON)")
         sessions = {e.get("session") for e in fake.log if e.get("rpc") == "tools/call"}
@@ -410,6 +413,7 @@ def case_manifest_and_vendoring():
     check(manifest.get("login") == {"tool": "login"}, "the manifest names its login tool")
     check(not any(t.get("threat_level") == "forbidden" for t in declared.values()), "no tool is declared forbidden")
     check({t["name"] for t in server.LOCAL_TOOLS} <= set(declared), "every local tool is declared")
+    check(not (set(declared) & server.HIDDEN_TOOLS), "no withheld tool is declared")
     sys.path.insert(0, str(TREE / "scripts"))
     import sync_lib
     check(sync_lib.tree(WRAPPER / "_lib") == sync_lib.tree(TREE / "servers" / "_lib"), "the vendored _lib is identical to servers/_lib")

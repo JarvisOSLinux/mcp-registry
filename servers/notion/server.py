@@ -36,6 +36,12 @@ SERVER_INFO = {"name": "notion (JARVIS wrapper)", "version": "1.0.0"}
 
 NOT_SIGNED_IN = "Not signed in to Notion. Call the `login` tool, then retry."
 
+# Notion's live server exposes more than its documentation lists. These two move
+# many pages, or a database with all its rows, to Trash in one call: the mass
+# deletion the forbidden tier covers (docs/manifest-reference.md, #88), even
+# though Trash can restore them. Withheld until the daemon enforces that tier.
+HIDDEN_TOOLS = frozenset({"notion-delete-pages", "notion-delete-databases"})
+
 LOCAL_TOOLS = [
     {
         "name": "login",
@@ -150,6 +156,7 @@ def main() -> int:
         handlers=HANDLERS,
         server_info=SERVER_INFO,
         not_signed_in=NOT_SIGNED_IN,
+        hidden_tools=HIDDEN_TOOLS,
     )
 
 
