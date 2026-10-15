@@ -7,10 +7,9 @@ ever returned to the caller, never logged.
 """
 
 import time
-import webbrowser
 from typing import Callable, Iterable
 
-from . import hostpin
+from . import browser, hostpin
 
 DEFAULT_INTERVAL = 5
 DEFAULT_EXPIRES_IN = 900
@@ -56,10 +55,7 @@ def run_device_flow(
 
     log(f"To sign in, open {link} and enter the code {user_code}")
     if open_browser:
-        try:
-            webbrowser.open(browser_link)
-        except Exception:
-            pass
+        browser.open_link(browser_link, hosts)
 
     interval = max(int(grant.get("interval") or DEFAULT_INTERVAL), 1)
     deadline = now() + int(grant.get("expires_in") or DEFAULT_EXPIRES_IN)
