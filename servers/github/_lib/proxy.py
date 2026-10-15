@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 import threading
-from typing import Callable, Optional
+from typing import Callable, Iterable, Optional
 
 
 class ToolError(Exception):
@@ -26,11 +26,17 @@ def run_proxy(
     local_tools: list[dict],
     handlers: dict[str, Callable[[dict], str]],
     guard: Optional[Callable[[str, dict], Optional[str]]] = None,
+    hidden_tools: Iterable[str] = (),
 ) -> int:
     """Run until the client hangs up or the upstream exits. Returns an exit code.
 
     `guard(name, args)` may return an error text to refuse a forwarded call
     before it reaches the upstream (for example "not signed in").
+
+    `hidden_tools` are upstream tools the wrapper withholds: they are dropped
+    from every tools/list page and a call to one is refused here, so the client
+    never learns of or reaches them. An upstream tool with the same name as a
+    local one is dropped too: the wrapper's version replaces it.
     """
     try:
         child = subprocess.Popen(
@@ -47,6 +53,8 @@ def run_proxy(
         print(f"cannot start the upstream server: {err}", file=sys.stderr, flush=True)
         return 1
 
+    hidden = set(hidden_tools)
+    withheld = hidden | {tool["name"] for tool in local_tools}
     out_lock = threading.Lock()
     list_ids: set = set()
     ids_lock = threading.Lock()
@@ -85,8 +93,15 @@ def run_proxy(
                     is_list = msg["id"] in list_ids
                     list_ids.discard(msg["id"])
                 result = msg["result"]
-                if is_list and isinstance(result, dict) and not result.get("nextCursor"):
-                    result["tools"] = [*result.get("tools", []), *local_tools]
+                if is_list and isinstance(result, dict):
+                    kept = [
+                        tool
+                        for tool in result.get("tools", [])
+                        if not (isinstance(tool, dict) and tool.get("name") in withheld)
+                    ]
+                    if not result.get("nextCursor"):
+                        kept += local_tools
+                    result["tools"] = kept
                     emit(msg)
                     continue
             emit(line)
@@ -116,6 +131,9 @@ def run_proxy(
             args = params.get("arguments") or {}
             if name in handlers:
                 threading.Thread(target=run_local, args=(msg["id"], name, args), daemon=True).start()
+                continue
+            if name in hidden:
+                reply_tool(msg["id"], f"{name} is not available through this server.", True)
                 continue
             refusal = guard(name, args) if guard else None
             if refusal:
