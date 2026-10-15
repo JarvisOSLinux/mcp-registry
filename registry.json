@@ -27505,7 +27505,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "358ebbec36a9f9d05e2b25c285f66ff943aec0f0557097fe79f752ae00a51a99",
+        "manifestSha256": "ca2bd9f6f5ab63b3b1be41da96cc8699a78b2113fa8bc1ef12692317f3c30d1b",
         "setupScriptSha256": "8ddfb9b3460aa9e8f8a747dfb6d828072799391a04f2602eba2674697742b2b9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/github/manifest.json",

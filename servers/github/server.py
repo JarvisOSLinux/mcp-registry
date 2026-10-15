@@ -32,10 +32,9 @@ TOKEN_URL = "https://github.com/login/oauth/access_token"
 IDENTITY_URL = "https://api.github.com/user"
 
 # The public client id of the JarvisOS GitHub OAuth App (Device Flow enabled).
-# Public by design: a device-flow app has no secret. Empty until the app is
-# registered; GITHUB_OAUTH_CLIENT_ID overrides it, so a personal OAuth app can
-# test the flow end to end.
-DEFAULT_CLIENT_ID = ""
+# Public by design: a device-flow app has no secret. GITHUB_OAUTH_CLIENT_ID
+# overrides it, so a personal OAuth app can test the flow end to end.
+DEFAULT_CLIENT_ID = "Ov23liURTWQGuxqD0yFv"
 DEFAULT_SCOPES = "repo"
 
 UPSTREAM_DIR = Path(__file__).resolve().parent / "upstream"

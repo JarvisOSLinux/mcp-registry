@@ -41,7 +41,7 @@
       "description": "Sign in to GitHub. Prints a link and a short code, opens the browser, and blocks until the user approves, declines or the code expires. Dispatch it as a concurrent task with a reminder, and tell the user to open the link and enter the code when it appears in the output. Returns who signed in; the token is never returned.",
       "threat_level": "elevated",
       "blocking": true,
-      "suggestedRemindAfter": 30
+      "suggestedRemindAfter": 5
     },
     {
       "name": "status",
@@ -137,7 +137,7 @@
       "secrets: the token is stored in the OS keyring (secret-tool) or an owner-only file; it is never returned in a tool result or logged",
       "login prints a link and device code to stderr and opens the browser; it sends no secret"
     ],
-    "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The tool list is the same minimal subset as that entry plus login/status/logout; the upstream exposes more tools, which the host floor classifies. Until a JarvisOS GitHub OAuth App client id is configured, login needs GITHUB_OAUTH_CLIENT_ID.",
+    "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The tool list is the same minimal subset as that entry plus login/status/logout; the upstream exposes more tools, which the host floor classifies.",
     "securityNotes": "Powerful GitHub API access, repo scope by default. Sign in with the least privilege you need; a token set by hand in config takes precedence over the stored sign-in."
   },
   "embeddings": {

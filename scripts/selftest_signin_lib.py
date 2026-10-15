@@ -371,11 +371,12 @@ def case_github_wrapper():
 
     with file_store():
         with provider() as fake:
-            saved = (server.DEVICE_URL, server.TOKEN_URL, server.IDENTITY_URL, server.ALLOWED_HOSTS)
+            saved = (server.DEVICE_URL, server.TOKEN_URL, server.IDENTITY_URL, server.ALLOWED_HOSTS, server.DEFAULT_CLIENT_ID)
             server.DEVICE_URL = f"{fake.base}/device/code"
             server.TOKEN_URL = f"{fake.base}/token"
             server.IDENTITY_URL = f"{fake.base}/user"
             server.ALLOWED_HOSTS = ("127.0.0.1",)
+            server.DEFAULT_CLIENT_ID = ""  # the "no client id" case below
             try:
                 check("Not signed in" in server.tool_status({}), "status before login says not signed in")
                 check(server.guard("get_file_contents", {}) == server.NOT_SIGNED_IN, "a forwarded call is refused before login")
@@ -405,7 +406,7 @@ def case_github_wrapper():
                 server.tool_logout({})
                 check(server.current_token() == "", "logout forgets the token")
             finally:
-                server.DEVICE_URL, server.TOKEN_URL, server.IDENTITY_URL, server.ALLOWED_HOSTS = saved
+                server.DEVICE_URL, server.TOKEN_URL, server.IDENTITY_URL, server.ALLOWED_HOSTS, server.DEFAULT_CLIENT_ID = saved
 
 
 def case_vendored_copies():
