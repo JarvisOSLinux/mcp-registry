@@ -17,7 +17,7 @@ vectors for semantic search when the LLM needs to discover tools by capability.
 ```
 registry.json              Main index (server metadata + embeddings)
 servers/_lib/              Shared sign-in helper (host pinning, device flow, token
-                           store, stdio proxy). Canonical source only: dmcp installs
+                           store, stdio proxy, detached browser opener). Canonical source only: dmcp installs
                            just a server's own directory, so each wrapper carries a
                            byte-identical copy at servers/<wrapper>/_lib/
                            (scripts/sync_lib.py; the PR gate fails on drift)
@@ -49,6 +49,9 @@ scripts/
   selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
                            GitHub wrapper (host pinning, device flow, token store,
                            stdio proxy, vendored-copy drift)
+  selftest_microsoft_365.py  Self-test for the Microsoft 365 wrapper against stand-ins
+                           (auth-cache protocol, blocking login, withheld tools,
+                           browser opener off the MCP wire); honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -103,6 +106,22 @@ JarvisOS app is registered and its id is set as `DEFAULT_CLIENT_ID`.
 
 Edit `servers/_lib/`, then run `python scripts/sync_lib.py`. Gated by
 `scripts/selftest_signin_lib.py`.
+
+### servers/microsoft-365/ — reusing an upstream's own sign-in
+
+The other shape of the wrapper pattern: the upstream (@softeria/ms-365-mcp-server)
+already signs in, so the wrapper keeps its sign-in and changes only what dmcp's
+one-process-per-call lifecycle breaks. The upstream's `login` tool returns the
+device code and finishes in the background, which dmcp ends; the wrapper's
+`login` runs the upstream's blocking `--login` instead, relays the link and code
+to stderr and opens the browser through `_lib.browser` (detached, off the MCP
+wire, display only). `cache_store.py` is Softeria's `MS365_MCP_AUTH_CACHE_COMMAND`,
+so its MSAL cache lives in the keyring through `_lib.tokenstore`. `HIDDEN_TOOLS`
+withholds what the forbidden tier covers or that bypasses the gate (`graph-batch`,
+container deletes, webhook subscriptions) via `proxy.run_proxy(hidden_tools=…)`.
+The upstream installs with `npm ci` from the committed `package-lock.json`
+(`--ignore-scripts`, optional packages omitted). Defaults to the mail and calendar
+presets (`MS365_PRESET`). Gated by `scripts/selftest_microsoft_365.py`.
 
 ### servers/jarvis-shell{,-system}/server.py — the interactive-command pattern
 
@@ -189,6 +208,7 @@ python scripts/selftest_categories.py   # Offline self-test: closed category voc
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_login.py        # Offline self-test: a manifest's `login` names one of its tools
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
+python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 

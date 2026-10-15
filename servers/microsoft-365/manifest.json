@@ -1,0 +1,1809 @@
+{
+  "version": "1.0.0",
+  "scope": "user",
+  "platforms": [
+    "linux"
+  ],
+  "name": "Microsoft 365",
+  "summary": "Outlook mail and calendar, OneDrive, contacts, To Do and OneNote in your Microsoft account, with a built-in Microsoft sign-in",
+  "keywords": [
+    "microsoft",
+    "outlook",
+    "email",
+    "calendar",
+    "meetings",
+    "onedrive",
+    "office",
+    "microsoft-365",
+    "contacts",
+    "todo",
+    "onenote",
+    "excel"
+  ],
+  "homepage": "https://github.com/Softeria/ms-365-mcp-server",
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "server.py"
+      ],
+      "description": "Microsoft 365 wrapper (stdio): Softeria's server with a sign-in that completes under dmcp."
+    }
+  ],
+  "source": {
+    "type": "git",
+    "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
+    "rev": "e8ad870451cbb6f616e049ad8210c8767bd87879",
+    "path": "servers/microsoft-365"
+  },
+  "setupScript": "setup.sh",
+  "login": {
+    "tool": "login"
+  },
+  "configurableProperties": [
+    {
+      "key": "MS365_PRESET",
+      "label": "Tool presets",
+      "description": "Comma-separated Softeria presets to expose: mail, calendar, files, contacts, tasks, onenote, excel, search, personal, or all. More presets means more tools and wider sign-in permissions; sign in again after changing it.",
+      "default": "mail,calendar",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_READ_ONLY",
+      "label": "Read-only",
+      "description": "true to start the server read-only: every tool that would change, send or delete is disabled.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_MCP_ORG_MODE",
+      "label": "Work account mode",
+      "description": "true for a work or school account, to add Teams, SharePoint and shared mailboxes. Personal Microsoft accounts leave it off.",
+      "default": "false",
+      "sensitive": false,
+      "required": false
+    },
+    {
+      "key": "MS365_MCP_CLIENT_ID",
+      "label": "Microsoft Entra app client id",
+      "description": "Optional. Your own Entra app registration's public client id, for organisations that do not allow Softeria's app. Public, not a secret.",
+      "sensitive": false,
+      "required": false
+    }
+  ],
+  "tools": [
+    {
+      "name": "login",
+      "description": "Sign in to Microsoft 365 (Outlook mail, calendar, OneDrive and more). Starts Microsoft's device sign-in: prints a link and a short code, opens the browser, and waits until the user approves. Blocks until approved, declined or expired, so dispatch it as a concurrent task with a reminder, and tell the user the link and code when they show up in the output. Does nothing if already signed in, unless force is true. Returns who signed in; tokens are never returned.",
+      "threat_level": "elevated",
+      "blocking": true,
+      "suggestedRemindAfter": 5
+    },
+    {
+      "name": "list-mail-messages",
+      "description": "List, search, and filter Outlook email messages in the signed-in user's mailbox across all folders. Returns message metadata (subject, from, receivedDateTime, isRead, hasAttachments) plus a body previ",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-mail-message",
+      "description": "Get a single Outlook email message by its message ID, including full subject, sender, recipients, body, and attachment flags. Use list-mail-messages first to obtain the message ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "send-mail",
+      "description": "Send the message specified in the request body using either JSON or MIME format. When using JSON format, you can include a file attachment in the same sendMail action call. When using MIME format: Thi",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "reply-mail-message",
+      "description": "Reply to the sender of a message using either JSON or MIME format. When using JSON format:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-draft-email",
+      "description": "Create a draft Outlook email message in the signed-in user's Drafts folder. Set subject, body, toRecipients, ccRecipients, and importance. The draft is saved, not sent \u2014 use send-mail to send a messag",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-calendar-events",
+      "description": "Get a list of event objects in the user's mailbox. The list contains single",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-calendar-view",
+      "description": "Get the occurrences, exceptions, and single instances of events in a calendar view defined by a time range, from the user's default calendar,",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-calendar-event",
+      "description": "Create (schedule) a new calendar event \u2014 a meeting or appointment \u2014 on the user's calendar. Times use nested objects, not flat fields: start: {dateTime, timeZone}, end: {dateTime, timeZone}. Do NOT us",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-calendar-event",
+      "description": "Update an event on the default calendar. Requires eventId (the event's ID from get-calendar-view or list-calendar-events). Times use nested {dateTime, timeZone} objects. UTC is simplest for one-off ev",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "search-onedrive-files",
+      "description": "Search the hierarchy of items for items matching a query.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-folder-files",
+      "description": "Return a collection of DriveItems in the children relationship of a DriveItem. DriveItems with a non-null folder or package facet can have one or more child DriveItems.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-outlook-contacts",
+      "description": "Get a contact collection from the default contacts folder of the signed-in user. There are two scenarios where an app can get contacts in another user's contact folder:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-todo-tasks",
+      "description": "Get the todoTask resources from the tasks navigation property of a specified todoTaskList.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-task",
+      "description": "Create a new task object in a specified todoTaskList.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-pages",
+      "description": "Retrieve a list of page objects.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-onenote-page",
+      "description": "Create a new OneNote page in the default section of the default notebook. To create a page in a different section in the default notebook, you can use the sectionName query parameter.  Example: ../one",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-excel-range",
+      "description": "Get an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "move-mail-message",
+      "description": "Move a message to another folder within the specified user's mailbox. This creates a new copy of the message in the destination folder and removes the original message.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "accept-calendar-event",
+      "description": "Accept the specified event in a user calendar.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "logout",
+      "description": "Log out from Microsoft account",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "verify-login",
+      "description": "Check current Microsoft authentication status",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-accounts",
+      "description": "List all Microsoft accounts configured in this server. Use this to discover available account emails before making tool calls. Reflects accounts added mid-session via --login.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "select-account",
+      "description": "Select a Microsoft account as the default. Accepts email address (e.g. user@outlook.com) or account ID. Use list-accounts to discover available accounts.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "remove-account",
+      "description": "Remove a Microsoft account from the cache. Accepts email address (e.g. user@outlook.com) or account ID. Use list-accounts to discover available accounts.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-item",
+      "description": "All items contained in the drive. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "move-rename-onedrive-item",
+      "description": "Move or rename a OneDrive item.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-onedrive-file",
+      "description": "Delete a OneDrive file.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-onedrive-folder",
+      "description": "Create a OneDrive folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "upload-file-content",
+      "description": "The content stream, if the item represents a file.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "copy-drive-item",
+      "description": "Copy a drive item.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-drive-item-share-link",
+      "description": "Create a link to share a driveItem driveItem. The createLink action creates a new sharing link if the specified link type doesn't already exist for the calling application.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-upload-session",
+      "description": "Create an upload session.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-delta",
+      "description": "Track changes in a driveItem and its children over time. Your app begins by calling delta without any parameters.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "share-drive-item",
+      "description": "Send a sharing invitation for a driveItem. A sharing invitation provides permissions to the recipients and, optionally, sends them an email to notify them that the item was shared.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-drive-item-permissions",
+      "description": "The set of permissions for the item. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-drive-item-permission",
+      "description": "Delete a drive item permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-drive-item-preview",
+      "description": "Create a drive item preview.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-drive-item-thumbnails",
+      "description": "Collection of thumbnailSet objects associated with the item. For more information, see getting thumbnails. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-drive-item-versions",
+      "description": "The list of previous versions of the item. For more info, see getting previous versions. Read-only. Nullable.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-excel-tables",
+      "description": "Represents a collection of tables associated with the workbook. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-excel-table",
+      "description": "Represents a collection of tables associated with the workbook. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-excel-table-rows",
+      "description": "The list of all the rows in the table. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "add-excel-table-rows",
+      "description": "Add Excel table rows.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-excel-table-row",
+      "description": "Update an Excel table row.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-excel-table-row",
+      "description": "Delete an Excel table row.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-excel-worksheets",
+      "description": "Represents a collection of worksheets associated with the workbook. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-excel-chart",
+      "description": "Creates a new chart.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "sort-excel-range",
+      "description": "Sort an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-excel-range",
+      "description": "Update an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "clear-excel-range",
+      "description": "Clear an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-excel-range",
+      "description": "Delete an Excel range.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-excel-range-format",
+      "description": "Returns a format object, encapsulating the range's font, fill, borders, alignment, and other properties. Read-only.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range",
+      "description": "Format an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-border",
+      "description": "Format an Excel range border.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-fill",
+      "description": "Format an Excel range fill.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "format-excel-range-font",
+      "description": "Format an Excel range font.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "insert-excel-range",
+      "description": "Insert an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "merge-excel-range",
+      "description": "Merge an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "unmerge-excel-range",
+      "description": "Unmerge an Excel range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-excel-table",
+      "description": "Create a new table. The range source address determines the worksheet under which the table will be added. If the table can't be added (for example, because the address is invalid, or the table would",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-excel-used-range",
+      "description": "Get an Excel used range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-drive-root-item",
+      "description": "The root folder of the drive. Read-only.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-current-user",
+      "description": "Retrieve the properties and relationships of user object. This operation returns by default only a subset of the more commonly used properties for each user. These default properties are noted in the",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-my-calendar-permissions",
+      "description": "The permissions of the users with whom the calendar is shared.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-my-calendar-permission",
+      "description": "Create a calendarPermission resource to specify the identity and role of the user with whom the specified calendar is being shared or delegated.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-my-calendar-permission",
+      "description": "Update my calendar permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-my-calendar-permission",
+      "description": "Delete my calendar permission.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendars",
+      "description": "Get all the user's calendars (/calendars navigation property), get the calendars from the default calendar group or from a specific calendar group.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-calendar",
+      "description": "Create a new calendar for a user.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-calendar",
+      "description": "Update a calendar.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-specific-calendar-view",
+      "description": "List the occurrences, exceptions, and single instances of events over a time range, from one of the signed-in user's calendars addressed by calendar ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-specific-calendar-events",
+      "description": "List events from one of the signed-in user's calendars, addressed by calendar ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-specific-calendar-event",
+      "description": "Create a calendar event on a specific calendar. Requires calendarId (the target calendar's ID). Times use nested {dateTime, timeZone} objects \u2014 do NOT use startDateTime/startTimeZone. UTC is simplest",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-specific-calendar-event",
+      "description": "Get a single event from one of the signed-in user's calendars, addressed by calendar ID and event ID. Any calendar can be addressed this way, including the default one.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-specific-calendar-event",
+      "description": "Update a specific calendar event. Requires calendarId (from list-calendars) and eventId (from list-specific-calendar-events or get-specific-calendar-view for that same calendar). Times use nested {dat",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-specific-calendar-event",
+      "description": "Delete a specific calendar event. Requires calendarId (the target calendar's ID) and eventId (the event's own ID).",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendar-event-instances",
+      "description": "The occurrences of a recurring series, if the event is a series master. This property includes occurrences that are part of the recurrence pattern, and exceptions modified, but doesn't include occurre",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-calendar-view-delta",
+      "description": "Get a set of event resources that have been added, deleted, or updated in a calendarView (a range of events defined by start and end dates) of the user's primary calendar. Typically, synchronizing eve",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folders",
+      "description": "Get the contact folder collection in the default Contacts folder of the signed-in user.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-contact-folder",
+      "description": "Create a new contactFolder under the user's default contacts folder. You can also create a new contactfolder as a child of any specified contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-contact-folder",
+      "description": "Update the properties of contactfolder object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folder-child-folders",
+      "description": "Get a collection of child folders under the specified contact folder.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-contact-child-folder",
+      "description": "Create a new contactFolder as a child of a specified folder.  You can also create a new contactFolder under the user's default contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-contact-folder-contacts",
+      "description": "Get a contact collection from the default Contacts folder of the signed-in user (.../me/contacts), or from the specified contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-contact-in-folder",
+      "description": "Add a contact to the root Contacts folder or to the contacts endpoint of another contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-outlook-contact",
+      "description": "Add a contact to the root Contacts folder or to the contacts endpoint of another contact folder.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-outlook-contact",
+      "description": "Retrieve the properties and relationships of a contact object. There are two scenarios where an app can get a contact in another user's contact folder:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-outlook-contact",
+      "description": "Update the properties of a contact object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-outlook-contact",
+      "description": "Delete a contact.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-drives",
+      "description": "Retrieve the list of Drive resources available for a target User, Group, or Site.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-calendar-event",
+      "description": "Get the properties and relationships of the specified event object. Currently, this operation returns event bodies in only HTML format. There are two scenarios where an app can get an event in another",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-calendar-event",
+      "description": "Removes the specified event from the containing calendar.  If the event is a meeting, deleting the event on the organizer's calendar sends a cancellation message to the meeting attendees.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "add-calendar-event-attachment",
+      "description": "Use this API to add an attachment to an existing event. This operation limits the size of the attachment you can add to under 3 MB. If an organizer adds an attachment to a meeting event, the organizer",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-calendar-event-attachment-upload-session",
+      "description": "Create an upload session that allows an app to iteratively upload ranges of a file, so as to attach the file to the specified Outlook item. The item can be a message or event. Use this approach to att",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "cancel-calendar-event",
+      "description": "This action allows the organizer of a meeting to send a cancellation message and cancel the event.  The action moves the event to the Deleted Items folder. The organizer can also cancel an occurrence",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "decline-calendar-event",
+      "description": "Decline invitation to the specified event in a user calendar. If the event allows proposals for new times, on declining the event, an invitee can choose to suggest an alternative time by including the",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "dismiss-calendar-event-reminder",
+      "description": "Dismiss a reminder that has been triggered for an event in a user calendar.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "forward-calendar-event",
+      "description": "This action allows the organizer or attendee of a meeting event to forward the",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "snooze-calendar-event-reminder",
+      "description": "Postpone a reminder for an event in a user calendar until a new time.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "tentatively-accept-calendar-event",
+      "description": "Tentatively accept the specified event in a user calendar. If the event allows proposals for new times, on responding tentative to the event, an invitee can choose to suggest an alternative time by in",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-calendar-events-delta",
+      "description": "Get a set of event resources that have been added, deleted, or updated in a calendarView (a range of events defined by start and end dates) of the user's primary calendar. Typically, synchronizing eve",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-mail-tips",
+      "description": "Get the MailTips of one or more recipients as available to the signed-in user. Note that by making a POST call to the getMailTips action, you can request specific types of MailTips to",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-focused-inbox-overrides",
+      "description": "Get the overrides that a user has set up to always classify messages from certain senders in specific ways. Each override corresponds to an SMTP address of a sender. Initially, a user doesn't have any",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-focused-inbox-override",
+      "description": "Create an override for a sender identified by an SMTP address. Future messages from that SMTP address will be consistently classified",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-focused-inbox-override",
+      "description": "Change the classifyAs field of an override as specified. You cannot use PATCH to change any other fields in an inferenceClassificationOverride instance. If an override exists for a sender and the send",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-focused-inbox-override",
+      "description": "Delete an override specified by its ID.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mailbox-settings",
+      "description": "Get the user's mailboxSettings. You can view all mailbox settings, or get specific settings. Users can set the following settings for their mailboxes through an Outlook client: Users can set their pre",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mailbox-settings",
+      "description": "Enable, configure, or disable one or more of the following settings as part of a user's mailboxSettings: When updating the preferred date or time format for a user, specify it in respectively, the sho",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-mail-folders",
+      "description": "Get the mail folder collection directly under the root folder of the signed-in user. The returned collection includes any mail search folders directly under the root. By default, this operation doesn'",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-mail-folder",
+      "description": "Use this API to create a new mail folder in the root folder of the user's mailbox. If you intend a new folder to be hidden, you must set the isHidden property to true on creation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mail-folder",
+      "description": "Update the properties of mailfolder object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-child-folders",
+      "description": "Get the folder collection under the specified folder. You can use the .../me/mailFolders shortcut to get the top-level",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-mail-child-folder",
+      "description": "Use this API to create a new child mailFolder. If you intend a new folder to be hidden, you must set the isHidden property to true on creation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-rules",
+      "description": "Get all the messageRule objects defined for the user's inbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-mail-rule",
+      "description": "Create a messageRule object by specifying a set of conditions and actions. Outlook carries out those actions if an incoming message in the user's Inbox meets the specified conditions.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "update-mail-rule",
+      "description": "Change writable properties on a messageRule object and save the changes.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-mail-rule",
+      "description": "Delete the specified messageRule object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-mail-folder-messages",
+      "description": "Get all the messages in the specified user's mailbox, or those messages in a specified folder in the mailbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-folder-messages-delta",
+      "description": "Get a set of messages added, deleted, or updated in a specified folder. A delta function call for messages in a folder is similar to a GET request, except that by appropriately",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-mail-message",
+      "description": "Update an existing Outlook email message by its message ID \u2014 for example mark it read or unread (isRead), flag it (flag), change its categories, importance, or edit a draft's subject, body, or recipie",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-mail-message",
+      "description": "Delete an Outlook email message by its message ID. This is a soft delete that moves the message to Deleted Items.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mail-message-mime",
+      "description": "Download the raw MIME source (RFC 5322 .eml content) of an Outlook email message by its message ID. Returns the complete original message including headers and encoded attachments.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-mail-attachments",
+      "description": "Retrieve a list of attachment objects.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "add-mail-attachment",
+      "description": "Use this API to create a new Attachment. An attachment can be one of the following types: All these types of attachment resources are derived from the attachment",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-mail-attachment",
+      "description": "Delete a mail attachment.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-mail-attachment-content",
+      "description": "Download the raw bytes of a file attachment of an Outlook message in the signed-in user's mailbox, by message ID and attachment ID.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-mail-attachment-upload-session",
+      "description": "Create an upload session that allows an app to iteratively upload ranges of a file, so as to attach the file to the specified Outlook item. The item can be a message or event. Use this approach to att",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "copy-mail-message",
+      "description": "Copy a message to a folder within the user's mailbox.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-forward-draft",
+      "description": "Create a forward draft.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-reply-draft",
+      "description": "Create a draft to reply to the sender of a message in either JSON or MIME format. When using JSON format:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-reply-all-draft",
+      "description": "Create a draft to reply to the sender and all recipients of a message in either JSON or MIME format. When using JSON format:",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "forward-mail-message",
+      "description": "Forward a message using either JSON or MIME format. When using JSON format, you can:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "reply-all-mail-message",
+      "description": "Reply to all recipients of a message using either JSON or MIME format. When using JSON format:",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "send-draft-message",
+      "description": "Send an existing draft message. The draft message can be a new message draft, reply draft, reply-all draft, or a forward draft. This method saves the message in the Sent Items folder. Alternatively, s",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-onenote-notebooks",
+      "description": "Retrieve a list of notebook objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-onenote-notebook",
+      "description": "Create a new OneNote notebook.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-notebook-sections",
+      "description": "Retrieve a list of onenoteSection objects from the specified notebook.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-onenote-section",
+      "description": "Create a new onenoteSection in the specified notebook.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-onenote-page",
+      "description": "Delete a OneNote page.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-onenote-page-content",
+      "description": "The page's HTML content.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-onenote-section-groups",
+      "description": "Retrieve a list of sectionGroup objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-all-onenote-sections",
+      "description": "Retrieve a list of onenoteSection objects.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-onenote-section-pages",
+      "description": "Retrieve a list of page objects from the specified section.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-onenote-section-page",
+      "description": "Create a new page in the specified section.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-outlook-categories",
+      "description": "Get all the categories that have been defined for a user.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-outlook-category",
+      "description": "Create an outlookCategory object in the user's master list of categories.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-supported-languages",
+      "description": "Get the list of locales and languages that are supported for the user, as configured on the user's mailbox server. When setting up an Outlook client, the user selects the preferred language from this",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-supported-time-zones",
+      "description": "Get the list of time zones that are supported for the user, as configured on the user's mailbox server. You can explicitly specify to have time zones returned in the Windows time zone format or  Inter",
+      "threat_level": "safe"
+    },
+    {
+      "name": "upload-my-profile-photo",
+      "description": "Update the photo for the specified contact, group, team, or user in a tenant. The size of the photo you can update to is limited to 4 MB. You can use either PATCH or PUT for this operation.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-planner-tasks",
+      "description": "Retrieve a list of plannertask objects assigned to a User.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-todo-task-lists",
+      "description": "Get a list of the todoTaskList objects and their properties.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "create-todo-task-list",
+      "description": "Create a new lists object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-task-list",
+      "description": "Update the properties of a todoTaskList object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-todo-task",
+      "description": "Read the properties and relationships of a todoTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-task",
+      "description": "Update the properties of a todoTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-task",
+      "description": "Delete a todoTask object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-todo-checklist-items",
+      "description": "Get the checklistItem resources associated to a todoTask from the checklistItems navigation property.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-checklist-item",
+      "description": "Create a new checklistItem object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-todo-checklist-item",
+      "description": "Update the properties of a checklistItem object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-checklist-item",
+      "description": "Delete a checklistItem object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "list-todo-linked-resources",
+      "description": "Get information of one or more items in a partner application, based on which a specified task was created. The information is represented in a linkedResource object for each item. It includes an exte",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-todo-linked-resource",
+      "description": "Create a linkedResource object to associate a specified task with an item in a partner application. For example, you can associate a task with an email item in Outlook that spurred the task, and you c",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "delete-todo-linked-resource",
+      "description": "Delete a linkedResource object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create-planner-bucket",
+      "description": "Create a new plannerBucket object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-bucket",
+      "description": "Retrieve the properties and relationships of a plannerBucket object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "update-planner-bucket",
+      "description": "Update the properties of plannerbucket object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-plan",
+      "description": "Retrieve the properties and relationships of a plannerplan object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-plan-buckets",
+      "description": "Retrieve a list of plannerBucket objects contained by a plannerPlan object.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list-plan-tasks",
+      "description": "Retrieve a list of plannerTask objects associated with a plannerPlan object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-planner-task",
+      "description": "Create a new plannerTask.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-task",
+      "description": "Retrieve the properties and relationships of plannerTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-planner-task",
+      "description": "Update the properties of plannerTask object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get-planner-task-details",
+      "description": "Retrieve the properties and relationships of a plannerTaskDetails object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update-planner-task-details",
+      "description": "Update the properties of plannerTaskDetails object.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-subscriptions",
+      "description": "Retrieve the properties and relationships of webhook subscriptions, based on the app ID, the user, and the user's role with a tenant. The content of the response depends on the context in which the ap",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get-subscription",
+      "description": "Retrieve the properties and relationships of a subscription. See the table in the Permissions section for the list of resources that support subscribing to change notifications.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "delete-subscription",
+      "description": "Delete a subscription. For the list of resources that support subscribing to change notifications, see the table in the Permissions section.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-my-profile",
+      "description": "[beta] Retrieve the properties and relationships of a profile object for a given user. The profile resource exposes various rich properties that are descriptive of the user as relationships, for examp",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list-planner-task-messages",
+      "description": "[beta] Retrieve a list of plannerTaskChatMessage objects associated with a plannerTask.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create-planner-task-message",
+      "description": "[beta] Create a new plannerTaskChatMessage on a plannerTask.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "delete-planner-task-message",
+      "description": "[beta] Delete a plannerTaskChatMessage object.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-upload-url",
+      "description": "Mint a short-lived, single-use URL that this server serves for uploading a file as an attachment to a draft message or an event, so the bytes go straight from the caller to Microsoft Graph instead of",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "parse-teams-url",
+      "description": "Converts any Teams meeting URL format (short /meet/, full /meetup-join/, or recap ?threadId=) into a standard joinWebUrl. Use this before list-online-meetings when the user provides a recap or short U",
+      "threat_level": "safe"
+    },
+    {
+      "name": "download-bytes",
+      "description": "Download binary content from Microsoft Graph and return it as base64. Single tool for any binary read: drive file content, mail attachment, profile photo, Teams hosted content, meeting recording. Retu",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "download-bytes-to-file",
+      "description": "Write authenticated Microsoft Graph byte content to a local file on the server, returning { path, contentType, bytesWritten } instead of base64. The only out-of-band way to save mail attachments and m",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "get-download-url",
+      "description": "Resolve a short-lived, pre-authenticated download URL for Microsoft Graph binary content that exposes one (drive/SharePoint file content). The returned URL streams the bytes with NO Authorization head",
+      "threat_level": "elevated"
+    }
+  ],
+  "trust": {
+    "reviewReferences": [
+      "https://github.com/Softeria/ms-365-mcp-server",
+      "https://www.npmjs.com/package/@softeria/ms-365-mcp-server",
+      "https://github.com/JarvisOSLinux/mcp-registry/issues/91",
+      "https://github.com/JarvisOSLinux/Project-JARVIS/issues/229"
+    ],
+    "checks": [
+      "upstream: @softeria/ms-365-mcp-server 0.166.0, MIT, npm package with SLSA provenance built from commit 675b82198701b9565ab3cdd836d1a2c7aac4f8c9 (the v0.166.0 tag)",
+      "install: npm ci from the committed package-lock.json (211 packages, each verified by sha512), --ignore-scripts, optional packages (keytar, Azure Key Vault) omitted",
+      "wrapper: first-party stdlib Python in this repository; shared sign-in helper vendored from servers/_lib, identical copy enforced by the PR gate",
+      "sign-in: Softeria's own device-code login, run as one blocking call; the link must be on a Microsoft sign-in host or it is refused; the browser opener is detached from the MCP wire",
+      "tokens: Softeria's MSAL cache is kept through cache_store.py in the OS keyring (secret-tool) or an owner-only file; tokens never appear in a tool result",
+      "withheld: graph-batch, the container deletes (calendar, mail folder, contact folder, planner bucket, To Do list) and webhook subscription creation are hidden and refused by the wrapper"
+    ],
+    "notes": "Defaults to the mail and calendar presets (83 tools). MS365_PRESET widens it; every tool Softeria exposes outside work mode is classified here (187). Work-mode tools (Teams, SharePoint) are not declared individually, so JARVIS gates them at elevated or above. Microsoft's official Work IQ servers (agent365) are the door for tenants with a Copilot licence and admin consent; they are documented in #91, not required.",
+    "securityNotes": "The widest blast radius in the registry: mail, calendar and files in the user's account. Reads are elevated (mail and documents carry text anyone can send); anything that sends, notifies attendees, shares, forwards, changes permissions or rules, overwrites, deletes or touches local files is dangerous. Sign-in goes through Softeria's multi-tenant Entra app unless MS365_MCP_CLIENT_ID names your own."
+  },
+  "embeddings": {
+    "nomic-embed-text": {
+      "v": [
+        -0.11585433036088943,
+        0.3902682363986969,
+        -2.958405017852783,
+        -0.9527168869972229,
+        1.039060115814209,
+        -1.1251320838928223,
+        -0.163788303732872,
+        -0.1582748293876648,
+        0.996371865272522,
+        -1.1441179513931274,
+        -0.49115240573883057,
+        -0.24062752723693848,
+        1.3623243570327759,
+        0.04951869323849678,
+        0.38245144486427307,
+        -0.02672959491610527,
+        0.05519958212971687,
+        -1.4649989604949951,
+        -0.3191794455051422,
+        0.7659984827041626,
+        0.8367345333099365,
+        -1.5111078023910522,
+        -0.885249137878418,
+        -0.5306763052940369,
+        0.8500985503196716,
+        0.8224550485610962,
+        0.2353714406490326,
+        0.14106909930706024,
+        -1.0972059965133667,
+        0.6397906541824341,
+        0.5929333567619324,
+        0.5399900674819946,
+        -0.32315629720687866,
+        -1.123397707939148,
+        0.1395687609910965,
+        -0.5509612560272217,
+        -0.21161067485809326,
+        -0.07452688366174698,
+        -0.07068675011396408,
+        0.6333999037742615,
+        0.49729064106941223,
+        -1.1351158618927002,
+        -0.01825280860066414,
+        -0.05419006571173668,
+        1.208473801612854,
+        -0.6284334063529968,
+        1.8345630168914795,
+        0.6370023488998413,
+        2.099087715148926,
+        -0.6024008393287659,
+        0.3378508985042572,
+        -0.6982736587524414,
+        1.0147510766983032,
+        0.8216896653175354,
+        1.0625180006027222,
+        0.49948257207870483,
+        0.8486484885215759,
+        -0.08840340375900269,
+        0.05842367932200432,
+        -0.34628069400787354,
+        2.293694019317627,
+        0.5798728466033936,
+        0.4110446572303772,
+        1.6206908226013184,
+        0.5850921273231506,
+        -0.2341153621673584,
+        -0.7863519787788391,
+        1.0864187479019165,
+        -0.17266510426998138,
+        -0.5941690802574158,
+        1.2981524467468262,
+        -0.3449321389198303,
+        -0.04479100927710533,
+        -0.11261666566133499,
+        0.24165542423725128,
+        0.337907999753952,
+        -0.6613155603408813,
+        -0.9323408007621765,
+        0.09329937398433685,
+        0.24121874570846558,
+        0.9538559317588806,
+        -0.15998217463493347,
+        1.083325743675232,
+        0.07799366861581802,
+        1.7204418182373047,
+        0.2959003746509552,
+        -0.28089961409568787,
+        -0.4979950189590454,
+        -0.6429195404052734,
+        0.6445073485374451,
+        -0.30749407410621643,
+        -0.07950575649738312,
+        -0.15721654891967773,
+        0.052457813173532486,
+        -1.2160606384277344,
+        1.3539875745773315,
+        0.5221737027168274,
+        -1.1245723962783813,
+        -0.5956107974052429,
+        -0.721283495426178,
+        -0.5862703323364258,
+        -0.5020754337310791,
+        -0.24700075387954712,
+        -0.13062866032123566,
+        0.9149172902107239,
+        1.5665870904922485,
+        -0.5473046898841858,
+        0.0026604614686220884,
+        -0.2310296595096588,
+        0.46791356801986694,
+        -0.3853023946285248,
+        -0.08264920115470886,
+        0.31826573610305786,
+        -0.215993270277977,
+        0.24029317498207092,
+        0.4159054756164551,
+        1.112030029296875,
+        -0.48474204540252686,
+        0.9560614228248596,
+        1.1760305166244507,
+        -0.1989164799451828,
+        -0.8960146307945251,
+        0.5540657043457031,
+        -0.003899479517713189,
+        0.3680053949356079,
+        -0.051604293286800385,
+        0.21360929310321808,
+        -0.8451718091964722,
+        -0.14094090461730957,
+        -1.319135308265686,
+        -0.023303749039769173,
+        -0.629239559173584,
+        -0.9386636018753052,
+        0.9919852614402771,
+        -0.16942377388477325,
+        1.0113204717636108,
+        -0.9475812315940857,
+        0.01851843111217022,
+        0.5485380291938782,
+        -1.108302354812622,
+        0.7558239102363586,
+        0.49877557158470154,
+        -0.3201301395893097,
+        0.185610830783844,
+        -0.2232160121202469,
+        -0.5512511134147644,
+        -0.3523285388946533,
+        -0.4119280278682709,
+        -0.02929043024778366,
+        0.5574130415916443,
+        0.007905222475528717,
+        -0.09903834760189056,
+        -1.0035974979400635,
+        0.689775288105011,
+        0.21501988172531128,
+        -1.0910135507583618,
+        -0.5923136472702026,
+        -0.5331193208694458,
+        0.8147149682044983,
+        0.7117429971694946,
+        0.7927930355072021,
+        -0.4796050488948822,
+        -0.9212772846221924,
+        1.234341025352478,
+        -0.34778091311454773,
+        -1.1153502464294434,
+        -0.1077432632446289,
+        1.1501880884170532,
+        0.007246572989970446,
+        0.033129531890153885,
+        -0.5332181453704834,
+        -1.4439945220947266,
+        -0.41305139660835266,
+        -0.2947200536727905,
+        -0.10106655210256577,
+        -0.011596404947340488,
+        0.5888557434082031,
+        -0.11622031778097153,
+        0.9789482355117798,
+        -1.6115245819091797,
+        0.2653335928916931,
+        -0.6539081931114197,
+        0.5972795486450195,
+        0.28051382303237915,
+        -1.3719455003738403,
+        -0.015841133892536163,
+        0.17053641378879547,
+        -0.28988954424858093,
+        -0.1208488941192627,
+        -0.424550861120224,
+        0.09617289900779724,
+        -0.8474896550178528,
+        -0.6614683866500854,
+        -1.1894818544387817,
+        -0.609418511390686,
+        -0.6364983320236206,
+        0.30455172061920166,
+        -0.2915203273296356,
+        0.03658778965473175,
+        -1.1588982343673706,
+        -0.44499915838241577,
+        0.15405522286891937,
+        -0.490983247756958,
+        0.10651930421590805,
+        -0.44969844818115234,
+        1.4003809690475464,
+        0.9437005519866943,
+        0.35964763164520264,
+        0.45491454005241394,
+        0.35081005096435547,
+        0.8896045088768005,
+        0.11746807396411896,
+        -0.07239485532045364,
+        -0.6467955112457275,
+        0.24992452561855316,
+        0.41984033584594727,
+        -0.5324520468711853,
+        -0.7452248930931091,
+        -0.22659310698509216,
+        0.3599075675010681,
+        0.6366980075836182,
+        -0.08837475627660751,
+        0.053201016038656235,
+        -0.2646964192390442,
+        0.522743284702301,
+        0.16404102742671967,
+        -0.8887838125228882,
+        -0.14148515462875366,
+        -0.7055776715278625,
+        -0.10042901337146759,
+        -1.078714370727539,
+        -0.3130808174610138,
+        -0.13763266801834106,
+        -0.10484310239553452,
+        0.037751659750938416,
+        -0.40653520822525024,
+        0.08521399646997452,
+        0.9860346913337708,
+        -0.4632101356983185,
+        0.8683935403823853,
+        -0.5942296981811523,
+        0.7086092829704285,
+        -0.3619115948677063,
+        0.039378177374601364,
+        -0.588042140007019,
+        0.17997118830680847,
+        0.09158405661582947,
+        0.19979645311832428,
+        0.2800321578979492,
+        1.2839231491088867,
+        -0.25423872470855713,
+        0.0022851116955280304,
+        -0.2037958949804306,
+        0.5603771805763245,
+        0.8021157383918762,
+        0.21848317980766296,
+        -0.7970693111419678,
+        0.6178197860717773,
+        0.23870322108268738,
+        -0.17664207518100739,
+        0.3701963424682617,
+        -1.3019527196884155,
+        0.786634624004364,
+        -0.42398780584335327,
+        0.24135668575763702,
+        -1.1372462511062622,
+        -0.6981799602508545,
+        0.38325074315071106,
+        0.2368956059217453,
+        -0.5694589614868164,
+        -0.14597482979297638,
+        0.686948299407959,
+        -0.24239163100719452,
+        0.8098012804985046,
+        -0.469203382730484,
+        -0.011196071282029152,
+        0.7382715940475464,
+        0.29725316166877747,
+        0.33163782954216003,
+        0.8963250517845154,
+        -0.517342746257782,
+        -1.0526841878890991,
+        -0.3606815040111542,
+        0.22824349999427795,
+        -0.20556750893592834,
+        0.4754018485546112,
+        0.609032392501831,
+        1.313938021659851,
+        0.2165689915418625,
+        -0.2839306890964508,
+        0.8937242031097412,
+        0.39929383993148804,
+        -1.0004669427871704,
+        -0.6300649642944336,
+        -0.1293354034423828,
+        0.33098238706588745,
+        1.0603663921356201,
+        0.044337257742881775,
+        -0.10135990381240845,
+        0.07972992956638336,
+        0.532600998878479,
+        0.7842872142791748,
+        0.966745138168335,
+        1.1003280878067017,
+        -0.8816284537315369,
+        -0.632908046245575,
+        0.6941836476325989,
+        -0.7939549684524536,
+        0.6093965768814087,
+        0.004900211468338966,
+        -0.175939679145813,
+        0.2813219428062439,
+        -1.2897964715957642,
+        0.8707820177078247,
+        -0.7615588903427124,
+        1.3518950939178467,
+        0.7746135592460632,
+        0.7849633693695068,
+        0.9629966020584106,
+        -0.32206442952156067,
+        -0.23154950141906738,
+        -0.5931328535079956,
+        0.36961299180984497,
+        -0.4914074242115021,
+        -0.3390471935272217,
+        0.9454729557037354,
+        -0.3413747549057007,
+        0.12400900572538376,
+        -0.12795737385749817,
+        0.13514474034309387,
+        0.25133147835731506,
+        0.6823182702064514,
+        -0.22611244022846222,
+        -1.2699718475341797,
+        -0.19064472615718842,
+        -0.1282968968153,
+        0.372856080532074,
+        -0.34830808639526367,
+        0.046947263181209564,
+        1.112220048904419,
+        1.0183076858520508,
+        0.5544719099998474,
+        0.178724467754364,
+        -0.9242523312568665,
+        -0.26696810126304626,
+        -0.7243672609329224,
+        -0.6443185806274414,
+        -0.2263382375240326,
+        1.026560664176941,
+        0.5286245346069336,
+        -0.5359017252922058,
+        -0.19045618176460266,
+        -0.16337350010871887,
+        -0.29293006658554077,
+        0.5162109732627869,
+        -1.9121794700622559,
+        0.2278580516576767,
+        1.2065668106079102,
+        -0.5617067813873291,
+        -0.20059609413146973,
+        -0.13849139213562012,
+        0.7347257137298584,
+        0.7178829312324524,
+        -0.21808139979839325,
+        0.17092816531658173,
+        0.12243500351905823,
+        0.48916876316070557,
+        -0.045388367027044296,
+        1.4572921991348267,
+        -0.1571117639541626,
+        -0.2676924467086792,
+        -0.564440131187439,
+        0.7398110628128052,
+        0.5407443642616272,
+        0.030062181875109673,
+        0.726441502571106,
+        -0.8721460103988647,
+        -0.28571203351020813,
+        0.2789779007434845,
+        0.706869900226593,
+        -0.3387839198112488,
+        -0.34861841797828674,
+        0.691959023475647,
+        0.9628797769546509,
+        0.4416939616203308,
+        -0.6965336799621582,
+        -0.02957758679986,
+        -0.9197950959205627,
+        -0.2878960072994232,
+        1.1541873216629028,
+        -0.01441454142332077,
+        -0.41378363966941833,
+        -0.06802675873041153,
+        0.8914386034011841,
+        0.5567329525947571,
+        -1.1138585805892944,
+        -0.18966269493103027,
+        0.5265311002731323,
+        -0.25442731380462646,
+        1.0758306980133057,
+        -0.148946151137352,
+        -1.1692008972167969,
+        0.24445299804210663,
+        0.12597306072711945,
+        0.7260048389434814,
+        0.35858848690986633,
+        -0.8920308351516724,
+        0.2095881998538971,
+        0.19515268504619598,
+        0.008495276793837547,
+        0.9790288805961609,
+        1.3969156742095947,
+        -0.2525327503681183,
+        -0.34023529291152954,
+        0.43088361620903015,
+        -0.07517720758914948,
+        2.26636004447937,
+        -0.7734288573265076,
+        -0.7487133145332336,
+        -0.440841406583786,
+        -0.3816963732242584,
+        0.6228922605514526,
+        -0.36429786682128906,
+        0.5857345461845398,
+        0.39146551489830017,
+        0.09547168761491776,
+        0.23058921098709106,
+        0.702201247215271,
+        -0.597636342048645,
+        -1.0469893217086792,
+        -0.17644037306308746,
+        0.4512450397014618,
+        1.071467638015747,
+        0.004704061895608902,
+        -0.7626797556877136,
+        -0.04455377534031868,
+        0.3408443331718445,
+        0.15107491612434387,
+        0.043547842651605606,
+        0.6158773899078369,
+        0.7782361507415771,
+        -1.147910475730896,
+        0.008472763001918793,
+        -0.528910756111145,
+        -0.07639724016189575,
+        0.9027029871940613,
+        0.6128274202346802,
+        -0.5136497020721436,
+        -0.5271328091621399,
+        -0.027288146317005157,
+        0.020924532786011696,
+        -0.18325188755989075,
+        0.15913589298725128,
+        0.49329930543899536,
+        1.579628825187683,
+        -0.5167856216430664,
+        -0.24418717622756958,
+        0.14496760070323944,
+        0.4703466594219208,
+        0.7566275000572205,
+        0.10648104548454285,
+        0.7908276915550232,
+        0.6086380481719971,
+        0.5496819019317627,
+        -0.8959301114082336,
+        -0.06520779430866241,
+        1.222084403038025,
+        -0.05716072767972946,
+        0.2188609093427658,
+        0.7340119481086731,
+        -0.8853665590286255,
+        0.06148182600736618,
+        0.3495158553123474,
+        0.20405244827270508,
+        -0.12178143858909607,
+        -0.9193145632743835,
+        -0.3556933104991913,
+        -0.4760504364967346,
+        -0.15625478327274323,
+        0.7142344117164612,
+        0.24315863847732544,
+        -0.3978908360004425,
+        -0.7348636984825134,
+        -0.3863708972930908,
+        -0.12443307787179947,
+        0.18009820580482483,
+        1.2186177968978882,
+        -0.043425604701042175,
+        -0.3037813901901245,
+        -0.47293776273727417,
+        0.4055464267730713,
+        0.11718616634607315,
+        -0.3621183931827545,
+        -0.8055447936058044,
+        -0.4894264042377472,
+        -0.16849899291992188,
+        -0.25918638706207275,
+        0.9228194355964661,
+        0.27473825216293335,
+        -0.9649449586868286,
+        0.11377988755702972,
+        1.11887526512146,
+        -0.7201415300369263,
+        -0.577146053314209,
+        0.5958502292633057,
+        -0.07004039734601974,
+        -0.16681237518787384,
+        -0.9979065656661987,
+        -0.6860994696617126,
+        -0.48454421758651733,
+        -0.699840784072876,
+        -0.7636464834213257,
+        -0.49373888969421387,
+        0.8724448084831238,
+        0.695160448551178,
+        -0.20057813823223114,
+        0.3130542039871216,
+        0.2232796549797058,
+        -0.9359851479530334,
+        0.7594373822212219,
+        0.02272186428308487,
+        0.39612749218940735,
+        -0.3269047439098358,
+        -0.5158771872520447,
+        -1.867270588874817,
+        0.005370186176151037,
+        -0.2858833372592926,
+        -0.9292241334915161,
+        1.0153793096542358,
+        0.2269587367773056,
+        0.2464265525341034,
+        0.957616925239563,
+        -0.5155766606330872,
+        -0.3342112600803375,
+        1.0366662740707397,
+        0.062350139021873474,
+        -1.4626837968826294,
+        0.4938485026359558,
+        0.8168837428092957,
+        0.7159419059753418,
+        -0.6150577664375305,
+        -0.05425436049699783,
+        -0.19045671820640564,
+        0.16621041297912598,
+        -0.14916715025901794,
+        -0.5266567468643188,
+        0.42140233516693115,
+        1.3057820796966553,
+        -0.328920841217041,
+        -0.11806264519691467,
+        0.1987125724554062,
+        -1.2460598945617676,
+        0.19131764769554138,
+        -0.9237548112869263,
+        0.34004324674606323,
+        -0.7985020279884338,
+        0.13114453852176666,
+        -0.4379027485847473,
+        -0.31946462392807007,
+        -0.051169585436582565,
+        0.05297929793596268,
+        0.42422351241111755,
+        0.8311042189598083,
+        1.1656584739685059,
+        -0.06358164548873901,
+        -0.48779016733169556,
+        0.0013272891519591212,
+        -0.23560602962970734,
+        -0.3236613869667053,
+        0.49325549602508545,
+        -0.057857487350702286,
+        -0.4006645381450653,
+        0.04433922469615936,
+        -0.17338617146015167,
+        -0.12906789779663086,
+        -0.3254232108592987,
+        0.9812497496604919,
+        0.2106117159128189,
+        -0.5825510025024414,
+        -0.746054470539093,
+        0.4348019063472748,
+        0.31416672468185425,
+        0.6890439391136169,
+        1.1290377378463745,
+        0.44788315892219543,
+        -0.3223583400249481,
+        -0.8890334367752075,
+        -0.6200799942016602,
+        0.8758195042610168,
+        -0.6840618848800659,
+        -0.7577736377716064,
+        -0.26191213726997375,
+        0.30705344676971436,
+        -0.4272610545158386,
+        -0.6156302690505981,
+        0.7837631106376648,
+        -0.209568053483963,
+        -1.4048807621002197,
+        -0.8223521709442139,
+        -0.9787735342979431,
+        -0.7548527717590332,
+        0.7268079519271851,
+        0.5070277452468872,
+        -0.2446432113647461,
+        -0.40753471851348877,
+        0.8185979127883911,
+        -0.14260102808475494,
+        0.15560509264469147,
+        0.3188282251358032,
+        -0.7252654433250427,
+        0.662320077419281,
+        0.5606207251548767,
+        -0.06339114904403687,
+        -0.06586915254592896,
+        0.3189530372619629,
+        -0.541674792766571,
+        0.6893133521080017,
+        0.5237959027290344,
+        -0.41455477476119995,
+        -0.9640682935714722,
+        -0.5790790319442749,
+        -0.39970868825912476,
+        1.0884915590286255,
+        -0.5228399634361267,
+        -0.5411831140518188,
+        -0.10574944317340851,
+        -0.8413438200950623,
+        -0.0642835944890976,
+        0.10838770121335983,
+        0.5564483404159546,
+        -0.5056208372116089,
+        0.4779229164123535,
+        -1.7698750495910645,
+        -0.36293908953666687,
+        -0.4493178725242615,
+        0.5346383452415466,
+        0.4636724293231964,
+        -1.0235174894332886,
+        -0.10319013893604279,
+        0.35813257098197937,
+        1.22217857837677,
+        -0.3060172498226166,
+        0.21559660136699677,
+        0.6757211685180664,
+        0.6891635656356812,
+        0.01699519343674183,
+        -0.00845636148005724,
+        0.2177002876996994,
+        1.0365318059921265,
+        -0.3730868697166443,
+        1.81788170337677,
+        0.8202662467956543,
+        0.05864381790161133,
+        0.536576509475708,
+        0.319351464509964,
+        0.20397615432739258,
+        0.387662410736084,
+        -0.9065127372741699,
+        -1.7632980346679688,
+        -0.1770910769701004,
+        0.5199252963066101,
+        -0.32273852825164795,
+        -0.611793577671051,
+        0.20747797191143036,
+        0.071057990193367,
+        0.1460953950881958,
+        0.31614357233047485,
+        0.4590911865234375,
+        -0.3527163863182068,
+        -0.6371507048606873,
+        -0.10827495902776718,
+        1.2615430355072021,
+        0.04056870564818382,
+        -0.07499038428068161,
+        0.02507573552429676,
+        0.5973433256149292,
+        0.47171398997306824,
+        0.43660587072372437,
+        -0.5939333438873291,
+        -0.42946815490722656,
+        -0.12489315867424011,
+        -0.2906423509120941,
+        0.0881812795996666,
+        -0.898592472076416,
+        0.4070173501968384,
+        -0.7969694137573242,
+        0.7607312798500061,
+        0.32734936475753784,
+        -0.10313069075345993,
+        -0.5055667757987976,
+        -0.4778366982936859,
+        -0.4632304608821869,
+        -0.13391456007957458,
+        -0.12253878265619278,
+        -0.23270410299301147,
+        -0.09276881068944931,
+        0.3352695405483246,
+        -0.4076560139656067,
+        -1.3369735479354858,
+        0.3522456884384155,
+        -0.6047285795211792,
+        0.991576075553894,
+        0.20974701642990112,
+        0.488559365272522,
+        -0.4353908598423004,
+        -0.21390430629253387,
+        -1.0527364015579224,
+        -0.9653120040893555,
+        -0.33324265480041504,
+        -0.7583976984024048,
+        -0.3232431411743164,
+        0.2983878552913666,
+        0.05765971541404724,
+        -0.32181814312934875,
+        0.2955174744129181,
+        0.734979510307312,
+        -0.16914844512939453,
+        0.09751607477664948,
+        0.10694458335638046,
+        0.3342948257923126,
+        -0.11154521256685257,
+        0.25281673669815063,
+        -1.2342356443405151,
+        -0.3392675220966339,
+        -0.03252454102039337,
+        -0.11265640705823898,
+        0.2279360592365265,
+        -0.3606218993663788,
+        0.19095616042613983,
+        -0.06678280234336853,
+        0.11960931867361069,
+        -0.23494349420070648,
+        -0.9731502532958984,
+        1.3021528720855713,
+        -0.5440032482147217,
+        0.2490546554327011,
+        -0.08361590653657913,
+        -1.1854885816574097,
+        -0.8836877346038818,
+        -0.5629192590713501,
+        -0.006693421863019466,
+        -0.3355608582496643,
+        -0.8253890872001648,
+        -0.305909126996994,
+        -0.17709000408649445,
+        -0.4280954599380493,
+        -0.7174769043922424,
+        0.6056782603263855,
+        -0.35887348651885986,
+        -0.13174337148666382,
+        0.06376776099205017,
+        0.06984522193670273,
+        -1.1503103971481323,
+        -0.48110827803611755,
+        -0.2576758861541748,
+        0.4736641049385071,
+        0.061533380299806595,
+        0.3264884650707245,
+        1.8982173204421997,
+        1.2086554765701294,
+        0.18764610588550568,
+        0.1499345749616623,
+        -0.1090242862701416,
+        0.7212095260620117,
+        -0.15151092410087585,
+        -0.5266084671020508,
+        -0.008959035389125347,
+        -0.20516207814216614
+      ],
+      "hash": "75fe1f8ab4842ff3ff60a01377081ce057003b980e092f92f798dc2cd5c75991"
+    }
+  }
+}

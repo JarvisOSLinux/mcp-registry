@@ -1,0 +1,8 @@
+{
+  "name": "jarvis-microsoft-365-upstream",
+  "private": true,
+  "description": "Pins @softeria/ms-365-mcp-server for the JARVIS Microsoft 365 wrapper.",
+  "dependencies": {
+    "@softeria/ms-365-mcp-server": "0.166.0"
+  }
+}
