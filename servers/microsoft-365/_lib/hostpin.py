@@ -86,6 +86,20 @@ def post_form(url: str, fields: dict, allowed_hosts: Iterable[str]) -> Any:
     return _request(req, allowed_hosts)
 
 
+def post_json(url: str, body: dict, allowed_hosts: Iterable[str]) -> Any:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode("utf-8"),
+        method="POST",
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+        },
+    )
+    return _request(req, allowed_hosts)
+
+
 def get_json(url: str, allowed_hosts: Iterable[str], headers: dict | None = None) -> Any:
     req = urllib.request.Request(
         url,

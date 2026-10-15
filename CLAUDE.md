@@ -20,7 +20,8 @@ providers/                 Sign-in providers (<id>.json: OAuth endpoints, public
                            client id, scope catalogue), mirrored into
                            registry.json `providers` by sync_registry.py
 servers/_lib/              Shared sign-in helper (host pinning, device flow, token
-                           store, stdio proxy, detached browser opener). Canonical source only: dmcp installs
+                           store, stdio proxy, detached browser opener, hosted-server browser sign-in
+                           and stdio-to-HTTP proxy). Canonical source only: dmcp installs
                            just a server's own directory, so each wrapper carries a
                            byte-identical copy at servers/<wrapper>/_lib/
                            (scripts/sync_lib.py; the PR gate fails on drift)
@@ -56,6 +57,9 @@ scripts/
   selftest_microsoft_365.py  Self-test for the Microsoft 365 wrapper against stand-ins
                            (auth-cache protocol, blocking login, withheld tools,
                            browser opener off the MCP wire); honours JOBS_SELFTEST_TREE
+  selftest_notion.py       Self-test for the Notion wrapper against a fake hosted server
+                           (spec sign-in, forged callbacks, pinning, SSE, renewal, 401
+                           retry); honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -132,6 +136,20 @@ container deletes, webhook subscriptions) via `proxy.run_proxy(hidden_tools=…)
 The upstream installs with `npm ci` from the committed `package-lock.json`
 (`--ignore-scripts`, optional packages omitted). Defaults to the mail and calendar
 presets (`MS365_PRESET`). Gated by `scripts/selftest_microsoft_365.py`.
+
+### servers/notion/ — a hosted server, signed in by its wrapper
+
+Notion's MCP server is hosted (mcp.notion.com) and signs its caller in under the
+MCP authorization spec, which puts the sign-in on the client. The wrapper is that
+client, a local stdio server built from two helper modules:
+`_lib.oauthbrowser.sign_in` (RFC 9728/8414 discovery, RFC 7591 registration as a
+public client, PKCE S256, state, RFC 8707 `resource`, a one-shot 127.0.0.1
+listener that ignores requests without the sign-in's state) and
+`_lib.httpproxy.run_http_proxy` (answers `initialize` itself, opens the upstream
+session lazily, reads JSON and SSE answers, renews and retries once after a 401).
+Everything is pinned to mcp.notion.com; tokens live in `_lib.tokenstore` and are
+renewed before expiry. No setup script: stdlib only. Gated by
+`scripts/selftest_notion.py`.
 
 ### servers/jarvis-shell{,-system}/server.py — the interactive-command pattern
 
@@ -220,6 +238,7 @@ python scripts/selftest_system_status.py  # Offline self-test: system-status par
 python scripts/selftest_credentials.py  # Offline self-test: providers, credentials, login, provider-change approval
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
+python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
