@@ -46,7 +46,8 @@ scripts/
   selftest_system_status.py  Synthetic-/proc and /sys self-test of the
                            system-status server's parsing (btrfs, batteries,
                            /proc/pid/stat, sensors, health thresholds)
-  selftest_login.py        Temp-dir self-test for the manifest `login` check
+  selftest_tool_declarations.py  Temp-dir self-test for the `login` and
+                           `suggestedRemindAfter` checks
   selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
                            GitHub wrapper (host pinning, device flow, token store,
                            stdio proxy, vendored-copy drift)
@@ -182,8 +183,9 @@ that can prompt. Both are documented for third-party authors in
   `source.rev` on `official` entries, orphan directories, vendored `_lib` copies
   identical to `servers/_lib`, and a `threat_level` —
   `safe`/`elevated`/`dangerous`/`forbidden`, or the legacy
-  `confirmation_required: true` — on every tool of a live entry, and a `login`
-  that names one of the server's tools) and blocks both
+  `confirmation_required: true` — on every tool of a live entry, a `login`
+  that names one of the server's tools, and a `suggestedRemindAfter` of at
+  least 15 s) and blocks both
   `trustStatus` promotion to `official` and lifting a `deprecated`/`removed`
   revocation without the maintainer `trust-approved` label.
   Enforced by the `main protection` ruleset: `validate` required, one approving
@@ -224,7 +226,7 @@ python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell intera
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
-python scripts/selftest_login.py        # Offline self-test: a manifest's `login` names one of its tools
+python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
 python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)

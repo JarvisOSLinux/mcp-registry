@@ -1,22 +1,30 @@
 #!/usr/bin/env python3
-"""selftest_login.py — prove the manifest `login` check actually fires.
+"""selftest_tool_declarations.py — prove the `login` and reminder checks fire.
 
-A server that works in the user's account signs in through its own tool
-(Project-JARVIS#229, design v3), and its manifest names that tool in `login`.
-JARVIS finds the sign-in by that name, so a `login` pointing at no tool would
-leave the user with nothing to call. Each case builds a throwaway registry,
-runs the real validator entry point against it and asserts on what it reports,
-including the case that must stay silent.
+Two manifest declarations tell the orchestrator how to treat a tool, and a
+wrong one fails quietly at runtime, so each is checked here against the real
+validator entry point on a throwaway registry, including the cases that must
+stay silent.
+
+`login` names the tool a server signs the user in with (Project-JARVIS#229,
+design v3). JARVIS finds the sign-in by that name, so one pointing at no tool
+leaves the user with nothing to call.
 
   1. A `login` naming one of the server's tools passes, silently.
   2. A `login` naming no tool ERRORS.
-  3. A `login` that is not an object ERRORS.
-  4. A `login` with a misspelt key ERRORS.
+  3. A `login` that is not an object, or has a misspelt key, ERRORS.
+
+`suggestedRemindAfter` is the interval dispatch repeats a blocking tool's
+reminder at, and each reminder costs a model turn.
+
+  4. An interval at or above the floor passes.
+  5. An interval below the floor ERRORS.
+  6. An interval that is not a whole number of seconds ERRORS.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
 Usage:
-  python3 scripts/selftest_login.py
+  python3 scripts/selftest_tool_declarations.py
 """
 import contextlib
 import io
@@ -59,7 +67,7 @@ def manifest():
         "scope": "user",
         "platforms": ["linux"],
         "name": "Demo Server",
-        "summary": "Fixture server for the login self-test",
+        "summary": "Fixture server for the tool declaration self-test",
         "keywords": ["demo"],
         "transports": [{"type": "stdio", "command": "python3", "args": ["server.py"]}],
         "tools": [
@@ -78,7 +86,7 @@ def fixture(edit_manifest=None):
 
     real_hash = generate_embeddings.canonical_hash(generate_embeddings.canonical_text(doc))
     saved_cwd = os.getcwd()
-    with tempfile.TemporaryDirectory(prefix="mcp-registry-login-selftest-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="mcp-registry-tool-declarations-selftest-") as tmp:
         root = pathlib.Path(tmp)
         server_dir = root / "servers" / "demo"
         server_dir.mkdir(parents=True)
@@ -174,6 +182,41 @@ def a_malformed_login_is_an_error():
     expect_error(misspelt, needle="login has unknown field(s) ['tol']", label="a login with a misspelt key")
 
 
+def _remind_after(value):
+    def edit(m):
+        m["tools"][1]["blocking"] = True
+        m["tools"][1]["suggestedRemindAfter"] = value
+
+    return edit
+
+
+@case
+def a_reminder_at_or_above_the_floor_passes():
+    floor = validate_registry.MIN_SUGGESTED_REMIND_AFTER
+    for value in (floor, 180):
+        with fixture(_remind_after(value)):
+            code, out = validate()
+            check(code == 0 and "::error::" not in out, f"suggestedRemindAfter {value} passes")
+
+
+@case
+def a_reminder_below_the_floor_is_an_error():
+    floor = validate_registry.MIN_SUGGESTED_REMIND_AFTER
+    expect_error(
+        _remind_after(floor - 1),
+        needle=f"suggestedRemindAfter {floor - 1} is below {floor} s",
+        label="a reminder just below the floor",
+    )
+    expect_error(_remind_after(5), needle="suggestedRemindAfter 5 is below", label="a 5 s reminder")
+
+
+@case
+def a_reminder_that_is_not_whole_seconds_is_an_error():
+    needle = "suggestedRemindAfter must be a whole number of seconds"
+    for value in (30.5, "30", True):
+        expect_error(_remind_after(value), needle=needle, label=f"suggestedRemindAfter {value!r}")
+
+
 def main() -> int:
     global running
 
@@ -187,7 +230,7 @@ def main() -> int:
         for failure in FAILURES:
             print(f"  - {failure}")
         return 1
-    print("\nOK: login self-test passed.")
+    print("\nOK: tool declaration self-test passed.")
     return 0
 
 

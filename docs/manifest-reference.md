@@ -275,7 +275,7 @@ The `tools` array declares the tools the server exposes. This list is used for d
 | `name` | string | Yes | Tool identifier (snake_case recommended). |
 | `description` | string | Yes | What the tool does. Used for semantic search. |
 | `blocking` | boolean | No | `true` if this tool can park indefinitely waiting for input. See [Blocking Tools](#blocking-tools). |
-| `suggestedRemindAfter` | integer | No | Seconds. The reminder interval the server recommends for this tool. See [Blocking Tools](#blocking-tools). |
+| `suggestedRemindAfter` | integer | No | Seconds, at least 15. The reminder interval the server recommends for this tool. See [Blocking Tools](#blocking-tools). |
 | `threat_level` | string | Yes¹ | `safe` \| `elevated` \| `dangerous` \| `forbidden`. What this tool can do to the host. See [Threat Level](#threat-level). |
 | `confirmation_required` | boolean | No | Legacy shorthand for `threat_level: elevated`, and accepted in its place. Prefer `threat_level`. |
 
@@ -405,6 +405,21 @@ reports it. Pick from the tool's own behavior: how long does it normally go quie
 mid-run, and how quickly does a stall need noticing? A tool whose whole purpose is
 interactive work wants a shorter interval than one that merely *might* prompt
 after a long silent phase.
+
+Three things bound the choice in practice:
+
+- **It repeats.** dispatch reminds at this interval for as long as the tool
+  runs, not once, and every reminder costs the orchestrator a model turn
+  (10–30 s against a cloud model). An interval shorter than a turn queues
+  reminders faster than they can be answered. The validator rejects anything
+  below **15 s**.
+- **The first reminder is when the model first sees the tool's output.** A
+  sign-in link or device code printed to stderr reaches the model only then,
+  so the interval is also how long a user without a browser waits for it.
+- **Leave room for several reminders.** A sign-in should stay open well past
+  the first one. The sign-in wrappers use 180 s against a 15-minute sign-in:
+  the link arrives with the first reminder, and a few more follow before the
+  sign-in expires.
 
 **Where a blocking tool comes from.** The usual reason a tool parks is that it is
 holding an interactive process open so a *later* tool call can answer it — the
@@ -549,10 +564,10 @@ names the tool, so JARVIS can find it:
 
 `tool` must be one of the server's declared `tools`, and it is reviewed and
 threat-classified like any other. A sign-in waits for the user, so the tool
-should also be marked `blocking` with a `suggestedRemindAfter`: dispatch then
-arms a reminder by itself, and the sign-in link the tool prints to stderr
-reaches the model while the call is still running. Tokens never appear in a
-tool result.
+should also be marked `blocking` with a `suggestedRemindAfter` (see
+[Blocking Tools](#blocking-tools) for choosing it): dispatch then arms a
+reminder by itself, and the sign-in link the tool prints to stderr reaches the
+model while the call is still running. Tokens never appear in a tool result.
 
 ---
 
