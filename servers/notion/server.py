@@ -36,6 +36,11 @@ SERVER_INFO = {"name": "notion (JARVIS wrapper)", "version": "1.0.0"}
 
 NOT_SIGNED_IN = "Not signed in to Notion. Call the `login` tool, then retry."
 
+# Long enough for a few of the login tool's reminders (suggestedRemindAfter in
+# the manifest): when no browser can open, the first reminder is where the user
+# gets the link, so the sign-in must still be open well after it.
+LOGIN_TIMEOUT_SECONDS = 15 * 60
+
 # Notion's live server exposes more than its documentation lists. These two move
 # many pages, or a database with all its rows, to Trash in one call: the mass
 # deletion the forbidden tier covers (docs/manifest-reference.md, #88), even
@@ -114,7 +119,7 @@ def tool_login(_args: dict) -> str:
             allowed_hosts=ALLOWED_HOSTS,
             client_name=CLIENT_NAME,
             log=log,
-            timeout=float(os.environ.get("JARVIS_SIGNIN_TIMEOUT") or oauthbrowser.DEFAULT_TIMEOUT_SECONDS),
+            timeout=float(os.environ.get("JARVIS_SIGNIN_TIMEOUT") or LOGIN_TIMEOUT_SECONDS),
         )
     except oauthbrowser.SignInError as err:
         raise httpproxy.ToolError(str(err)) from err
