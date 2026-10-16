@@ -80,7 +80,7 @@
       "description": "Sign in to Microsoft 365 (Outlook mail, calendar, OneDrive and more). Starts Microsoft's device sign-in: prints a link and a short code, opens the browser, and waits until the user approves. Blocks until approved, declined or expired, so dispatch it as a concurrent task with a reminder, and tell the user the link and code when they show up in the output. Does nothing if already signed in, unless force is true. Returns who signed in; tokens are never returned.",
       "threat_level": "elevated",
       "blocking": true,
-      "suggestedRemindAfter": 5
+      "suggestedRemindAfter": 180
     },
     {
       "name": "list-mail-messages",

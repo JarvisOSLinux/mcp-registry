@@ -294,7 +294,7 @@ Define each tool the MCP server provides. Required for tooling and validation.
 | `name` | string | **Required.** Tool identifier. |
 | `description` | string | **Required.** What the tool does. Feeds semantic search. |
 | `blocking` | boolean | Optional. `true` if this tool can park indefinitely awaiting input. See Blocking Tools below. |
-| `suggestedRemindAfter` | integer | Optional. Seconds; the reminder interval the server recommends for this tool. See Blocking Tools below. |
+| `suggestedRemindAfter` | integer | Optional. Seconds, at least 15; the reminder interval the server recommends for this tool. See Blocking Tools below. |
 
 #### Blocking Tools
 

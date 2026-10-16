@@ -36,6 +36,8 @@ Static checks (always run):
   - no orphan directory: every first-party servers/<dir>/ is referenced by an
     entry (catches a half-done removal that dropped the entry but left the dir)
   - a manifest's `login` names one of the server's tools
+  - a tool's `suggestedRemindAfter` is a whole number of seconds, at least
+    MIN_SUGGESTED_REMIND_AFTER
 
 Warnings (reported, never fatal):
   - a vetted top-level platform that no transport can serve
@@ -148,6 +150,12 @@ ALLOWED_CATEGORIES = {
 # A server that works in the user's account signs in through its own tool
 # (Project-JARVIS#229, design v3); `login` names it.
 LOGIN_KEYS = {"tool"}
+
+# dispatch repeats a blocking tool's reminder at this interval for as long as
+# the tool runs, and every reminder costs a model turn (10-30 s against a cloud
+# model). Shorter than a turn and reminders arrive faster than they can be
+# answered; 5 s on the sign-in tools queued ~30 of them in one live login.
+MIN_SUGGESTED_REMIND_AFTER = 15
 
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
@@ -742,6 +750,23 @@ def validate_login(where: str, manifest: dict, errors: list) -> None:
         errors.append(f"{where}: login.tool {login.get('tool')!r} is not one of the server's tools")
 
 
+def validate_reminders(where: str, manifest: dict, errors: list) -> None:
+    """A tool's suggested reminder interval is long enough to answer."""
+    for tool in manifest.get("tools") or []:
+        if not isinstance(tool, dict) or "suggestedRemindAfter" not in tool:
+            continue
+        value = tool["suggestedRemindAfter"]
+        name = tool.get("name") or "?"
+        if isinstance(value, bool) or not isinstance(value, int):
+            errors.append(f"{where}: tool {name!r}: suggestedRemindAfter must be a whole number of seconds")
+        elif value < MIN_SUGGESTED_REMIND_AFTER:
+            errors.append(
+                f"{where}: tool {name!r}: suggestedRemindAfter {value} is below "
+                f"{MIN_SUGGESTED_REMIND_AFTER} s; the reminder repeats at this interval "
+                f"and each one costs a model turn"
+            )
+
+
 def validate_static(registry: dict, errors: list, warnings: list, embeddings: list) -> None:
     if "servers" not in registry or not isinstance(registry["servers"], dict):
         errors.append("registry.json: missing or malformed 'servers' object")
@@ -809,6 +834,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_transports(where, manifest, entry, errors, warnings)
         validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
         validate_login(where, manifest, errors)
+        validate_reminders(where, manifest, errors)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:

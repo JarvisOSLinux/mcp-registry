@@ -31,7 +31,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "592f074ce97afd0ed7ab9d970e7f5aab412d8a73",
+    "rev": "b5e41a399f35d821c576dd9f518f9f02b8f8047f",
     "path": "servers/notion"
   },
   "login": {
@@ -318,7 +318,7 @@
       "description": "Sign in to Notion. Opens Notion's sign-in page in the browser (the link is also printed) and waits until the user approves which pages and databases to share. Blocks until approved, declined or timed out, so dispatch it as a concurrent task with a reminder, and tell the user about the link when it shows up in the output. Returns which workspace was connected; tokens are never returned.",
       "threat_level": "elevated",
       "blocking": true,
-      "suggestedRemindAfter": 5
+      "suggestedRemindAfter": 180
     },
     {
       "name": "status",

@@ -41,7 +41,7 @@
       "description": "Sign in to GitHub. Prints a link and a short code, opens the browser, and blocks until the user approves, declines or the code expires. Dispatch it as a concurrent task with a reminder, and tell the user to open the link and enter the code when it appears in the output. Returns who signed in; the token is never returned.",
       "threat_level": "elevated",
       "blocking": true,
-      "suggestedRemindAfter": 5
+      "suggestedRemindAfter": 180
     },
     {
       "name": "status",
