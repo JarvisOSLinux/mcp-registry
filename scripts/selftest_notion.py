@@ -18,7 +18,7 @@ plays the browser. No network, no Notion account.
      in, refuses calls with a sign-in message, then forwards (JSON and SSE),
      renews an expiring token, recovers from a 401 once, and asks for a new
      sign-in when renewal fails.
-  5. The manifest declares a blocking login with a short reminder, and the
+  5. The manifest declares a blocking login with a reminder, and the
      vendored _lib is identical to servers/_lib.
 
 JOBS_SELFTEST_TREE works as for selftest_jobs.py.
@@ -409,7 +409,9 @@ def case_manifest_and_vendoring():
     manifest = json.loads((WRAPPER / "manifest.json").read_text())
     declared = {t["name"]: t for t in manifest["tools"]}
     login_tool = declared.get("login", {})
-    check(login_tool.get("blocking") is True and 0 < login_tool.get("suggestedRemindAfter", 0) <= 10, "login is blocking with a short reminder")
+    # How long the interval is belongs to validate_registry's floor, not here.
+    interval = login_tool.get("suggestedRemindAfter")
+    check(login_tool.get("blocking") is True and type(interval) is int and interval > 0, "login is blocking with a reminder")
     check(manifest.get("login") == {"tool": "login"}, "the manifest names its login tool")
     check(not any(t.get("threat_level") == "forbidden" for t in declared.values()), "no tool is declared forbidden")
     check({t["name"] for t in server.LOCAL_TOOLS} <= set(declared), "every local tool is declared")
