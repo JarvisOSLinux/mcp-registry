@@ -132,15 +132,23 @@ def run_http_proxy(
     server_info: dict,
     not_signed_in: str,
     hidden_tools: Iterable[str] = (),
+    allowed_tools: Optional[Iterable[str]] = None,
 ) -> int:
     """Serve stdio until the client hangs up.
 
     `get_token(renew)` returns the access token, renewing it first when `renew`
-    is true (after a 401), or None when there is no sign-in.
+    is true (after a 401), or None when there is no sign-in. `allowed_tools`,
+    when given, is the only hosted tools passed on (the manifest's reviewed
+    list, `reviewed.declared_tools`); the rest are withheld like `hidden_tools`.
     """
     hosts = tuple(allowed_hosts)
     hidden = set(hidden_tools)
-    withheld = hidden | {tool["name"] for tool in local_tools}
+    allowed = None if allowed_tools is None else set(allowed_tools)
+    local_names = {tool["name"] for tool in local_tools}
+
+    def withheld_call(name) -> bool:
+        return name in hidden or (allowed is not None and name not in allowed)
+
     upstream = _Upstream(url, hosts, {"name": server_info.get("name", "wrapper"), "version": server_info.get("version", "1")})
     out_lock = threading.Lock()
 
@@ -201,7 +209,11 @@ def run_http_proxy(
             try:
                 answer = forward("tools/list", params)
                 result = answer.get("result") or {}
-                tools = [t for t in result.get("tools", []) if not (isinstance(t, dict) and t.get("name") in withheld)]
+                tools = [
+                    t
+                    for t in result.get("tools", [])
+                    if isinstance(t, dict) and t.get("name") not in local_names and not withheld_call(t.get("name"))
+                ]
                 if not result.get("nextCursor"):
                     tools += local_tools
                 emit({"jsonrpc": "2.0", "id": msg_id, "result": {**result, "tools": tools}})
@@ -212,7 +224,7 @@ def run_http_proxy(
             args = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}
             if name in handlers:
                 threading.Thread(target=run_local, args=(msg_id, name, args), daemon=True).start()
-            elif name in hidden:
+            elif withheld_call(name):
                 reply_tool(msg_id, f"{name} is not available through this server.", True)
             else:
                 try:

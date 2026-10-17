@@ -17,7 +17,7 @@ vectors for semantic search when the LLM needs to discover tools by capability.
 ```
 registry.json              Main index (server metadata + embeddings)
 servers/_lib/              Shared sign-in helper (host pinning, device flow, token
-                           store, stdio proxy, detached browser opener and sign-in-code notification, hosted-server browser sign-in
+                           store, stdio proxy, detached browser opener and sign-in-code notification, reviewed-tools filter, hosted-server browser sign-in
                            and stdio-to-HTTP proxy). Canonical source only: dmcp installs
                            just a server's own directory, so each wrapper carries a
                            byte-identical copy at servers/<wrapper>/_lib/
@@ -105,7 +105,12 @@ live), opens the browser, shows the code as a desktop notification, and polls. T
 A token set by hand in `GITHUB_PERSONAL_ACCESS_TOKEN` still wins.
 
 Every link and endpoint goes through `_lib.hostpin`: a wrapper refuses hosts it
-does not name, including ones the provider advertises or redirects to. The
+does not name, including ones the provider advertises or redirects to.
+A wrapper passes on only the upstream tools its manifest declares
+(`_lib.reviewed.declared_tools`, `allowed_tools=REVIEWED_TOOLS` in each
+wrapper): the manifest is the reviewed list, so a tool an upstream adds or a
+hosted server starts offering reaches the model only through a registry PR.
+An unreadable manifest offers nothing upstream (fails closed). The
 GitHub wrapper signs in through the JarvisOS OAuth App, whose public client id
 is `DEFAULT_CLIENT_ID`; `GITHUB_OAUTH_CLIENT_ID` overrides it.
 

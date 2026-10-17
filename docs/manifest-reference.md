@@ -563,7 +563,9 @@ names the tool, so JARVIS can find it:
 ```
 
 `tool` must be one of the server's declared `tools`, and it is reviewed and
-threat-classified like any other. A sign-in waits for the user, so the tool
+threat-classified like any other. For a wrapper in this registry, `tools` is also
+the allowlist: the wrapper passes on only the upstream tools declared there, so
+a tool the upstream adds is offered only once a PR declares and classifies it. A sign-in waits for the user, so the tool
 should also be marked `blocking` with a `suggestedRemindAfter` (see
 [Blocking Tools](#blocking-tools) for choosing it): dispatch then arms a
 reminder by itself, and the sign-in link the tool prints to stderr reaches the

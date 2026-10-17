@@ -23,7 +23,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _lib import devicecode, hostpin, proxy, tokenstore  # noqa: E402
+from _lib import devicecode, hostpin, proxy, reviewed, tokenstore  # noqa: E402
+
+# Only tools the registry reviewed (this wrapper's manifest) are passed on.
+REVIEWED_TOOLS = reviewed.declared_tools(__file__)
 
 SERVICE = "github"
 ALLOWED_HOSTS = ("github.com", "api.github.com")
@@ -192,6 +195,7 @@ def main() -> int:
         local_tools=LOCAL_TOOLS,
         handlers=HANDLERS,
         guard=guard,
+        allowed_tools=REVIEWED_TOOLS,
     )
 
 

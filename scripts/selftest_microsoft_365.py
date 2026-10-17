@@ -215,7 +215,7 @@ FAKE_MCP = textwrap.dedent(
     """
     import json, os, sys
     log = open(os.environ["FAKE_CALLS"], "a")
-    pages = [["login", "list-mail-messages", "graph-batch"], ["send-mail", "delete-calendar"]]
+    pages = [["login", "list-mail-messages", "graph-batch"], ["send-mail", "delete-calendar", "unreviewed-tool"]]
     for line in sys.stdin:
         msg = json.loads(line)
         if msg.get("method") == "tools/list":
@@ -238,7 +238,7 @@ PROXY_MAIN = textwrap.dedent(
     from _lib import proxy
     sys.exit(proxy.run_proxy(upstream_argv=[sys.executable, {fake!r}], upstream_env=dict(__import__("os").environ),
                              upstream_cwd=None, local_tools=[server.LOGIN_TOOL], handlers={{"login": lambda a: "local"}},
-                             hidden_tools=server.HIDDEN_TOOLS))
+                             hidden_tools=server.HIDDEN_TOOLS, allowed_tools=server.REVIEWED_TOOLS))
     """
 )
 
@@ -264,16 +264,19 @@ def case_proxy():
         names = [t["name"] for t in first["tools"] + second["tools"]]
         check("graph-batch" not in names and "delete-calendar" not in names, "withheld tools are dropped from every page")
         check(names.count("login") == 1 and names[-1] == "login", "the upstream's login is replaced by the wrapper's, listed once")
-        check({"list-mail-messages", "send-mail"} <= set(names), "everything else is listed as the upstream lists it")
+        check({"list-mail-messages", "send-mail"} <= set(names), "reviewed tools are listed as the upstream lists them")
+        check("unreviewed-tool" not in names, "a tool the manifest does not declare is dropped")
         refused = ask({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "graph-batch", "arguments": {}}})["result"]
         local = ask({"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "login", "arguments": {}}})["result"]
         passed = ask({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "send-mail", "arguments": {}}})["result"]
+        unreviewed = ask({"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "unreviewed-tool", "arguments": {}}})["result"]
         child.kill()
         child.wait()
         check(refused.get("isError") is True, "a call to a withheld tool is refused")
         check(local["content"][0]["text"] == "local", "login is answered by the wrapper")
         check(passed["content"][0]["text"] == "upstream", "other calls reach the upstream")
-        check(calls.read_text().split() == ["send-mail"], "neither the withheld tool nor login reached the upstream")
+        check(unreviewed.get("isError") is True, "a call to an undeclared tool is refused")
+        check(calls.read_text().split() == ["send-mail"], "neither a withheld or undeclared tool nor login reached the upstream")
 
 
 OPENER = "#!/bin/sh\necho 'Opening in existing browser session.'\necho \"$1\" >> \"$FAKE_OPENED\"\n"
