@@ -36,7 +36,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _lib import browser, hostpin, proxy  # noqa: E402
+from _lib import browser, hostpin, proxy, reviewed  # noqa: E402
+
+# Only tools the registry reviewed (this wrapper's manifest) are passed on.
+REVIEWED_TOOLS = reviewed.declared_tools(__file__)
 
 HERE = Path(__file__).resolve().parent
 UPSTREAM_DIR = HERE / "upstream"
@@ -251,6 +254,7 @@ def main() -> int:
         local_tools=[LOGIN_TOOL],
         handlers={"login": tool_login},
         hidden_tools=HIDDEN_TOOLS,
+        allowed_tools=REVIEWED_TOOLS,
     )
 
 

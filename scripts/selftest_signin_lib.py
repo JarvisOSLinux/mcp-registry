@@ -496,8 +496,81 @@ def case_device_flow_notifies():
     check(not any("gho_SECRET" in body for _, body in shown), "the token is never shown")
 
 
+REVIEWED_UPSTREAM = r'''
+import json, sys
+for line in sys.stdin:
+    msg = json.loads(line)
+    method, mid = msg.get("method"), msg.get("id")
+    if method == "tools/list":
+        tools = [{"name": n, "inputSchema": {"type": "object"}} for n in ("reviewed", "unreviewed")]
+        out = {"jsonrpc": "2.0", "id": mid, "result": {"tools": tools}}
+    elif method == "tools/call":
+        out = {"jsonrpc": "2.0", "id": mid, "result": {"content": [{"type": "text", "text": "upstream ran " + msg["params"]["name"]}]}}
+    else:
+        continue
+    print(json.dumps(out), flush=True)
+'''
+
+REVIEWED_DRIVER = r'''
+import sys
+sys.path.insert(0, {servers!r})
+from _lib import proxy
+sys.exit(proxy.run_proxy(
+    upstream_argv=[sys.executable, {upstream!r}], upstream_env={{}}, upstream_cwd=None,
+    local_tools=[{{"name": "login"}}], handlers={{"login": lambda a: "local"}},
+    allowed_tools={{"reviewed", "login"}},
+))
+'''
+
+
+def case_reviewed_tools():
+    from _lib import reviewed
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        wrapper = tmp / "server.py"
+        (tmp / "manifest.json").write_text(json.dumps({"tools": [{"name": "a"}, {"name": "b"}, "junk"]}))
+        check(reviewed.declared_tools(str(wrapper)) == {"a", "b"}, "the manifest beside the wrapper is the reviewed list")
+        (tmp / "manifest.json").write_text("{not json")
+        with contextlib.redirect_stderr(io.StringIO()):
+            check(reviewed.declared_tools(str(wrapper)) == frozenset(), "an unreadable manifest offers nothing (fails closed)")
+        (tmp / "manifest.json").unlink()
+        with contextlib.redirect_stderr(io.StringIO()):
+            check(reviewed.declared_tools(str(wrapper)) == frozenset(), "a missing manifest offers nothing")
+
+        upstream = tmp / "up.py"
+        upstream.write_text(REVIEWED_UPSTREAM)
+        driver = tmp / "driver.py"
+        driver.write_text(REVIEWED_DRIVER.format(servers=str(SERVERS), upstream=str(upstream)))
+        child = subprocess.Popen([sys.executable, str(driver)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, text=True)
+
+        def ask(msg):
+            child.stdin.write(json.dumps(msg) + "\n")
+            child.stdin.flush()
+            return json.loads(child.stdout.readline())
+
+        listed = [t["name"] for t in ask({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]]
+        check(listed == ["reviewed", "login"], f"an unreviewed upstream tool is not listed (got {listed})")
+        refused = ask({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "unreviewed", "arguments": {}}})["result"]
+        check(refused.get("isError") is True and "not available" in refused["content"][0]["text"],
+              "a call to an unreviewed tool is refused before the upstream sees it")
+        passed = ask({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "reviewed", "arguments": {}}})["result"]
+        check(passed["content"][0]["text"] == "upstream ran reviewed", "a reviewed tool reaches the upstream")
+        child.kill()
+        child.wait()
+
+    for name in ("github", "microsoft-365", "notion"):
+        manifest = json.loads((SERVERS / name / "manifest.json").read_text())
+        source = (SERVERS / name / "server.py").read_text()
+        check("REVIEWED_TOOLS = reviewed.declared_tools(__file__)" in source and "allowed_tools=REVIEWED_TOOLS" in source,
+              f"the {name} wrapper passes on only its reviewed tools")
+        check(all(isinstance(t.get("name"), str) for t in manifest["tools"]), f"every {name} tool is named")
+
+
 CASES = [
     case_host_pinning,
+    case_reviewed_tools,
     case_device_flow,
     case_device_flow_notifies,
     case_notify,

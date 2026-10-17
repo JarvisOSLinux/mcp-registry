@@ -84,11 +84,6 @@
       "threat_level": "elevated"
     },
     {
-      "name": "notion-ai-search",
-      "description": "Natural-language search across Notion and the sources connected to it (Slack, mail, calendar, Google Drive, Jira).",
-      "threat_level": "elevated"
-    },
-    {
       "name": "notion-query-meeting-notes",
       "description": "Query the current user's meeting notes by their properties.",
       "threat_level": "elevated"
@@ -139,11 +134,6 @@
       "threat_level": "elevated"
     },
     {
-      "name": "notion-get-tool-access",
-      "description": "Report which tools the workspace's plan allows and which parameters are restricted.",
-      "threat_level": "safe"
-    },
-    {
       "name": "notion-get-async-task",
       "description": "Check the status of an operation another tool started asynchronously.",
       "threat_level": "safe"
@@ -162,11 +152,6 @@
       "name": "notion-create-file-upload",
       "description": "Create a short-lived URL for uploading a local file to Notion.",
       "threat_level": "elevated"
-    },
-    {
-      "name": "notion-list-agents",
-      "description": "List the workspace's Custom Agents.",
-      "threat_level": "safe"
     },
     {
       "name": "notion-search-agents",
@@ -221,16 +206,6 @@
     {
       "name": "notion-get-self",
       "description": "Get the connected workspace and the signed-in user's name and email.",
-      "threat_level": "safe"
-    },
-    {
-      "name": "notion-check-mcp-next-steps",
-      "description": "Follow-up guidance Notion asks for after certain fetch results.",
-      "threat_level": "safe"
-    },
-    {
-      "name": "notion-show-advanced-analysis-next-steps",
-      "description": "Explains what a cross-database query needs when the plan lacks it.",
       "threat_level": "safe"
     },
     {
@@ -311,6 +286,56 @@
     {
       "name": "notion-upload-skill",
       "description": "Import an Agent Skills directory into a page: persistent instructions for AI agents.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-get-groups",
+      "description": "Retrieves permission groups in the current workspace that you can see, with their IDs and names.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "notion-list-page-backlinks",
+      "description": "List the pages that link to or mention a Notion page (backlinks), in the same workspace.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-list-calendars",
+      "description": "List calendars grouped by connected account.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-list-events",
+      "description": "List the user's events across connected calendars within a time range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-list-coworkers-events",
+      "description": "List detailed events for coworkers in the same organization within a time range.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-list-calendar-resources",
+      "description": "List rooms or other calendar resources available for specific times.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-list-contacts",
+      "description": "Find contacts by name or email across the user's connected Calendar accounts.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "notion-calendar-create-events",
+      "description": "Create one or more events on writable calendars.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-calendar-update-events",
+      "description": "Update one or more identified events, including timing, attendees, recurrence, resources, or RSVP status.",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "notion-calendar-cancel-events",
+      "description": "Cancel one or more identified events the user can manage.",
       "threat_level": "dangerous"
     },
     {
@@ -1123,5 +1148,6 @@
       ],
       "hash": "79cbc16c141a83ddda6423ff42653d9da6a02a81de91ddbdc7617be658a7270e"
     }
-  }
+  },
+  "notes": "The wrapper passes on only the tools declared here (_lib.reviewed); Notion's hosted server changes its tool list without notice. Withheld: notion-delete-pages and notion-delete-databases (bulk deletion, the forbidden tier), and notion-check-mcp-next-steps, notion-show-advanced-analysis-next-steps and notion-get-tool-access, whose descriptions and results steer the model toward upgrade links. Calendar writes are dangerous: they notify attendees."
 }

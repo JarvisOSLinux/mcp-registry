@@ -163,7 +163,8 @@ class FakeNotion:
                     if msg["method"] == "tools/list":
                         tools = [{"name": "notion-search", "inputSchema": {"type": "object"}},
                                  {"name": "notion-delete-pages", "inputSchema": {"type": "object"}},
-                                 {"name": "notion-fetch", "inputSchema": {"type": "object"}}]
+                                 {"name": "notion-fetch", "inputSchema": {"type": "object"}},
+                                 {"name": "notion-check-mcp-next-steps", "inputSchema": {"type": "object"}}]
                         events = (f"event: message\ndata: {json.dumps({'jsonrpc': '2.0', 'method': 'notifications/message', 'params': {}})}\n\n"
                                   f"event: message\ndata: {json.dumps({'jsonrpc': '2.0', 'id': msg['id'], 'result': {'tools': tools}})}\n\n")
                         return self.send(200, raw=events.encode(), kind="text/event-stream")
@@ -364,10 +365,13 @@ def case_proxy():
                "resource": resource, "expires_at": int(time.time()) + 3600})
         names = [t["name"] for t in client.ask("tools/list")["result"]["tools"]]
         check(names == ["notion-search", "notion-fetch", "login", "status", "logout"],
-              "signed in, Notion's tools come through (SSE), withheld ones dropped, plus the wrapper's")
+              "signed in, Notion's reviewed tools come through (SSE), withheld and unreviewed ones dropped, plus the wrapper's")
         refused = client.ask("tools/call", {"name": "notion-delete-pages", "arguments": {"page_ids": ["x"]}})["result"]
         check(refused.get("isError") and not any(e.get("rpc") == "tools/call" for e in fake.log),
               "a withheld delete is refused before anything reaches Notion")
+        upsell = client.ask("tools/call", {"name": "notion-check-mcp-next-steps", "arguments": {}})["result"]
+        check(upsell.get("isError") and not any(e.get("rpc") == "tools/call" for e in fake.log),
+              "a tool the manifest does not declare is refused before anything reaches Notion")
         call = client.ask("tools/call", {"name": "notion-search", "arguments": {"query": "x"}})["result"]
         check(call["content"][0]["text"] == "searched with at-1", "a call is forwarded with the token (JSON)")
         sessions = {e.get("session") for e in fake.log if e.get("rpc") == "tools/call"}

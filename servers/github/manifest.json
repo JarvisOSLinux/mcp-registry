@@ -37,23 +37,6 @@
   "setupScript": "setup.sh",
   "tools": [
     {
-      "name": "login",
-      "description": "Sign in to GitHub. Prints a link and a short code, opens the browser, and blocks until the user approves, declines or the code expires. Dispatch it as a concurrent task with a reminder, and tell the user to open the link and enter the code when it appears in the output. Returns who signed in; the token is never returned.",
-      "threat_level": "elevated",
-      "blocking": true,
-      "suggestedRemindAfter": 180
-    },
-    {
-      "name": "status",
-      "description": "Report whether JARVIS is signed in to GitHub, and as whom. No network call.",
-      "threat_level": "safe"
-    },
-    {
-      "name": "logout",
-      "description": "Forget the stored GitHub sign-in on this machine. Does not revoke the token at GitHub.",
-      "threat_level": "elevated"
-    },
-    {
       "name": "create_or_update_file",
       "description": "Create or update a file in a repository.",
       "threat_level": "dangerous"
@@ -94,13 +77,145 @@
       "threat_level": "elevated"
     },
     {
-      "name": "merge_pull_request",
-      "description": "Merge a pull request.",
+      "name": "get_pull_request_files",
+      "description": "List files changed in a pull request.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "search_users",
+      "description": "Search for users on GitHub",
+      "threat_level": "safe"
+    },
+    {
+      "name": "get_rate_limit",
+      "description": "Check the current rate limit status",
+      "threat_level": "safe"
+    },
+    {
+      "name": "list_commits",
+      "description": "Get list of commits of a branch in a GitHub repository",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list_issues",
+      "description": "List issues in a GitHub repository with filtering options",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_issue",
+      "description": "Get details of a specific issue in a GitHub repository.",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list_issue_comments",
+      "description": "List comments on an issue or pull request conversation (general comments, not inline diff review comments).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "search_code",
+      "description": "Search for code across GitHub repositories",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "search_issues",
+      "description": "Search for issues and pull requests across GitHub repositories",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_pull_request",
+      "description": "Get a single pull request by number",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_pull_request_diff",
+      "description": "Get the diff for a pull request",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_pull_request_comments",
+      "description": "List pull request review comments (inline comments on the diff).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_pull_request_reviews",
+      "description": "List reviews on a pull request (each review may contain multiple inline comments — use get_pull_request_review_comments to fetch them).",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_pull_request_review_comments",
+      "description": "List comments attached to a specific pull request review",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_commit_statuses",
+      "description": "Get statuses for a commit",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "get_combined_status",
+      "description": "Get the combined status for a commit",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "list_releases",
+      "description": "List releases for a GitHub repository",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "update_issue",
+      "description": "Update an existing issue in a GitHub repository",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "add_issue_comment",
+      "description": "Add a comment to an existing issue",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create_branch",
+      "description": "Create a new branch in a GitHub repository",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "fork_repository",
+      "description": "Fork a GitHub repository to your account or specified organization",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "create_pull_request_review",
+      "description": "Create a review for a pull request",
+      "threat_level": "elevated"
+    },
+    {
+      "name": "submit_pull_request_review",
+      "description": "Submit a pull request review (approve, request changes, or comment)",
       "threat_level": "dangerous"
     },
     {
-      "name": "get_pull_request_files",
-      "description": "List files changed in a pull request.",
+      "name": "create_release",
+      "description": "Create a new release in a GitHub repository",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "create_tag",
+      "description": "Create a new tag in a GitHub repository",
+      "threat_level": "dangerous"
+    },
+    {
+      "name": "login",
+      "description": "Sign in to GitHub. Prints a link and a short code, opens the browser, and blocks until the user approves, declines or the code expires. Dispatch it as a concurrent task with a reminder, and tell the user to open the link and enter the code when it appears in the output. Returns who signed in; the token is never returned.",
+      "threat_level": "elevated",
+      "blocking": true,
+      "suggestedRemindAfter": 180
+    },
+    {
+      "name": "status",
+      "description": "Report whether JARVIS is signed in to GitHub, and as whom. No network call.",
+      "threat_level": "safe"
+    },
+    {
+      "name": "logout",
+      "description": "Forget the stored GitHub sign-in on this machine. Does not revoke the token at GitHub.",
       "threat_level": "elevated"
     }
   ],
@@ -914,5 +1029,6 @@
       ],
       "hash": "8b025ed5a3ef23f91d24dc5d52d8d2d732b7b0b4e79ff8d0bea33777964f3a10"
     }
-  }
+  },
+  "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The wrapper passes on only the tools declared here (_lib.reviewed); the upstream server offers 77. Withheld: every repository and organization webhook tool (create/update/delete/ping/redeliver: a standing exfiltration or persistence channel), delete_release, dismiss_pull_request_review, create_commit_status (fakes CI results), gists (public by default), classic projects, packages and release assets. merge_pull_request is not offered upstream."
 }

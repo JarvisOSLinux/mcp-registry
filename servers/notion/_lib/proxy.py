@@ -27,6 +27,7 @@ def run_proxy(
     handlers: dict[str, Callable[[dict], str]],
     guard: Optional[Callable[[str, dict], Optional[str]]] = None,
     hidden_tools: Iterable[str] = (),
+    allowed_tools: Optional[Iterable[str]] = None,
 ) -> int:
     """Run until the client hangs up or the upstream exits. Returns an exit code.
 
@@ -37,6 +38,10 @@ def run_proxy(
     from every tools/list page and a call to one is refused here, so the client
     never learns of or reaches them. An upstream tool with the same name as a
     local one is dropped too: the wrapper's version replaces it.
+
+    `allowed_tools`, when given, is the only upstream tools passed on (the
+    manifest's reviewed list, `reviewed.declared_tools`): anything else the
+    upstream offers is withheld the same way.
     """
     try:
         child = subprocess.Popen(
@@ -54,7 +59,11 @@ def run_proxy(
         return 1
 
     hidden = set(hidden_tools)
-    withheld = hidden | {tool["name"] for tool in local_tools}
+    allowed = None if allowed_tools is None else set(allowed_tools)
+    local_names = {tool["name"] for tool in local_tools}
+
+    def withheld_call(name) -> bool:
+        return name in hidden or (allowed is not None and name not in allowed)
     out_lock = threading.Lock()
     list_ids: set = set()
     ids_lock = threading.Lock()
@@ -97,7 +106,9 @@ def run_proxy(
                     kept = [
                         tool
                         for tool in result.get("tools", [])
-                        if not (isinstance(tool, dict) and tool.get("name") in withheld)
+                        if isinstance(tool, dict)
+                        and tool.get("name") not in local_names
+                        and not withheld_call(tool.get("name"))
                     ]
                     if not result.get("nextCursor"):
                         kept += local_tools
@@ -132,7 +143,7 @@ def run_proxy(
             if name in handlers:
                 threading.Thread(target=run_local, args=(msg["id"], name, args), daemon=True).start()
                 continue
-            if name in hidden:
+            if withheld_call(name):
                 reply_tool(msg["id"], f"{name} is not available through this server.", True)
                 continue
             refusal = guard(name, args) if guard else None

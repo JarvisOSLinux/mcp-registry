@@ -26,7 +26,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _lib import httpproxy, oauthbrowser, tokenstore  # noqa: E402
+from _lib import httpproxy, oauthbrowser, reviewed, tokenstore  # noqa: E402
+
+# Only tools the registry reviewed (this wrapper's manifest) are passed on.
+REVIEWED_TOOLS = reviewed.declared_tools(__file__)
 
 SERVICE = "notion"
 RESOURCE = "https://mcp.notion.com/mcp"
@@ -162,6 +165,7 @@ def main() -> int:
         server_info=SERVER_INFO,
         not_signed_in=NOT_SIGNED_IN,
         hidden_tools=HIDDEN_TOOLS,
+        allowed_tools=REVIEWED_TOOLS,
     )
 
 
