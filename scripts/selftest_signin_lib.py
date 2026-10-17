@@ -425,9 +425,82 @@ def case_vendored_copies():
         check(len(sync_lib.differing(servers)) == 1, "an extra file in a copy is reported")
 
 
+NOTIFY_PROBE = """
+import sys
+sys.path.insert(0, {servers!r})
+from _lib import browser
+print("shown" if browser.notify("Microsoft 365 sign-in", "Enter the code AB12CD at https://microsoft.com/devicelogin") else "skipped", flush=True)
+"""
+
+FAKE_NOTIFY_SEND = """#!/bin/sh
+printf '%s\\n' "$@" > "$FAKE_NOTIFIED"
+echo "notify-send writes to stdout"
+"""
+
+
+def case_notify():
+    if os.name != "posix" or sys.platform == "darwin":
+        print("    skip  (notify-send path only)")
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        bin_dir = tmp / "bin"
+        bin_dir.mkdir()
+        fake = bin_dir / "notify-send"
+        fake.write_text(FAKE_NOTIFY_SEND)
+        fake.chmod(0o755)
+        probe = tmp / "probe.py"
+        probe.write_text(NOTIFY_PROBE.format(servers=str(SERVERS)))
+        notified = tmp / "notified.log"
+        base = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY", "JARVIS_SIGNIN_NO_BROWSER")}
+        base.update(PATH=f"{bin_dir}:{os.environ.get('PATH', '')}", FAKE_NOTIFIED=str(notified))
+        run = lambda extra: subprocess.run([sys.executable, str(probe)], capture_output=True, text=True, env={**base, **extra}, timeout=30)
+
+        shown = run({"WAYLAND_DISPLAY": "wayland-0"})
+        check(shown.stdout == "shown\n", "on a desktop the notification starts, and nothing it prints reaches stdout")
+        for _ in range(50):
+            if notified.exists():
+                break
+            time.sleep(0.05)
+        args = notified.read_text().splitlines() if notified.exists() else []
+        check("Microsoft 365 sign-in" in args and any("AB12CD" in a for a in args), "the title and the code reach notify-send")
+        notified.unlink(missing_ok=True)
+        check(run({}).stdout == "skipped\n", "with no display nothing is started")
+        check(run({"DISPLAY": ":99", "JARVIS_SIGNIN_NO_BROWSER": "1"}).stdout == "skipped\n", "JARVIS_SIGNIN_NO_BROWSER turns it off")
+        check(not notified.exists(), "and notify-send never ran")
+
+
+def case_device_flow_notifies():
+    from _lib import browser
+
+    shown: list = []
+    saved = (browser.open_link, browser.notify)
+    browser.open_link = lambda url, hosts: True
+    browser.notify = lambda title, body: shown.append((title, body)) or True
+    try:
+        with provider() as fake:
+            fake.polls = [{"access_token": "gho_SECRET", "token_type": "bearer", "scope": "repo"}]
+            devicecode.run_device_flow(
+                client_id="cid",
+                scopes=["repo"],
+                device_url=f"{fake.base}/device/code",
+                token_url=f"{fake.base}/token",
+                allowed_hosts=("127.0.0.1",),
+                log=lambda line: None,
+                open_browser=True,
+                sleep=lambda seconds: None,
+            )
+    finally:
+        browser.open_link, browser.notify = saved
+    check(len(shown) == 1 and "WDJB-MJHT" in shown[0][1] and "/device" in shown[0][1], f"the code and link are shown right away (got {shown})")
+    check(not any("gho_SECRET" in body for _, body in shown), "the token is never shown")
+
+
 CASES = [
     case_host_pinning,
     case_device_flow,
+    case_device_flow_notifies,
+    case_notify,
     case_unpinned_verification_link,
     case_token_store,
     case_proxy,
