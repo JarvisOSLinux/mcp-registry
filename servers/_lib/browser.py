@@ -10,6 +10,7 @@ printed to stderr either way, so a missing opener only costs a click.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 from typing import Iterable
@@ -43,6 +44,44 @@ def open_link(url: str, allowed_hosts: Iterable[str]) -> bool:
     try:
         subprocess.Popen(
             [*command, url],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=os.name == "posix",
+        )
+    except OSError:
+        return False
+    return True
+
+
+def _notifier(title: str, body: str) -> list[str] | None:
+    if sys.platform == "darwin":
+        quote = lambda text: '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+        return ["osascript", "-e", f"display notification {quote(body)} with title {quote(title)}"]
+    if os.name == "nt":
+        return None
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        return None
+    notify_send = shutil.which("notify-send")
+    return [notify_send, "--app-name=JARVIS", "--expire-time=0", title, body] if notify_send else None
+
+
+def notify(title: str, body: str) -> bool:
+    """Show a desktop notification, detached and off the MCP wire. True if one started.
+
+    A device-code sign-in prints its code to stderr, which reaches the model
+    only at the call's first reminder, minutes later. A notification puts the
+    code in front of the user the moment it exists, even while the model is
+    busy. JARVIS_SIGNIN_NO_BROWSER=1 turns this off with the browser.
+    """
+    if os.environ.get("JARVIS_SIGNIN_NO_BROWSER") == "1":
+        return False
+    command = _notifier(title, body)
+    if not command:
+        return False
+    try:
+        subprocess.Popen(
+            command,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

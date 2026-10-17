@@ -17,7 +17,7 @@ vectors for semantic search when the LLM needs to discover tools by capability.
 ```
 registry.json              Main index (server metadata + embeddings)
 servers/_lib/              Shared sign-in helper (host pinning, device flow, token
-                           store, stdio proxy, detached browser opener, hosted-server browser sign-in
+                           store, stdio proxy, detached browser opener and sign-in-code notification, hosted-server browser sign-in
                            and stdio-to-HTTP proxy). Canonical source only: dmcp installs
                            just a server's own directory, so each wrapper carries a
                            byte-identical copy at servers/<wrapper>/_lib/
@@ -100,7 +100,7 @@ reference: it starts the upstream GitHub server (fetched at a pinned commit by
 `setup.sh`) through `_lib.proxy`, adds `login` / `status` / `logout`, and runs
 the upstream with the stored token. `login` is one blocking call
 (`blocking: true`): it prints the link and device code to stderr (dmcp relays it
-live), opens the browser, and polls. The token is stored in the keyring
+live), opens the browser, shows the code as a desktop notification, and polls. The token is stored in the keyring
 (`secret-tool`) or an owner-only file, and is never returned in a tool result.
 A token set by hand in `GITHUB_PERSONAL_ACCESS_TOKEN` still wins.
 

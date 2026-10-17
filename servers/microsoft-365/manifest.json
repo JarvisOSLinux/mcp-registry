@@ -34,7 +34,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "e8ad870451cbb6f616e049ad8210c8767bd87879",
+    "rev": "6737e2e757f6aeaf68b63b8aa01ce135fbf9ac6f",
     "path": "servers/microsoft-365"
   },
   "setupScript": "setup.sh",
@@ -53,7 +53,7 @@
     {
       "key": "MS365_READ_ONLY",
       "label": "Read-only",
-      "description": "true to start the server read-only: every tool that would change, send or delete is disabled.",
+      "description": "true to start the server read-only: every tool that would change, send or delete is disabled. Turning it off asks Microsoft for write permissions you have not approved yet, so sign in again after changing it.",
       "default": "false",
       "sensitive": false,
       "required": false
@@ -61,7 +61,7 @@
     {
       "key": "MS365_MCP_ORG_MODE",
       "label": "Work account mode",
-      "description": "true for a work or school account, to add Teams, SharePoint and shared mailboxes. Personal Microsoft accounts leave it off.",
+      "description": "true for a work or school account, to add Teams, SharePoint and shared mailboxes. Personal Microsoft accounts leave it off. Sign in again after changing it.",
       "default": "false",
       "sensitive": false,
       "required": false

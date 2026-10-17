@@ -213,6 +213,8 @@ def tool_login(args: dict) -> str:
             code = _CODE_RE.search(line)
             log(f"To sign in to Microsoft 365, open {url} and enter the code {code.group(1) if code else '(see above)'}")
             browser.open_link(url, SIGN_IN_HOSTS)
+            if code:
+                browser.notify("Microsoft 365 sign-in", f"Enter the code {code.group(1)} at {url}")
             shown = True
         child.wait()
     finally:

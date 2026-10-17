@@ -56,6 +56,7 @@ def run_device_flow(
     log(f"To sign in, open {link} and enter the code {user_code}")
     if open_browser:
         browser.open_link(browser_link, hosts)
+        browser.notify("JARVIS sign-in", f"Enter the code {user_code} at {link}")
 
     interval = max(int(grant.get("interval") or DEFAULT_INTERVAL), 1)
     deadline = now() + int(grant.get("expires_in") or DEFAULT_EXPIRES_IN)
