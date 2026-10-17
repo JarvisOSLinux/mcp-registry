@@ -356,6 +356,17 @@
       "threat_level": "elevated"
     }
   ],
+  "withheldTools": {
+    "Bulk deletion: the forbidden tier.": [
+      "notion-delete-databases",
+      "notion-delete-pages"
+    ],
+    "Their descriptions and results steer the model toward upgrade links.": [
+      "notion-check-mcp-next-steps",
+      "notion-get-tool-access",
+      "notion-show-advanced-analysis-next-steps"
+    ]
+  },
   "trust": {
     "reviewReferences": [
       "https://developers.notion.com/docs/mcp",
@@ -1149,5 +1160,5 @@
       "hash": "ff8e8e6afba13a42434c97723fe6cf687f72691fd7a11bb502becd8a99f772c0"
     }
   },
-  "notes": "The wrapper passes on only the tools declared here (_lib.reviewed); Notion's hosted server changes its tool list without notice. Withheld: notion-delete-pages and notion-delete-databases (bulk deletion, the forbidden tier), and notion-check-mcp-next-steps, notion-show-advanced-analysis-next-steps and notion-get-tool-access, whose descriptions and results steer the model toward upgrade links. Calendar writes are dangerous: they notify attendees."
+  "notes": "The wrapper passes on only the tools declared here (_lib.reviewed); Notion's hosted server changes its tool list without notice, so run scripts/check_tool_drift.py now and then: it reports any hosted tool that is neither declared nor in withheldTools. Calendar writes are dangerous: they notify attendees."
 }

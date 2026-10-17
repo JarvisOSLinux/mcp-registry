@@ -156,6 +156,13 @@ HANDLERS = {"login": tool_login, "status": tool_status, "logout": tool_logout}
 
 
 def main() -> int:
+    if sys.argv[1:] == [reviewed.LIST_FLAG]:
+        return reviewed.print_upstream_tools(
+            lambda: httpproxy.list_upstream_tools(
+                url=RESOURCE, allowed_hosts=ALLOWED_HOSTS, get_token=get_token, server_info=SERVER_INFO
+            ),
+            LOCAL_TOOLS,
+        )
     return httpproxy.run_http_proxy(
         url=RESOURCE,
         allowed_hosts=ALLOWED_HOSTS,

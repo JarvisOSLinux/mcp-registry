@@ -409,6 +409,28 @@ def case_proxy():
         client.close()
 
 
+def case_list_upstream():
+    with sandbox() as (fake, tmp):
+        resource = f"{fake.base}/mcp"
+        fake.clients["client-1"] = []
+        store({"access_token": "at-1", "refresh_token": "rt-1", "client_id": "client-1", "token_endpoint": f"{fake.base}/token",
+               "resource": resource, "expires_at": int(time.time()) + 3600})
+        out = io.StringIO()
+        saved_argv = sys.argv
+        sys.argv = ["server.py", "--list-upstream-tools"]
+        try:
+            with contextlib.redirect_stdout(out):
+                code = server.main()
+        finally:
+            sys.argv = saved_argv
+        listing = json.loads(out.getvalue())
+        check(code == 0 and listing["upstream"] == sorted(
+            ["notion-search", "notion-delete-pages", "notion-fetch", "notion-check-mcp-next-steps"]),
+              "--list-upstream-tools lists every hosted tool, the withheld ones too")
+        check(listing["local"] == ["login", "logout", "status"], "and names the wrapper's own tools")
+        check(not any(e.get("rpc") == "tools/call" for e in fake.log), "listing calls no tool")
+
+
 def case_manifest_and_vendoring():
     manifest = json.loads((WRAPPER / "manifest.json").read_text())
     declared = {t["name"]: t for t in manifest["tools"]}
@@ -427,7 +449,7 @@ def case_manifest_and_vendoring():
 
 def main() -> int:
     global running
-    for fn in (case_login, case_callbacks, case_pinning, case_proxy, case_manifest_and_vendoring):
+    for fn in (case_login, case_callbacks, case_pinning, case_proxy, case_list_upstream, case_manifest_and_vendoring):
         running = fn.__name__
         print(f"  {running}")
         fn()

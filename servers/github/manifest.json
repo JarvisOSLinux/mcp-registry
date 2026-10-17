@@ -219,6 +219,59 @@
       "threat_level": "elevated"
     }
   ],
+  "withheldTools": {
+    "Webhooks send repository and organization events to a URL of the caller's choosing: a standing channel out, or a way to stay in.": [
+      "create_organization_webhook",
+      "create_repository_webhook",
+      "delete_organization_webhook",
+      "delete_repository_webhook",
+      "get_organization_webhook",
+      "get_organization_webhook_config",
+      "get_organization_webhook_delivery",
+      "get_repository_webhook",
+      "get_repository_webhook_config",
+      "get_repository_webhook_delivery",
+      "list_organization_webhook_deliveries",
+      "list_organization_webhooks",
+      "list_repository_webhook_deliveries",
+      "list_repository_webhooks",
+      "ping_organization_webhook",
+      "ping_repository_webhook",
+      "redeliver_organization_webhook_delivery",
+      "redeliver_repository_webhook_delivery",
+      "update_organization_webhook",
+      "update_organization_webhook_config",
+      "update_repository_webhook",
+      "update_repository_webhook_config"
+    ],
+    "Fakes CI results on a commit.": [
+      "create_commit_status"
+    ],
+    "Deletes a release, or removes a review that gates a merge.": [
+      "delete_release",
+      "dismiss_pull_request_review"
+    ],
+    "Gists are public by default.": [
+      "create_gist",
+      "get_gist",
+      "list_gists"
+    ],
+    "Not reviewed: classic projects, packages and release assets.": [
+      "create_project",
+      "create_project_card",
+      "create_project_column",
+      "list_project_columns",
+      "list_projects",
+      "get_org_package",
+      "get_repo_package",
+      "get_user_package",
+      "list_org_packages",
+      "list_repo_packages",
+      "list_user_packages",
+      "get_release_asset",
+      "upload_release_asset"
+    ]
+  },
   "login": {
     "tool": "login"
   },
@@ -1030,5 +1083,5 @@
       "hash": "9eb1d2b08237b5696bd5375db4ad3ca7bd8ec24936f268f78f96a6fd171cb007"
     }
   },
-  "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The wrapper passes on only the tools declared here (_lib.reviewed); the upstream server offers 77. Withheld: every repository and organization webhook tool (create/update/delete/ping/redeliver: a standing exfiltration or persistence channel), delete_release, dismiss_pull_request_review, create_commit_status (fakes CI results), gists (public by default), classic projects, packages and release assets. merge_pull_request is not offered upstream."
+  "notes": "Replaces the PAT-only io.github.missionsquad.mcp-github entry for users who want to sign in rather than paste a token. The wrapper passes on only the tools declared here (_lib.reviewed); withheldTools says why each other upstream tool is left out, and scripts/check_tool_drift.py reports any upstream tool that is in neither. merge_pull_request is not offered upstream."
 }

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-17T11:43:38Z",
+  "updated": "2026-10-17T22:37:35Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -27475,7 +27475,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "153776f6a93f44bb046f69a5b77049e3263bb14107b99053c327421313e1d672",
+        "manifestSha256": "071f7364f3aff52ad472e0052e902a9442ebc806a09579e19dfbe121fc016e0b",
         "setupScriptSha256": "8ddfb9b3460aa9e8f8a747dfb6d828072799391a04f2602eba2674697742b2b9"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/github/manifest.json",
@@ -28289,7 +28289,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "5de0774d70538a1761ed2dffb3ab1d3b441c72bb9eb9a703ce71f153cb5aa7db",
+        "manifestSha256": "51112ed9627b38b788fc6985b7f87d0baae5053344810bedd3a971b3765e1572",
         "setupScriptSha256": "83621e459dbe0cca7c01879a80264043d659269155572ae4c9cfc1abd4c91407"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/microsoft-365/manifest.json",
@@ -29097,7 +29097,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "38fd6e866b29e02d650f38a5ffdeb52bbea57ea625a1092487bf5dbb41e1ca65"
+        "manifestSha256": "f6929e558fdf5ed7ad3cda19d9887a96b2987128a27fdba129c0761dc563e1e6"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/notion/manifest.json",
       "embeddings": {

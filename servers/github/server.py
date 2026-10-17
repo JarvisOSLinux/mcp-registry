@@ -188,6 +188,13 @@ def main() -> int:
     token = current_token()
     if token:
         env[TOKEN_ENV] = token
+    if sys.argv[1:] == [reviewed.LIST_FLAG]:
+        return reviewed.print_upstream_tools(
+            lambda: proxy.list_upstream_tools(
+                upstream_argv=["node", str(UPSTREAM_ENTRY)], upstream_env=env, upstream_cwd=str(UPSTREAM_DIR)
+            ),
+            LOCAL_TOOLS,
+        )
     return proxy.run_proxy(
         upstream_argv=["node", str(UPSTREAM_ENTRY)],
         upstream_env=env,
