@@ -122,6 +122,41 @@ class _Upstream:
         return answer
 
 
+def list_upstream_tools(
+    *,
+    url: str,
+    allowed_hosts: Iterable[str],
+    get_token: Callable[[bool], Optional[str]],
+    server_info: dict,
+) -> list[str]:
+    """Every tool the hosted server offers, nothing withheld: the drift check's view.
+
+    Reached only through a wrapper's `--list-upstream-tools` flag; see
+    proxy.list_upstream_tools.
+    """
+    token = get_token(False)
+    if not token:
+        raise OSError("not signed in; run the server's login tool first")
+    upstream = _Upstream(url, tuple(allowed_hosts), {"name": server_info.get("name", "wrapper"), "version": server_info.get("version", "1")})
+    names: list[str] = []
+    cursor = None
+    while True:
+        try:
+            answer = upstream.request("tools/list", {"cursor": cursor} if cursor else {}, token)
+        except Unauthorized:
+            token = get_token(True)
+            if not token:
+                raise OSError("the sign-in has expired; sign in again") from None
+            answer = upstream.request("tools/list", {"cursor": cursor} if cursor else {}, token)
+        if "error" in answer:
+            raise OSError(f"the server refused: {answer['error']}")
+        result = answer.get("result") or {}
+        names += [t["name"] for t in result.get("tools", []) if isinstance(t, dict) and isinstance(t.get("name"), str)]
+        cursor = result.get("nextCursor")
+        if not cursor:
+            return names
+
+
 def run_http_proxy(
     *,
     url: str,

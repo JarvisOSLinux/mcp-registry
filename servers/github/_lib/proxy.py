@@ -165,3 +165,77 @@ def run_proxy(
     except subprocess.TimeoutExpired:
         child.terminate()
         return child.wait()
+
+
+def list_upstream_tools(
+    *,
+    upstream_argv: list[str],
+    upstream_env: dict,
+    upstream_cwd: str | None,
+    timeout: float = 60,
+) -> list[str]:
+    """Every tool the upstream offers, nothing withheld: the drift check's view.
+
+    Reached only through a wrapper's `--list-upstream-tools` flag, which a
+    maintainer passes by hand. dmcp starts a wrapper with its manifest's
+    arguments, so an agent cannot ask for this.
+    """
+    child = subprocess.Popen(
+        upstream_argv,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=upstream_env,
+        cwd=upstream_cwd,
+        text=True,
+        encoding="utf-8",
+        bufsize=1,
+    )
+    watchdog = threading.Timer(timeout, child.kill)
+    watchdog.start()
+    assert child.stdin is not None and child.stdout is not None
+
+    def send(message: dict) -> None:
+        child.stdin.write(json.dumps(message) + "\n")
+        child.stdin.flush()
+
+    def answer(wanted: int) -> dict:
+        for line in child.stdout:
+            try:
+                msg = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(msg, dict) and msg.get("id") == wanted:
+                if "error" in msg:
+                    raise OSError(f"the upstream refused: {msg['error']}")
+                return msg.get("result") or {}
+        raise OSError("the upstream exited without answering")
+
+    try:
+        send(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-06-18",
+                    "capabilities": {},
+                    "clientInfo": {"name": "tool-drift-check", "version": "1"},
+                },
+            }
+        )
+        answer(1)
+        send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        names: list[str] = []
+        cursor = None
+        for request_id in range(2, 1000):
+            send({"jsonrpc": "2.0", "id": request_id, "method": "tools/list", "params": {"cursor": cursor} if cursor else {}})
+            result = answer(request_id)
+            names += [t["name"] for t in result.get("tools", []) if isinstance(t, dict) and isinstance(t.get("name"), str)]
+            cursor = result.get("nextCursor")
+            if not cursor:
+                break
+        return names
+    finally:
+        watchdog.cancel()
+        child.kill()
+        child.wait()

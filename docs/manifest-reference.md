@@ -21,6 +21,7 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `setupScriptWindows` | string | No | PowerShell script run instead of `setupScript` on Windows hosts. The value must be `"setup.ps1"` (or the registry-hosted URL for it). See [Windows Setup Script](#windows-setup-script). |
 | `configurableProperties` | array | No | User-configurable properties (API keys, endpoints). See [Configurable Properties](#configurable-properties). |
 | `login` | object | No | Names the server's sign-in tool, for a server that works in the user's account. See [Login](#login). |
+| `withheldTools` | object | No | For a wrapper: the upstream tools it leaves out on purpose, by reason. See [Withheld Tools](#withheld-tools). |
 | `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
 | `name` | string | No | Display name. Synced into `registry.json` by `sync_registry.py`. |
@@ -573,6 +574,38 @@ model while the call is still running. Tokens never appear in a tool result.
 
 ---
 
+## Withheld Tools
+
+A wrapper offers only the upstream tools its `tools` declares. `withheldTools`
+records the rest of the upstream on purpose: each key is a reason, each value
+the tools left out for it.
+
+```json
+"withheldTools": {
+  "Bulk deletion: the forbidden tier.": ["notion-delete-databases", "notion-delete-pages"],
+  "Their descriptions and results steer the model toward upgrade links.": ["notion-check-mcp-next-steps"]
+}
+```
+
+A name appears once, and never in `tools` as well (the validator checks both).
+`scripts/check_tool_drift.py` asks each installed wrapper for its upstream's
+full list (`server.py --list-upstream-tools`; dmcp never passes that flag) and
+reports any upstream tool that is in neither field, and any declared or
+withheld tool the upstream no longer offers. A new upstream tool therefore
+shows up as a report, waiting for a PR that declares and classifies it or
+withholds it with a reason.
+
+```sh
+python3 scripts/check_tool_drift.py          # every manifest with withheldTools
+python3 scripts/check_tool_drift.py notion   # one server directory
+```
+
+It runs the copy dmcp installed (built upstream, stored sign-in) and compares
+it with this checkout's manifest. Pinned upstreams change only with their pin;
+a hosted one like Notion's changes whenever its owner changes it.
+
+---
+
 ## Stateful
 
 ```json
@@ -689,6 +722,8 @@ A Python stdio server with one required API key:
 ```
 
 ## Changelog — corrected claims
+
+*2026-10-17:* `withheldTools` added: a wrapper's deliberately withheld upstream tools, by reason, checked by `scripts/check_tool_drift.py`.
 
 *2026-07-22:* `sensitive` values are stored in plaintext today (masking is UI-only; encryption planned); setup scripts run by default with `sh` (`--no-setup` to skip, `dmcp setup <id>` to re-run) and receive `MCP_INSTALL_DIR`/`MCP_CONFIG_<KEY>`; registry-hosted `setup.sh` location and SHA-256 verification documented; machine-managed `embeddings` field documented; embedding canonical text corrected.
 

@@ -568,9 +568,61 @@ def case_reviewed_tools():
         check(all(isinstance(t.get("name"), str) for t in manifest["tools"]), f"every {name} tool is named")
 
 
+PAGED_UPSTREAM = r'''
+import json, sys
+print("not json: a banner on stdout", flush=True)
+for line in sys.stdin:
+    msg = json.loads(line)
+    method, mid = msg.get("method"), msg.get("id")
+    if method == "initialize":
+        if "--die" in sys.argv:
+            sys.exit(1)
+        out = {"jsonrpc": "2.0", "id": mid, "result": {"protocolVersion": "2025-06-18", "capabilities": {}}}
+    elif method == "tools/list":
+        if (msg.get("params") or {}).get("cursor") == "p2":
+            out = {"jsonrpc": "2.0", "id": mid, "result": {"tools": [{"name": "c"}]}}
+        else:
+            out = {"jsonrpc": "2.0", "id": mid, "result": {"tools": [{"name": "a"}, {"name": "b"}], "nextCursor": "p2"}}
+    else:
+        continue
+    print(json.dumps(out), flush=True)
+'''
+
+
+def case_list_upstream_tools():
+    from _lib import proxy, reviewed
+
+    with tempfile.TemporaryDirectory() as tmp:
+        upstream = Path(tmp) / "up.py"
+        upstream.write_text(PAGED_UPSTREAM)
+        names = proxy.list_upstream_tools(upstream_argv=[sys.executable, str(upstream)], upstream_env={}, upstream_cwd=None)
+        check(names == ["a", "b", "c"], f"every page of the upstream's tools is listed, nothing withheld (got {names})")
+        try:
+            proxy.list_upstream_tools(upstream_argv=[sys.executable, str(upstream), "--die"], upstream_env={}, upstream_cwd=None)
+            check(False, "an upstream that dies is reported")
+        except OSError as err:
+            check("exited without answering" in str(err), "an upstream that dies is reported, not waited on")
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = reviewed.print_upstream_tools(lambda: ["b", "a", "b"], [{"name": "login"}])
+    check(code == 0 and json.loads(out.getvalue()) == {"upstream": ["a", "b"], "local": ["login"]},
+          "the flag prints the upstream's tools and the wrapper's own, as JSON")
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        code = reviewed.print_upstream_tools(lambda: (_ for _ in ()).throw(OSError("not signed in")), [])
+    check(code == 1 and "not signed in" in err.getvalue(), "a listing that fails exits 1 and says why")
+
+    for name in ("github", "microsoft-365", "notion"):
+        source = (SERVERS / name / "server.py").read_text()
+        check("if sys.argv[1:] == [reviewed.LIST_FLAG]:" in source,
+              f"the {name} wrapper lists its upstream only when started with the flag")
+
+
 CASES = [
     case_host_pinning,
     case_reviewed_tools,
+    case_list_upstream_tools,
     case_device_flow,
     case_device_flow_notifies,
     case_notify,
