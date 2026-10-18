@@ -11,7 +11,8 @@ license = "MIT"
 requires-python = ">=3.10"
 keywords = ["mcp", "test", "delay", "dispatch"]
 dependencies = [
-    "mcp>=1.2.0",
+    # mcp 2 removed mcp.server.fastmcp, which this server imports.
+    "mcp>=1.2.0,<2",
 ]
 
 [project.scripts]
