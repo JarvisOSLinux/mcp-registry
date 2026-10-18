@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-17T22:38:54Z",
+  "updated": "2026-10-18T11:00:02Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -29097,7 +29097,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "0c04d8881e25436a52f1e35c22248dd36fc137eec45a585ade2c886f0dfdfeda"
+        "manifestSha256": "04e01d967bcd67e8e33f831db3279b267a9a3fec802f734270bbecdf7ced60d1"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/notion/manifest.json",
       "embeddings": {
