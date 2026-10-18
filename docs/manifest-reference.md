@@ -590,8 +590,8 @@ the tools left out for it.
 A name appears once, and never in `tools` as well (the validator checks both).
 `scripts/check_tool_drift.py` asks each installed wrapper for its upstream's
 full list (`server.py --list-upstream-tools`; dmcp never passes that flag) and
-reports any upstream tool that is in neither field, and any declared or
-withheld tool the upstream no longer offers. A new upstream tool therefore
+reports any upstream tool that is in neither field, and any declared tool the
+upstream no longer offers (a withheld one that is gone is only noted). A new upstream tool therefore
 shows up as a report, waiting for a PR that declares and classifies it or
 withholds it with a reason.
 

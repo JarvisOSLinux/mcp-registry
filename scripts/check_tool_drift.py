@@ -9,7 +9,10 @@ its `--list-upstream-tools` flag, and reports:
 
   * upstream tools that are neither declared in `tools` nor listed, with a
     reason, in `withheldTools`: new, and waiting for a review;
-  * declared or withheld tools the upstream no longer offers.
+  * declared tools the upstream no longer offers.
+
+A withheld tool the upstream no longer offers is only noted: nothing reaches
+the model either way, and a hosted server can list a tool on some days only.
 
 It runs the copy dmcp installed, which has the built upstream and the sign-in
 (GitHub's and Notion's upstreams list nothing without one), and compares with
@@ -107,8 +110,9 @@ def check(directory: str, server_id: str) -> int:
     if gone:
         print(f"  declared, but no longer offered upstream ({len(gone)}): {', '.join(gone)}")
     if gone_withheld:
-        print(f"  withheld, but no longer offered upstream ({len(gone_withheld)}): {', '.join(gone_withheld)}")
-    return 1 if new or gone or gone_withheld else 0
+        # Harmless, and Notion lists some tools on some days only: a note, not drift.
+        print(f"  note: withheld, not offered upstream today ({len(gone_withheld)}): {', '.join(gone_withheld)}")
+    return 1 if new or gone else 0
 
 
 def main(argv: list) -> int:

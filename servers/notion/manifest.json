@@ -365,6 +365,9 @@
       "notion-check-mcp-next-steps",
       "notion-get-tool-access",
       "notion-show-advanced-analysis-next-steps"
+    ],
+    "Needs Notion AI and reaches connected sources (Slack, mail). Its description, like notion-search's, routes the model through notion-get-tool-access, which is withheld; notion-search covers Notion content. Notion has listed it on some days and not others.": [
+      "notion-ai-search"
     ]
   },
   "trust": {
