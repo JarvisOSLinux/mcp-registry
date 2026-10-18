@@ -100,7 +100,12 @@
       "description": "Optional. 'metric' (Celsius, km/h, mm) or 'imperial' (Fahrenheit, mph, inches). Defaults to metric. Any tool call may override it with its own units argument.",
       "default": "metric",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "choice",
+      "choices": [
+        "metric",
+        "imperial"
+      ]
     }
   ],
   "trust": {

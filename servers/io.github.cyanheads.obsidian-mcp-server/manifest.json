@@ -107,7 +107,8 @@
       "description": "Set to 'true' to disable all write tools and the command palette at startup. Recommended for read-focused workflows.",
       "sensitive": false,
       "required": false,
-      "default": "false"
+      "default": "false",
+      "type": "boolean"
     },
     {
       "key": "OBSIDIAN_READ_PATHS",
@@ -129,7 +130,8 @@
       "description": "Set to 'true' to enable obsidian_execute_command and obsidian_list_commands. Off by default. Command-palette commands can close the vault, delete files, or trigger arbitrary plugins.",
       "sensitive": false,
       "required": false,
-      "default": "false"
+      "default": "false",
+      "type": "boolean"
     }
   ],
   "trust": {

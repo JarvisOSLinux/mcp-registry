@@ -48,7 +48,22 @@
       "description": "Comma-separated Softeria presets to expose: mail, calendar, files, contacts, tasks, onenote, excel, search, personal, or all. More presets means more tools and wider sign-in permissions; sign in again after changing it.",
       "default": "mail,calendar",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "choice",
+      "multiple": true,
+      "separator": ",",
+      "choices": [
+        "mail",
+        "calendar",
+        "files",
+        "contacts",
+        "tasks",
+        "onenote",
+        "excel",
+        "search",
+        "personal",
+        "all"
+      ]
     },
     {
       "key": "MS365_READ_ONLY",
@@ -56,7 +71,8 @@
       "description": "true to start the server read-only: every tool that would change, send or delete is disabled. Turning it off asks Microsoft for write permissions you have not approved yet, so sign in again after changing it.",
       "default": "false",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean"
     },
     {
       "key": "MS365_MCP_ORG_MODE",
@@ -64,7 +80,8 @@
       "description": "true for a work or school account. Its extra tools (Teams, SharePoint, shared mailboxes) are not offered yet: none has been reviewed (see withheldTools). Personal Microsoft accounts leave it off. Sign in again after changing it.",
       "default": "false",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean"
     },
     {
       "key": "MS365_MCP_CLIENT_ID",

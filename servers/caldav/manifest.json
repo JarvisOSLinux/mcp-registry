@@ -107,7 +107,9 @@
       "description": "How long to wait on each HTTP request before failing with a legible error. Default is 30.",
       "default": "30",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1
     }
   ],
   "trust": {

@@ -48,7 +48,8 @@
       "description": "Set to 'true' to stop the server pretty-printing each thought to stderr. When unset, thoughts are logged to stderr only; stdout is always pure JSON-RPC either way.",
       "default": "false",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean"
     }
   ],
   "trust": {

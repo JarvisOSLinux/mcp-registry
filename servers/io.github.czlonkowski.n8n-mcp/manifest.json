@@ -205,7 +205,14 @@
       "description": "Optional logging verbosity: error, warn, info or debug. Defaults to a quiet level. Logs go to stderr; stdout is reserved for JSON-RPC.",
       "default": "error",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "choice",
+      "choices": [
+        "error",
+        "warn",
+        "info",
+        "debug"
+      ]
     }
   ],
   "trust": {
