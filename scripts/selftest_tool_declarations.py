@@ -21,6 +21,13 @@ reminder at, and each reminder costs a model turn.
   5. An interval below the floor ERRORS.
   6. An interval that is not a whole number of seconds ERRORS.
 
+`withheldTools` lists, by reason, the upstream tools a wrapper leaves out on
+purpose; scripts/check_tool_drift.py treats them as decided, not as drift.
+
+  7. A well-formed list passes, silently.
+  8. A tool both offered and withheld ERRORS.
+  9. A tool withheld twice, an empty list, or a list that is not an object ERRORS.
+
 Offline, stdlib only, writes nothing outside its temp directory.
 
 Usage:
@@ -215,6 +222,41 @@ def a_reminder_that_is_not_whole_seconds_is_an_error():
     needle = "suggestedRemindAfter must be a whole number of seconds"
     for value in (30.5, "30", True):
         expect_error(_remind_after(value), needle=needle, label=f"suggestedRemindAfter {value!r}")
+
+
+@case
+def withheld_tools_pass_silently():
+    def good(m):
+        m["withheldTools"] = {"Deletes in bulk.": ["delete_all"], "Not reviewed yet.": ["frob"]}
+
+    with fixture(good):
+        code, out = validate()
+        check(code == 0, "a well-formed withheldTools passes")
+        check("::error::" not in out and "::warning::" not in out, "silently")
+
+
+@case
+def a_tool_both_offered_and_withheld_is_an_error():
+    def both(m):
+        m["withheldTools"] = {"Not reviewed yet.": ["ping"]}
+
+    expect_error(both, needle="'ping' is both offered in 'tools' and in withheldTools", label="an offered tool withheld")
+
+
+@case
+def a_malformed_withheld_list_is_an_error():
+    def twice(m):
+        m["withheldTools"] = {"One reason.": ["frob"], "Another reason.": ["frob"]}
+
+    def empty(m):
+        m["withheldTools"] = {"Not reviewed yet.": []}
+
+    def a_list(m):
+        m["withheldTools"] = ["frob"]
+
+    expect_error(twice, needle="withheldTools lists 'frob' more than once", label="a tool withheld twice")
+    expect_error(empty, needle="must be a non-empty list of tool names", label="an empty list")
+    expect_error(a_list, needle="'withheldTools' must be a non-empty object", label="a list, not an object")
 
 
 def main() -> int:

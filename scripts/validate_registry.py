@@ -767,6 +767,35 @@ def validate_reminders(where: str, manifest: dict, errors: list) -> None:
             )
 
 
+def validate_withheld(where: str, manifest: dict, errors: list) -> None:
+    """`withheldTools`: upstream tools a wrapper leaves out on purpose, by reason.
+
+    scripts/check_tool_drift.py compares a wrapper's upstream with `tools` plus
+    these, so a tool listed here is a decision, not drift. One a manifest both
+    offers and withholds would be ambiguous.
+    """
+    withheld = manifest.get("withheldTools")
+    if withheld is None:
+        return
+    if not isinstance(withheld, dict) or not withheld:
+        errors.append(f"{where}: 'withheldTools' must be a non-empty object of reason -> tool names")
+        return
+    offered = {t.get("name") for t in manifest.get("tools") or [] if isinstance(t, dict)}
+    seen: dict = {}
+    for reason, names in withheld.items():
+        if not reason.strip():
+            errors.append(f"{where}: withheldTools has an empty reason")
+        if not isinstance(names, list) or not names or not all(isinstance(n, str) and n for n in names):
+            errors.append(f"{where}: withheldTools[{reason[:40]!r}] must be a non-empty list of tool names")
+            continue
+        for name in names:
+            if name in seen:
+                errors.append(f"{where}: withheldTools lists {name!r} more than once")
+            seen[name] = reason
+            if name in offered:
+                errors.append(f"{where}: {name!r} is both offered in 'tools' and in withheldTools")
+
+
 def validate_static(registry: dict, errors: list, warnings: list, embeddings: list) -> None:
     if "servers" not in registry or not isinstance(registry["servers"], dict):
         errors.append("registry.json: missing or malformed 'servers' object")
@@ -835,6 +864,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
         validate_login(where, manifest, errors)
         validate_reminders(where, manifest, errors)
+        validate_withheld(where, manifest, errors)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:

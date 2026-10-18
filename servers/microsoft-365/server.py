@@ -242,6 +242,16 @@ def main() -> int:
     if not UPSTREAM_ENTRY.is_file():
         log(f"microsoft-365: upstream server not installed ({UPSTREAM_ENTRY}); run this server's setup again")
         return 1
+    if sys.argv[1:] == [reviewed.LIST_FLAG]:
+        # The broadest view, whatever is configured: every preset, the write
+        # tools, and the work-account tools.
+        env = dict(upstream_env(), MS365_MCP_ORG_MODE="true")
+        return reviewed.print_upstream_tools(
+            lambda: proxy.list_upstream_tools(
+                upstream_argv=[NODE, str(UPSTREAM_ENTRY)], upstream_env=env, upstream_cwd=str(UPSTREAM_DIR)
+            ),
+            [LOGIN_TOOL],
+        )
     try:
         argv = [NODE, str(UPSTREAM_ENTRY), *upstream_args()]
     except proxy.ToolError as err:

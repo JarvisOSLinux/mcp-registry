@@ -16,6 +16,12 @@ reviewed fails closed, keeping only its own tools (sign-in, status).
 import json
 import sys
 from pathlib import Path
+from typing import Callable, Iterable
+
+# The flag that makes a wrapper print what its upstream offers and exit, for
+# scripts/check_tool_drift.py. dmcp starts a wrapper with its manifest's
+# arguments only, so an agent never reaches it.
+LIST_FLAG = "--list-upstream-tools"
 
 
 def declared_tools(wrapper_file: str) -> frozenset:
@@ -28,3 +34,14 @@ def declared_tools(wrapper_file: str) -> frozenset:
         print(f"{path.parent.name}: cannot read the reviewed tool list ({err}); offering only the wrapper's own tools",
               file=sys.stderr, flush=True)
         return frozenset()
+
+
+def print_upstream_tools(fetch: Callable[[], list], local_tools: Iterable[dict]) -> int:
+    """Print {"upstream": [...], "local": [...]} as JSON: every upstream tool, nothing withheld."""
+    try:
+        upstream = fetch()
+    except OSError as err:
+        print(f"cannot list the upstream's tools: {err}", file=sys.stderr, flush=True)
+        return 1
+    print(json.dumps({"upstream": sorted(set(upstream)), "local": sorted(t["name"] for t in local_tools)}))
+    return 0

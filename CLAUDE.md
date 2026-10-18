@@ -33,6 +33,8 @@ scripts/
   generate_embeddings.py   Generate embedding vectors via Ollama
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
+  check_tool_drift.py      Compare each installed wrapper's upstream tools with
+                           its manifest's tools + withheldTools (run by hand)
   selftest_platform_format.py  Temp-dir self-test for the platform-format checks
   selftest_embedding_drift.py  Temp-dir self-test for the embedding-drift checks
   selftest_trust_gate.py   Temp-dir self-test for the trust-boundary checks
@@ -110,7 +112,12 @@ A wrapper passes on only the upstream tools its manifest declares
 (`_lib.reviewed.declared_tools`, `allowed_tools=REVIEWED_TOOLS` in each
 wrapper): the manifest is the reviewed list, so a tool an upstream adds or a
 hosted server starts offering reaches the model only through a registry PR.
-An unreadable manifest offers nothing upstream (fails closed). The
+An unreadable manifest offers nothing upstream (fails closed). The rest of the
+upstream is listed, by reason, in the manifest's `withheldTools`, and
+`scripts/check_tool_drift.py` reports any upstream tool in neither list (each
+wrapper prints its upstream's full list for it on `--list-upstream-tools`, a
+flag dmcp never passes). Run it after bumping a pin, and now and then for
+Notion, whose hosted list changes without notice. The
 GitHub wrapper signs in through the JarvisOS OAuth App, whose public client id
 is `DEFAULT_CLIENT_ID`; `GITHUB_OAUTH_CLIENT_ID` overrides it.
 
