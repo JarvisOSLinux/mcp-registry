@@ -70,6 +70,7 @@ Usage:
 import argparse
 import json
 import pathlib
+import re
 import sys
 
 # Imported, never re-derived: canonical_text is the definition of "the text that
@@ -767,6 +768,124 @@ def validate_reminders(where: str, manifest: dict, errors: list) -> None:
             )
 
 
+PROPERTY_FIELDS = {
+    "key", "label", "description", "sensitive", "required", "default",
+    "type", "values", "choices", "multiple", "separator", "min", "max",
+}
+PROPERTY_TYPES = ("string", "boolean", "integer", "choice")
+# Fields that belong to one type only (#115).
+PROPERTY_FIELD_OWNER = {
+    "values": "boolean", "choices": "choice", "multiple": "choice",
+    "separator": "choice", "min": "integer", "max": "integer",
+}
+_INTEGER = re.compile(r"-?[0-9]+")
+
+
+def property_value_error(prop: dict, value: str):
+    """Why `value` is not valid for the setting `prop`, or None. Values are strings, as stored."""
+    kind = prop.get("type", "string")
+    if kind == "boolean":
+        values = prop.get("values") or {"true": "true", "false": "false"}
+        if value not in (values["true"], values["false"]):
+            return f"must be {values['true']!r} or {values['false']!r}"
+    elif kind == "integer":
+        if not _INTEGER.fullmatch(value):
+            return "must be a whole number"
+        number = int(value)
+        if "min" in prop and number < prop["min"]:
+            return f"must be at least {prop['min']}"
+        if "max" in prop and number > prop["max"]:
+            return f"must be at most {prop['max']}"
+    elif kind == "choice":
+        choices = prop["choices"]
+        items = value.split(prop.get("separator", ",")) if prop.get("multiple") else [value]
+        if not value or any(item not in choices for item in items):
+            how = "each of its items must be" if prop.get("multiple") else "must be"
+            return f"{how} one of {', '.join(choices)}"
+    return None
+
+
+def validate_properties(where: str, manifest: dict, errors: list) -> None:
+    """configurableProperties: one entry per key, a known type, and a valid default (#115)."""
+    props = manifest.get("configurableProperties")
+    if props is None:
+        return
+    if not isinstance(props, list):
+        errors.append(f"{where}: 'configurableProperties' must be a list")
+        return
+    seen = set()
+    for prop in props:
+        if not isinstance(prop, dict) or not isinstance(prop.get("key"), str) or not prop["key"]:
+            errors.append(f"{where}: every configurableProperties entry needs a string 'key'")
+            continue
+        at = f"{where}: setting {prop['key']!r}"
+        if prop["key"] in seen:
+            errors.append(f"{at} is declared twice")
+        seen.add(prop["key"])
+        unknown = set(prop) - PROPERTY_FIELDS
+        if unknown:
+            errors.append(f"{at} has unknown field(s) {sorted(unknown)}")
+        kind = prop.get("type", "string")
+        if kind not in PROPERTY_TYPES:
+            errors.append(f"{at}: type {kind!r} is not one of {', '.join(PROPERTY_TYPES)}")
+            continue
+        if prop.get("sensitive") and kind != "string":
+            errors.append(f"{at}: a secret must be of type 'string'; it is never a switch or a choice")
+        misplaced = [f for f, owner in PROPERTY_FIELD_OWNER.items() if f in prop and owner != kind]
+        for f in misplaced:
+            errors.append(f"{at}: {f!r} applies only to type {PROPERTY_FIELD_OWNER[f]!r}")
+        if misplaced:
+            continue
+        if kind == "boolean" and "values" in prop:
+            values = prop["values"]
+            if not (
+                isinstance(values, dict)
+                and set(values) == {"true", "false"}
+                and all(isinstance(v, str) and v for v in values.values())
+                and values["true"] != values["false"]
+            ):
+                errors.append(f"{at}: values must be {{\"true\": ..., \"false\": ...}}, two different non-empty strings")
+                continue
+        if kind == "choice":
+            choices = prop.get("choices")
+            if not (
+                isinstance(choices, list)
+                and choices
+                and all(isinstance(c, str) and c for c in choices)
+                and len(set(choices)) == len(choices)
+            ):
+                errors.append(f"{at}: choices must be a non-empty list of distinct strings")
+                continue
+            if "multiple" in prop and not isinstance(prop["multiple"], bool):
+                errors.append(f"{at}: multiple must be true or false")
+                continue
+            if "separator" in prop and not prop.get("multiple"):
+                errors.append(f"{at}: separator applies only with \"multiple\": true")
+                continue
+            separator = prop.get("separator", ",")
+            if not isinstance(separator, str) or not separator:
+                errors.append(f"{at}: separator must be a non-empty string")
+                continue
+            if prop.get("multiple") and any(separator in c for c in choices):
+                errors.append(f"{at}: a choice contains the separator {separator!r}")
+                continue
+        if kind == "integer":
+            bounds = {b: prop[b] for b in ("min", "max") if b in prop}
+            if any(isinstance(v, bool) or not isinstance(v, int) for v in bounds.values()):
+                errors.append(f"{at}: min and max must be whole numbers")
+                continue
+            if len(bounds) == 2 and bounds["min"] > bounds["max"]:
+                errors.append(f"{at}: min is above max")
+                continue
+        if "default" in prop:
+            if not isinstance(prop["default"], str):
+                errors.append(f"{at}: default must be a string; settings are stored as strings")
+            else:
+                why = property_value_error(prop, prop["default"])
+                if why:
+                    errors.append(f"{at}: default {prop['default']!r} {why}")
+
+
 def validate_withheld(where: str, manifest: dict, errors: list) -> None:
     """`withheldTools`: upstream tools a wrapper leaves out on purpose, by reason.
 
@@ -865,6 +984,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_login(where, manifest, errors)
         validate_reminders(where, manifest, errors)
         validate_withheld(where, manifest, errors)
+        validate_properties(where, manifest, errors)
         if entry.get("trustStatus") not in THREAT_LEVEL_EXEMPT_TRUST:
             validate_threat_levels(where, manifest, errors)
         if entry.get("trustStatus") not in EMBEDDING_EXEMPT_TRUST:

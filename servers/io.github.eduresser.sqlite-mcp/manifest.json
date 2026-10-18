@@ -48,7 +48,8 @@
       "description": "Set to true to block write operations.",
       "default": "false",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean"
     },
     {
       "key": "SQLITE_TIMEOUT",
@@ -56,7 +57,9 @@
       "description": "Per-query timeout to prevent runaway queries.",
       "default": "30",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1
     }
   ],
   "trust": {

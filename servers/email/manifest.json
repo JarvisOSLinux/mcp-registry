@@ -73,7 +73,10 @@
       "description": "IMAP port. Defaults to 993 for ssl and 143 for starttls/plaintext.",
       "default": "993",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1,
+      "max": 65535
     },
     {
       "key": "EMAIL_IMAP_SECURITY",
@@ -81,7 +84,13 @@
       "description": "One of 'ssl' (implicit TLS, the default), 'starttls', or 'plaintext'. Certificates are always verified against the system CA store. 'plaintext' is testing-only: it is refused unless EMAIL_ALLOW_INSECURE_PLAINTEXT is set AND the host is loopback.",
       "default": "ssl",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "choice",
+      "choices": [
+        "ssl",
+        "starttls",
+        "plaintext"
+      ]
     },
     {
       "key": "EMAIL_IMAP_USERNAME",
@@ -110,7 +119,10 @@
       "description": "SMTP port. Defaults to 465 for ssl and 587 for starttls/plaintext.",
       "default": "465",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1,
+      "max": 65535
     },
     {
       "key": "EMAIL_SMTP_SECURITY",
@@ -118,7 +130,13 @@
       "description": "One of 'ssl' (implicit TLS, the default), 'starttls', or 'plaintext'. Same rules as EMAIL_IMAP_SECURITY.",
       "default": "ssl",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "choice",
+      "choices": [
+        "ssl",
+        "starttls",
+        "plaintext"
+      ]
     },
     {
       "key": "EMAIL_SMTP_USERNAME",
@@ -147,7 +165,9 @@
       "description": "Socket timeout for IMAP and SMTP operations.",
       "default": "30",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1
     },
     {
       "key": "EMAIL_ALLOW_INSECURE_PLAINTEXT",
@@ -155,7 +175,12 @@
       "description": "TESTING ONLY. Set to 1 to permit EMAIL_IMAP_SECURITY / EMAIL_SMTP_SECURITY = 'plaintext' against a loopback host, for driving the server at a local test daemon. Even with this set, plaintext to a non-loopback host is still refused. Never enable it for a real account: the password would go over the wire in the clear.",
       "default": "0",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean",
+      "values": {
+        "true": "1",
+        "false": "0"
+      }
     }
   ],
   "trust": {

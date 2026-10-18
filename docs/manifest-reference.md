@@ -545,8 +545,37 @@ Declares user-configurable values (API keys, endpoint URLs, options). These are 
 | `default` | string | No | Default value pre-filled in the UI. For optional properties only. |
 | `sensitive` | boolean | Yes | If `true`, the field is shown as a password input and masked in UIs. Values are currently stored in **plaintext** in the installed manifest's `config` object; encryption at rest is planned (kernel keyring). |
 | `required` | boolean | Yes | If `true`, the install dialog blocks until the user provides a value. |
+| `type` | string | No | `string` (the default), `boolean`, `integer` or `choice`. See [Setting Types](#setting-types). |
+| `values` | object | No | `boolean` only: how true and false are written, e.g. `{"true": "1", "false": "0"}`. Default `{"true": "true", "false": "false"}`. |
+| `choices` | array | No | `choice` only, and required for it: the allowed values. |
+| `multiple` | boolean | No | `choice` only: several of the choices, joined by `separator`. |
+| `separator` | string | No | With `multiple` only. Default `","`. No choice may contain it. |
+| `min`, `max` | integer | No | `integer` only: the allowed range, inclusive. |
 
 Never hardcode API keys or tokens directly in the manifest. All secrets must be declared here as `"required": true, "sensitive": true` properties.
+
+### Setting Types
+
+A type tells forms what to draw (a switch, a select, a multi-select, a number
+field) and tells `dmcp config set` what to accept (mcp-registry#115). Values
+stay strings in the installed manifest and in the server's environment; the
+type only says which strings are valid.
+
+```json
+{"key": "MS365_READ_ONLY", "type": "boolean"}
+{"key": "DISABLE_TELEMETRY", "type": "boolean", "values": {"true": "1", "false": "0"}}
+{"key": "EMAIL_IMAP_SECURITY", "type": "choice", "choices": ["ssl", "starttls", "plaintext"], "default": "ssl"}
+{"key": "MS365_PRESET", "type": "choice", "multiple": true, "separator": ",",
+ "choices": ["mail", "calendar", "files", "contacts", "tasks", "onenote", "excel", "search", "personal", "all"]}
+{"key": "EMAIL_IMAP_PORT", "type": "integer", "min": 1, "max": 65535, "default": "993"}
+```
+
+The validator checks that `type` is known, that the type-specific fields sit on
+the right type, that `default` is valid for the type (one of the boolean's
+spellings, one of the choices, a whole number in range), and that a `sensitive`
+setting is a `string`: a secret is never a switch or a choice. A setting
+without `type` is a string, exactly as before. Lists of free text (paths, tool
+names) stay strings.
 
 ---
 
@@ -722,6 +751,8 @@ A Python stdio server with one required API key:
 ```
 
 ## Changelog — corrected claims
+
+*2026-10-18:* setting types (`type`, `values`, `choices`, `multiple`, `separator`, `min`, `max`), validated by `validate_properties`; unknown property fields and duplicate keys are now errors.
 
 *2026-10-17:* `withheldTools` added: a wrapper's deliberately withheld upstream tools, by reason, checked by `scripts/check_tool_drift.py`.
 

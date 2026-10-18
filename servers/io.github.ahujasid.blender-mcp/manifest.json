@@ -162,7 +162,10 @@
       "description": "TCP port the Blender addon's socket server listens on. Defaults to 9876. Keep the addon and this value in sync.",
       "default": "9876",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "integer",
+      "min": 1,
+      "max": 65535
     },
     {
       "key": "DISABLE_TELEMETRY",
@@ -170,7 +173,12 @@
       "description": "The upstream blender-mcp package ships opt-out telemetry that POSTs to a hardcoded Supabase project: even without in-addon consent it sends a persistent customer/session UUID, platform, tool names, durations and generic errors, and with consent it additionally uploads prompts, tool arguments/code and viewport screenshots. This registry disables it by default (DISABLE_TELEMETRY=1 is pre-set in the manifest's config and injected as an env var at every launch; the upstream honours DISABLE_TELEMETRY / BLENDER_MCP_DISABLE_TELEMETRY / MCP_DISABLE_TELEMETRY). Set this to an empty string to re-enable the upstream telemetry.",
       "default": "1",
       "sensitive": false,
-      "required": false
+      "required": false,
+      "type": "boolean",
+      "values": {
+        "true": "1",
+        "false": "0"
+      }
     }
   ],
   "config": {
