@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-18T22:06:02Z",
+  "updated": "2026-10-19T09:03:22Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -20172,9 +20172,9 @@
         "data-analysis",
         "database"
       ],
-      "trustStatus": "community",
+      "trustStatus": "deprecated",
       "integrity": {
-        "manifestSha256": "7bf5cdf67ee42e9769371f6a90ebb2a1aab06295e981c640cbfd5c76e61e6cc6",
+        "manifestSha256": "2e8d47401ffa4cec9830021f861b88122664e2b723e88e5bcd9c0cadb11111d7",
         "setupScriptSha256": "49de3a481df5b5886006d89721d500e13cfdb83145e67ddc97f0b2cafa085db5"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.crystaldba.postgres-mcp/manifest.json",
