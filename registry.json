@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-10-18T11:13:51Z",
+  "updated": "2026-10-18T22:06:02Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -1639,7 +1639,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "cb1a4c64aa265998dd86be928b4666d4f6ea76ba3c571612d9b6510422be2d79",
+        "manifestSha256": "a617d67582c672cfd2bc3536018531439c57a007f1e9a952972abe173a6d0ba8",
         "setupScriptSha256": "3f6cea46553913f1460639864c155fcb12359f89a161374449ab5238493d8e05"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/calculator-py/manifest.json",
@@ -3244,7 +3244,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "0d217dc576e9b32d0d75b45efef11b6ba559c542bad4e781b6d70ecf1cacd688",
+        "manifestSha256": "9562ea67578a1032c550788df618fdf5921908205d736cacf768c8ee3f2a196a",
         "setupScriptSha256": "26fc5c1c5c7120e82fcc08210f049f43f1ef01814a43f6ccb4fc6eb1dbb093f6"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/hello-config/manifest.json",
@@ -7279,7 +7279,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "c33c8e9a068b9d5996edcbbf43bcb2bdf7d0171221d74e6a24256d1c42c00873",
+        "manifestSha256": "06ae749c9c01db3bb70da491ac0772de428e3d895e8109ca3e5eb31622461cf0",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/slow-mcp/manifest.json",
@@ -8084,7 +8084,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "ded7c472d3a251b94cf18cb2fc0a0a19b2227b5ab823e958837f4f6c2adf2205",
+        "manifestSha256": "0422117443f26974f653c84b898ddef4de32e48c059b39942f52ce73216a7c80",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/exit-mcp/manifest.json",
@@ -8890,7 +8890,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "2edc3770486ed914f6db18a3e9b3811312905b4613914755c215d4984fa1a688",
+        "manifestSha256": "85434024f39b95a1eb31daa4eb4b1e630f19da4969a0c0bce24647153251c68e",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/poison-mcp/manifest.json",
@@ -9694,7 +9694,7 @@
       "fixture": true,
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "3f48beedcc49545d2dfb60fd22870c342a543e274cd8f019fecf125ab2c8054c",
+        "manifestSha256": "d4485aae70e63c1b2e888e9d298d95afde0bb63002267744395fc21e5ee672a3",
         "setupScriptSha256": "a38986021e95d8c878fd98d836e5f84ae34e09fa30e7da02be5c1c423db7b56e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/identity-mcp/manifest.json",
@@ -15331,7 +15331,7 @@
       "trustStatus": "community",
       "integrity": {
         "manifestSha256": "d934aded2feb9f247e3dd2f570cb940cc75618f85020bfee86d4df51126ea11a",
-        "setupScriptSha256": "e5933abeeb449e1312b73dae899ce3ebc99ae997591e88e7773f0a74d5e312da"
+        "setupScriptSha256": "cc4f7bf68eac16323ab712550a19236db4b99e5a862bd3b875002b1cd0143fcc"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.erodenn.fetch-guard/manifest.json",
       "embeddings": {
@@ -20174,8 +20174,8 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "dbfd38432e97783c028a498fed9cf1792c53c7056e6f50a60bcc136057dc0091",
-        "setupScriptSha256": "82ab62e5df54a4a2f670b589a64acca512bfb7fd6aadbdc6408592868eff9a2e"
+        "manifestSha256": "7bf5cdf67ee42e9769371f6a90ebb2a1aab06295e981c640cbfd5c76e61e6cc6",
+        "setupScriptSha256": "49de3a481df5b5886006d89721d500e13cfdb83145e67ddc97f0b2cafa085db5"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.crystaldba.postgres-mcp/manifest.json",
       "embeddings": {

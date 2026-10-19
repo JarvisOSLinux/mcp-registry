@@ -20,7 +20,12 @@ fi
 
 python3 -m venv .venv
 ".venv/bin/python" -m pip install --upgrade pip
-".venv/bin/pip" install .
+# Upstream asks for any "mcp"; mcp 2 removed mcp.server.fastmcp, which
+# fetch-guard imports, so a fresh install got a server that cannot start.
+".venv/bin/pip" install . "mcp<2"
+# Import the server here, so a broken dependency fails setup instead of
+# every start.
+".venv/bin/python" -c "import fetch_guard.server"
 
 echo "OK: installed fetch-guard into .venv"
 

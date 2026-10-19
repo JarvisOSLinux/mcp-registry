@@ -18,7 +18,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "3b42f6203ea6815364568f6d953e900fa7a844e1",
+    "rev": "5ec4bdc2576861d2116976b0575c86ea3d072faa",
     "path": "servers/hello-config"
   },
   "setupScript": "setup.sh",
