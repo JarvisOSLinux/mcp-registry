@@ -408,7 +408,7 @@ def tool_search_news(arguments: dict) -> dict:
                 "published": seen,
             }
         )
-    answer = {"query": query, "days": days, "articles": articles, "from": "GDELT Project (gdeltproject.org)"}
+    answer = {"query": query, "days": days, "articles": articles, "from": "The GDELT Project, https://www.gdeltproject.org/"}
     if not articles:
         answer["note"] = f"No articles about {query!r} in the last {days} days. Try plainer words or more days."
     return answer
