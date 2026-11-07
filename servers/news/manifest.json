@@ -51,7 +51,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "c35bb88bb2e77cb9f9a90346fbbb5a62a9e6fd7a",
+    "rev": "ae1cd615942857d6af8b17dba0983bd299119be7",
     "path": "servers/news"
   },
   "setupScript": "setup.sh",

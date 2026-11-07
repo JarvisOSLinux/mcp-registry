@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-11-07T00:20:25Z",
+  "updated": "2026-11-07T10:51:23Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -29908,7 +29908,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/news/manifest.json",
       "integrity": {
-        "manifestSha256": "3366aa4cb18f8056ac43565a63789d3c2104346b53f76f5ef75df1dde7399593",
+        "manifestSha256": "bfca7213433ea13f359c9f0b1c9a31275cca68b2bd0f5d8be15214982181dc11",
         "setupScriptSha256": "219b9aa0b45c87cb1c1456311b1ff76537f2307cd173c5c5d3b26805ea663312",
         "setupScriptWindowsSha256": "deac049ea31266dd75728b668885eb784b9015d9a9f8a1bec7698e8a3d583a64"
       },

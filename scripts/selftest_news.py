@@ -218,6 +218,20 @@ def gdelt_is_asked_politely_and_read_right():
     check(not err and "too short" in answer["from"], "GDELT's plain-text refusal is passed on, with the feeds searched instead")
 
 
+class _Frozen:
+    """The datetime module as seen a month after the fake feeds' stories."""
+
+    import datetime as _real
+
+    timezone = _real.timezone
+    timedelta = _real.timedelta
+
+    class datetime(_real.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 12, 6, tzinfo=tz)
+
+
 @case
 def a_blocked_gdelt_falls_back_to_the_feeds_and_is_left_alone():
     server, fake = load_server({"bbc": RSS2, "dw": RDF})
@@ -231,6 +245,10 @@ def a_blocked_gdelt_falls_back_to_the_feeds_and_is_left_alone():
     check(sum(1 for u in fake.requests if "gdeltproject" in u) == asked, "GDELT is not asked again while it wants a pause")
     err, answer = call(server, "search_news", {"query": "nothing matches this"})
     check(not err and answer["articles"] == [] and "note" in answer, "no match is said plainly")
+    server.datetime = _Frozen
+    err, answer = call(server, "search_news", {"query": "DW story", "days": 3})
+    check(not err and answer["articles"] == [], "a matching story older than the window is left out")
+    server.datetime = __import__("datetime")
 
 
 @case
