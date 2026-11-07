@@ -59,6 +59,9 @@ scripts/
   selftest_notion.py       Self-test for the Notion wrapper against a fake hosted server
                            (spec sign-in, forged callbacks, pinning, SSE, renewal, 401
                            retry); honours JOBS_SELFTEST_TREE
+  selftest_currency.py     Fake-Frankfurter self-test for the currency server (names
+                           to codes, rounding, history grouping and summary, the
+                           manifest's tool list); honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -242,6 +245,7 @@ python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
 python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
+python scripts/selftest_currency.py     # Offline self-test: currency server (fake Frankfurter)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
