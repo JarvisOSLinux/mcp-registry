@@ -390,7 +390,7 @@ def tool_search_news(arguments: dict) -> dict:
                 os.utime(backoff)
             except OSError:
                 pass
-        return _search_feeds(query, limit, str(exc))
+        return _search_feeds(query, days, limit, str(exc))
     articles = []
     for item in payload.get("articles") or []:
         seen = item.get("seendate")
@@ -414,23 +414,28 @@ def tool_search_news(arguments: dict) -> dict:
     return answer
 
 
-def _search_feeds(query: str, limit: int, why: str) -> dict:
+def _search_feeds(query: str, days: int, limit: int, why: str) -> dict:
     words = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 1]
+    # Some feeds keep weeks of items; "the latest on X" must not come back
+    # with a month-old story because nothing newer matched.
+    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)).isoformat()
     items, _ = _read_feeds(list(ALL_SOURCES))
     found = [
         i
         for i in items
-        if all(w in f"{i['title']} {i['summary']}".lower() for w in words)
+        if (i["published"] is None or i["published"] >= since)
+        and all(w in f"{i['title']} {i['summary']}".lower() for w in words)
     ]
     answer = {
         "query": query,
+        "days": days,
         "articles": found[:limit],
         "from": "headlines of the built-in sources, since GDELT was unavailable: " + why,
     }
     if not found:
         answer["note"] = (
-            f"None of today's headlines from the built-in sources mention {query!r}. "
-            f"GDELT, which covers far more outlets, can be tried again in a minute."
+            f"None of the built-in sources' headlines from the last {days} days mention "
+            f"{query!r}. GDELT, which covers far more outlets, can be tried again in a few minutes."
         )
     return answer
 
