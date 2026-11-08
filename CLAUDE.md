@@ -53,6 +53,10 @@ scripts/
                            /proc/pid/stat, sensors, health thresholds)
   selftest_tool_declarations.py  Temp-dir self-test for the `login` and
                            `suggestedRemindAfter` checks
+  selftest_maps.py         Fake-OpenStreetMap self-test for the maps server (one request
+                           a second across processes, cache, User-Agent, attribution,
+                           routes whose end the router moved, nearby radius); honours
+                           JOBS_SELFTEST_TREE
   selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
                            GitHub wrapper (host pinning, device flow, token store,
                            stdio proxy, vendored-copy drift)
@@ -249,6 +253,7 @@ python scripts/selftest_categories.py   # Offline self-test: closed category voc
 python scripts/selftest_wikipedia.py    # Offline self-test: wikipedia server (fake Wikipedia)
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
+python scripts/selftest_maps.py         # Offline self-test: maps server (fake OpenStreetMap services)
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
 python scripts/selftest_news.py         # Offline self-test: news server (fake outlets and GDELT)
