@@ -12,7 +12,7 @@ reaches the store, the wire and the reply.
 JOBS_SELFTEST_TREE works as it does for selftest_jobs.py: the PR gate runs this
 logic from the base branch while the server under test comes from the PR.
 
-Offline, stdlib only; writes only to a temporary directory it removes.
+Offline, stdlib only; writes only to temporary directories it removes.
 
 Usage:
   python3 scripts/selftest_telegram.py
@@ -390,6 +390,35 @@ def a_crashed_holder_does_not_block_forever():
         err, answer, _ = box.call("read_messages")
         check(not err and answer["count"] == 1, "a stale lock left by a crash is cleared")
         check(not lock.exists(), "the lock is released afterwards")
+
+
+@case
+def loading_the_server_creates_nothing():
+    tmp = pathlib.Path(tempfile.mkdtemp(prefix="selftest-telegram-xdg-"))
+    saved = {k: os.environ.get(k) for k in ("XDG_STATE_HOME", "LOCALAPPDATA")}
+    os.environ["XDG_STATE_HOME"] = os.environ["LOCALAPPDATA"] = str(tmp)
+    try:
+        spec = importlib.util.spec_from_file_location("telegram_import_only", SERVER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        store = tmp / "jarvis-telegram"
+        check(not store.exists(), "importing the server (as setup does) makes no state directory")
+        module.TOKEN = ""
+        module._handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "read_messages", "arguments": {}}})
+        check(not store.exists(), "nor does a call refused for want of a token")
+        module.TOKEN = TOKEN
+        module.urllib.request.urlopen = FakeTelegram([message(1, YAKUP, "hi", sender=YAKUP)])
+        module._handle({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "read_messages", "arguments": {}}})
+        check(store.is_dir(), "the first real read makes it")
+        if os.name == "posix" and store.is_dir():
+            check(store.stat().st_mode & 0o777 == 0o700, "owner-only")
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 @case
