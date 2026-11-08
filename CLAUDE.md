@@ -45,6 +45,9 @@ scripts/
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
   selftest_categories.py   Temp-dir self-test for the category vocabulary and
                            fixture flag checks
+  selftest_wikipedia.py    Fake-Wikipedia self-test for the wikipedia server (language
+                           codes kept out of host names, disambiguation, sections and
+                           cuts, on this day); honours JOBS_SELFTEST_TREE
   selftest_system_status.py  Synthetic-/proc and /sys self-test of the
                            system-status server's parsing (btrfs, batteries,
                            /proc/pid/stat, sensors, health thresholds)
@@ -240,6 +243,7 @@ python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt d
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
+python scripts/selftest_wikipedia.py    # Offline self-test: wikipedia server (fake Wikipedia)
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
