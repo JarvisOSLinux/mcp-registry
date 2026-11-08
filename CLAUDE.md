@@ -56,12 +56,15 @@ scripts/
   selftest_microsoft_365.py  Self-test for the Microsoft 365 wrapper against stand-ins
                            (auth-cache protocol, blocking login, withheld tools,
                            browser opener off the MCP wire); honours JOBS_SELFTEST_TREE
-  selftest_notion.py       Self-test for the Notion wrapper against a fake hosted server
-                           (spec sign-in, forged callbacks, pinning, SSE, renewal, 401
-                           retry); honours JOBS_SELFTEST_TREE
   selftest_news.py         Fake-outlet and fake-GDELT self-test for the news server (RSS,
                            RDF and Atom, entity refusal, named sources only, GDELT spacing
                            and its fallback to the feeds); honours JOBS_SELFTEST_TREE
+  selftest_notion.py       Self-test for the Notion wrapper against a fake hosted server
+                           (spec sign-in, forged callbacks, pinning, SSE, renewal, 401
+                           retry); honours JOBS_SELFTEST_TREE
+  selftest_currency.py     Fake-Frankfurter self-test for the currency server (names
+                           to codes, rounding, history grouping and summary, the
+                           manifest's tool list); honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -244,8 +247,9 @@ python scripts/selftest_system_status.py  # Offline self-test: system-status par
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
-python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
 python scripts/selftest_news.py         # Offline self-test: news server (fake outlets and GDELT)
+python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
+python scripts/selftest_currency.py     # Offline self-test: currency server (fake Frankfurter)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
