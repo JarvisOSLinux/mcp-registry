@@ -72,6 +72,9 @@ scripts/
   selftest_currency.py     Fake-Frankfurter self-test for the currency server (names
                            to codes, rounding, history grouping and summary, the
                            manifest's tool list); honours JOBS_SELFTEST_TREE
+  selftest_telegram.py     Fake-Telegram self-test for the telegram server (messages saved
+                           before Telegram deletes them, token scrubbed from errors, chats
+                           named or numbered, splitting, files); honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -259,6 +262,7 @@ python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wra
 python scripts/selftest_news.py         # Offline self-test: news server (fake outlets and GDELT)
 python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
 python scripts/selftest_currency.py     # Offline self-test: currency server (fake Frankfurter)
+python scripts/selftest_telegram.py     # Offline self-test: telegram server (fake Telegram)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
