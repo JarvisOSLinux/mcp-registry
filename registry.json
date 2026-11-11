@@ -25842,7 +25842,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/telegram/manifest.json",
       "integrity": {
-        "manifestSha256": "e0e21975069f284521b2dd4a79e506916d472c6302c2c0a6c0d67f7a1730e367",
+        "manifestSha256": "6dc9e339d61a81d9f38875d1a4a5e8a760b02a2f3520ee9768ed9712c96cd54f",
         "setupScriptSha256": "7d79bc3175b3a28bd5e290dd2988c121808c8c9f0edf55b5214548bac3bee4b2",
         "setupScriptWindowsSha256": "56d9936d6a8fd7c861d931b8c974ffad8dc5ceae9048dfab2bd3b25c9dc7c786"
       },

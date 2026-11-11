@@ -204,15 +204,22 @@ def _state_dir() -> pathlib.Path | None:
         base = os.environ.get("LOCALAPPDATA") or str(pathlib.Path.home() / "AppData" / "Local")
     else:
         base = os.environ.get("XDG_STATE_HOME") or str(pathlib.Path.home() / ".local" / "state")
-    path = pathlib.Path(base) / "jarvis-telegram"
-    try:
-        path.mkdir(mode=0o700, parents=True, exist_ok=True)
-        return path
-    except OSError:
-        return None
+    return pathlib.Path(base) / "jarvis-telegram"
 
 
 STATE_DIR = _state_dir()
+
+
+def _store_dir() -> pathlib.Path | None:
+    """The store's directory, made on first use (not on import: setup and the
+    self-test load this file); None when it cannot be made."""
+    if STATE_DIR is None:
+        return None
+    try:
+        STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    except OSError:
+        return None
+    return STATE_DIR
 
 
 @contextmanager
@@ -223,10 +230,12 @@ def _locked():
     parallel; two readers would each confirm updates the other has not saved.
     A lock file made with O_EXCL works on every platform, unlike flock.
     """
-    if STATE_DIR is None:
+    name = f"{_bot_id()}.lock"
+    store = _store_dir()
+    if store is None:
         yield
         return
-    lock = STATE_DIR / f"{_bot_id()}.lock"
+    lock = store / name
     deadline = time.monotonic() + 40
     while True:
         try:
@@ -253,7 +262,9 @@ def _locked():
 
 
 def _store_path() -> pathlib.Path | None:
-    return STATE_DIR / f"{_bot_id()}.json" if STATE_DIR else None
+    name = f"{_bot_id()}.json"
+    store = _store_dir()
+    return store / name if store else None
 
 
 def _load() -> dict:
@@ -392,7 +403,7 @@ def _sync() -> dict:
     """
     with _locked():
         state = _load()
-        persistent = STATE_DIR is not None
+        persistent = _store_dir() is not None
         offset = state.get("next_offset") if persistent else None
         for _ in range(10):
             params = {
@@ -501,7 +512,7 @@ def _shown(msg: dict) -> dict:
 
 def _record_sent(chat_id: Any, chat_name: str, sent: list[dict], text: str, attachment: str | None = None) -> None:
     """Keep what the bot sent, so a chat reads back as a conversation."""
-    if STATE_DIR is None:
+    if _store_dir() is None:
         return
     with _locked():
         state = _load()
@@ -601,7 +612,7 @@ def tool_read_messages(args: dict) -> dict:
     messages = sorted(messages, key=lambda m: (m.get("date", 0), m.get("message_id") or 0))[-limit:]
     shown = [_shown(m) for m in messages]
 
-    if STATE_DIR is not None and any(not m.get("shown") for m in messages):
+    if _store_dir() is not None and any(not m.get("shown") for m in messages):
         with _locked():
             fresh = _load()
             keys = {(m["chat"]["id"], m.get("message_id")) for m in messages}

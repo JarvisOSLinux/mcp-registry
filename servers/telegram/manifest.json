@@ -52,7 +52,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "99ed1f09009e87fa6c745cc2690045d6b968ad1f",
+    "rev": "9f9a5f135d6fbf352cabde1407a738b5aee9b94a",
     "path": "servers/telegram"
   },
   "setupScript": "setup.sh",
