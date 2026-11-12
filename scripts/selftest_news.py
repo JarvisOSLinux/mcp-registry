@@ -232,10 +232,22 @@ class _Frozen:
             return cls(2026, 12, 6, tzinfo=tz)
 
 
+class _Fresh(_Frozen):
+    """The datetime module as seen the day after the fake feeds' stories, inside
+    the default three-day window. Read with the real clock, the stories aged out
+    of it on 2026-11-09 and the fallback found nothing."""
+
+    class datetime(_Frozen._real.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 11, 7, tzinfo=tz)
+
+
 @case
 def a_blocked_gdelt_falls_back_to_the_feeds_and_is_left_alone():
     server, fake = load_server({"bbc": RSS2, "dw": RDF})
     server.GDELT_SECONDS_BETWEEN_REQUESTS = 0
+    server.datetime = _Fresh
     fake.gdelt_status = 429
     err, answer = call(server, "search_news", {"query": "DW story"})
     check(not err and [a["title"] for a in answer["articles"]] == ["DW story"], "the feeds' headlines answer, matching every word")
