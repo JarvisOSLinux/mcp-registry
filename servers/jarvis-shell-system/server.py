@@ -48,7 +48,11 @@ TOOLS = [
         "name": "execute_command",
         "description": (
             "Execute a program and return its stdout, stderr, and exit code. "
-            "Use for single commands: 'python3', 'git', 'ls', etc. stdin is "
+            "Use for single commands: 'python3', 'git', 'ls', etc. It runs the "
+            "program without a shell: globs (*), pipes (|), redirects (> or "
+            "2>/dev/null), && and $VARS reach the program as literal text; only "
+            "a leading ~ is expanded to the home directory. Use execute_script "
+            "for anything that needs a shell. stdin is "
             "closed, so an interactive command cannot be answered here; when the "
             "output ends in an unanswered prompt the result carries a "
             "'needs_input' object (prompted / prompt / hint) — surface it to the "
@@ -333,9 +337,14 @@ def _timeout_seconds(arguments: dict):
     return float(t) if t else None
 
 
+def _expand_home(word: str) -> str:
+    """Expand a leading ~ or ~/ the way a shell would; no shell runs here."""
+    return os.path.expanduser(word) if word == "~" or word.startswith("~/") else word
+
+
 def _call_execute_command(arguments: dict) -> dict:
-    command = arguments["command"]
-    args = [str(a) for a in arguments.get("args") or []]
+    command = _expand_home(arguments["command"])
+    args = [_expand_home(str(a)) for a in arguments.get("args") or []]
     cwd = arguments.get("cwd") or None
     timeout = _timeout_seconds(arguments)
     extra_env = arguments.get("env") or {}
