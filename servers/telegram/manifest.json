@@ -61,7 +61,7 @@
     {
       "name": "list_chats",
       "description": "The bot's name and link, and the chats that have written to it with their numbers, last message time and unread count",
-      "threat_level": "safe"
+      "threat_level": "elevated"
     },
     {
       "name": "read_messages",
@@ -109,7 +109,7 @@
       "filesystem: a message store at $XDG_STATE_HOME/jarvis-telegram (%LOCALAPPDATA% on Windows), owner-only; send_file reads the one file it is given"
     ],
     "notes": "First-party server maintained in this repository, on Telegram's Bot API, which is free and needs no review. A bot token is a much smaller grant than a user account: the bot sees only messages sent to it (and in groups, with privacy mode on, only commands, mentions and replies to it), and cannot message anyone who has not messaged it first. Telegram holds a bot's incoming messages for 24 hours until it reads them and deletes them once read, so the server keeps what it read for 30 days.",
-    "securityNotes": "read_messages is elevated: anyone who finds the bot can write to it, so message text is third-party text and a prompt-injection surface. Every result says so.\n\nsend_message and send_file are dangerous: they reach other people and cannot be taken back, and send_file can send any file the user can read to any chat the bot is in. The confirmation shows the chat and the text or path.\n\nlist_chats is safe: it returns the bot's own name and the names and numbers of chats, no message text.\n\nThe token is sent only to api.telegram.org, and is scrubbed from every error, since it is part of each request URL. The message store is written owner-only (0600) and holds a month of messages at most."
+    "securityNotes": "read_messages is elevated: anyone who finds the bot can write to it, so message text is third-party text and a prompt-injection surface. Every result says so.\n\nsend_message and send_file are dangerous: they reach other people and cannot be taken back, and send_file can send any file the user can read to any chat the bot is in. The confirmation shows the chat and the text or path.\n\nlist_chats is elevated: it returns no message text, but chat names are chosen by whoever writes to the bot, so they are third-party text, and listing confirms new messages to Telegram, which then deletes them there (the server saves them to its store first).\n\nThe token is sent only to api.telegram.org, and is scrubbed from every error, since it is part of each request URL. The message store is written owner-only (0600) and holds a month of messages at most."
   },
   "embeddings": {
     "nomic-embed-text": {

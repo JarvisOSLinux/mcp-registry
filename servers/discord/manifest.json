@@ -61,12 +61,12 @@
     {
       "name": "list_servers",
       "description": "The Discord servers the bot is in, and a link that adds it to another",
-      "threat_level": "safe"
+      "threat_level": "elevated"
     },
     {
       "name": "list_channels",
       "description": "The channels and active threads in the bot's servers, by category, with ids and kinds",
-      "threat_level": "safe"
+      "threat_level": "elevated"
     },
     {
       "name": "read_messages",
@@ -102,7 +102,7 @@
       "filesystem: none \u2014 no reads or writes outside the interpreter's own imports"
     ],
     "notes": "First-party server maintained in this repository, on Discord's REST API, which is free for bots. A bot token is a much smaller grant than a user account: the bot sees only the servers it was added to and the channels its role can view. Reading message text needs the Message Content intent, which a bot in fewer than 100 servers switches on itself in the developer portal; without it Discord returns messages with no text, and the server says so.",
-    "securityNotes": "read_messages is elevated: anyone in a server can post, so message text is third-party text and a prompt-injection surface. Every result says so.\n\nsend_message is dangerous: it posts publicly to a community and cannot be taken back by the model. Its mentions are limited to people (allowed_mentions parse users), so no message can ping @everyone, @here or a role, whatever the model writes. The confirmation shows the channel and the text.\n\nlist_servers and list_channels are safe: they return server and channel names and ids, no message text (channel topics are left out for that reason).\n\nThe token goes only to discord.com, in a header, and is scrubbed from every error. The server stores nothing on disk."
+    "securityNotes": "read_messages is elevated: anyone in a server can post, so message text is third-party text and a prompt-injection surface. Every result says so.\n\nsend_message is dangerous: it posts publicly to a community and cannot be taken back by the model. Its mentions are limited to people (allowed_mentions parse users), so no message can ping @everyone, @here or a role, whatever the model writes. The confirmation shows the channel and the text.\n\nlist_servers and list_channels are elevated: they return no message text (channel topics are left out for that reason), but server, channel and thread names are set by people in those servers, so they are third-party text.\n\nThe token goes only to discord.com, in a header, and is scrubbed from every error. The server stores nothing on disk."
   },
   "embeddings": {
     "nomic-embed-text": {

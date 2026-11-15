@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-11-12T08:34:15Z",
+  "updated": "2026-11-15T17:10:52Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -25858,7 +25858,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/telegram/manifest.json",
       "integrity": {
-        "manifestSha256": "6dc9e339d61a81d9f38875d1a4a5e8a760b02a2f3520ee9768ed9712c96cd54f",
+        "manifestSha256": "b69b017f9c4a5f94bf18c80a51885162dfb0c2b5a5a20d8a42da182ec9f4005b",
         "setupScriptSha256": "7d79bc3175b3a28bd5e290dd2988c121808c8c9f0edf55b5214548bac3bee4b2",
         "setupScriptWindowsSha256": "56d9936d6a8fd7c861d931b8c974ffad8dc5ceae9048dfab2bd3b25c9dc7c786"
       },
@@ -29114,7 +29114,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/discord/manifest.json",
       "integrity": {
-        "manifestSha256": "af141213de53ffd12d0c30da6d171bda892cf0c9016bae6302ea1a64708a827a",
+        "manifestSha256": "223ea72a858d8cca1f9923d0f3d54f15283f4a7fa330e3d9441be51d6cd800ac",
         "setupScriptSha256": "f92305e9188b3daed399e8248c5fea367ec4f3def7684b589565ff544dd3e188",
         "setupScriptWindowsSha256": "3c37a4526a27f6c5e0c5ef76dcbf78b49805402181c3968fa09bd2c5b1718345"
       },
