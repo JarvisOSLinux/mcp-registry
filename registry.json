@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-11-15T17:10:52Z",
+  "updated": "2026-11-15T17:11:03Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -25848,9 +25848,7 @@
         "instant message"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "messaging"
@@ -25858,7 +25856,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/telegram/manifest.json",
       "integrity": {
-        "manifestSha256": "b69b017f9c4a5f94bf18c80a51885162dfb0c2b5a5a20d8a42da182ec9f4005b",
+        "manifestSha256": "babf7722c86e0399be644dcd0ee2f1d020d5ea9389c131dd20cbb0e0cfbfd33a",
         "setupScriptSha256": "7d79bc3175b3a28bd5e290dd2988c121808c8c9f0edf55b5214548bac3bee4b2",
         "setupScriptWindowsSha256": "56d9936d6a8fd7c861d931b8c974ffad8dc5ceae9048dfab2bd3b25c9dc7c786"
       },
@@ -26661,9 +26659,7 @@
         "wikipedia"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "search"
@@ -26671,7 +26667,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/wikipedia/manifest.json",
       "integrity": {
-        "manifestSha256": "9bd7ae0979e28d198ac36c7e99a3bdf9eb963889ae28e14a3301bbc266603c95",
+        "manifestSha256": "6009788f7bdfcec25d019acf04e2114226c6f72b5c5632729bf3b51606ee1ceb",
         "setupScriptSha256": "1dafcbb6eda84b8a39f70fd6cfa4413b2ee5a1809b48911010e7028c9c8f559d",
         "setupScriptWindowsSha256": "deb66405340a2a69608cfa5b36fffdb20e54f82c2643e2f7e1f53bd0af28b031"
       },
@@ -28290,9 +28286,7 @@
         "walking"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "travel"
@@ -28300,7 +28294,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/maps/manifest.json",
       "integrity": {
-        "manifestSha256": "daa23c967776e7c15ec986c14c47e505c128326f319ec6b687481e1f849432ad",
+        "manifestSha256": "09ff5bf7300aff5d9cbd8e8c88afdb1a158c719db13e68a922e1dc74da633343",
         "setupScriptSha256": "8978cb051deca3264b56da03e3dee13ae8191a26f4c42750d8b18eef3e3a090d",
         "setupScriptWindowsSha256": "9ea730ee81dbda693f15acbd8c7c044141af152e513dc1dc73a85a5028a723c0"
       },
@@ -29103,9 +29097,7 @@
         "guild"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "messaging",
@@ -29114,7 +29106,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/discord/manifest.json",
       "integrity": {
-        "manifestSha256": "223ea72a858d8cca1f9923d0f3d54f15283f4a7fa330e3d9441be51d6cd800ac",
+        "manifestSha256": "2a810fbe583731a007bb3e3e6d521436ca6c126a7971b15f8c29076147ccd53c",
         "setupScriptSha256": "f92305e9188b3daed399e8248c5fea367ec4f3def7684b589565ff544dd3e188",
         "setupScriptWindowsSha256": "3c37a4526a27f6c5e0c5ef76dcbf78b49805402181c3968fa09bd2c5b1718345"
       },
@@ -33986,9 +33978,7 @@
         "yen"
       ],
       "platforms": [
-        "linux",
-        "darwin",
-        "windows"
+        "linux"
       ],
       "categories": [
         "finance"
@@ -33996,7 +33986,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/currency/manifest.json",
       "integrity": {
-        "manifestSha256": "57990bf55102cc62d039bcb9a78b66c466efe919af91756bcbfdb1d97b7725f9",
+        "manifestSha256": "9b336611ea25b024ba325418019b0e3c68bbbd4911aa6a942a597f2edccc8598",
         "setupScriptSha256": "3a2008fe7c5c9fb0a2b5bd7ed6dab37ac1bd5493be6d5a11992eb4d1b143b1d6",
         "setupScriptWindowsSha256": "5faa11393882aafa8136abd0823f47450ffdf093d624a697bacaaea821362a68"
       },

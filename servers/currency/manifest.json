@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "Currency (Frankfurter)",
   "description": "Exchange rates and money conversion from Frankfurter, with no account and no API key: about 160 currencies from central banks and other official sources, a few dozen cryptocurrencies and four precious metals, published daily, with history back to 1999 for most currencies. Converts an amount into one or more currencies at the latest rate or a past date's, lists a currency's rates, shows how one currency moved against another over a period, and finds a currency's code by name. Use for 'how much is 250 dollars in lira', 'what is the euro at today', 'how has the yen moved this year', 'what was the pound worth in 2020' and 'what is bitcoin in dollars'. Read-only: it asks a public API for numbers and returns them; it moves no money.",

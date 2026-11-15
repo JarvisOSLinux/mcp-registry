@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "Telegram (bot)",
   "description": "Telegram through a bot the user makes with @BotFather: JARVIS reads what people send the bot and sends messages and files from it. The usual setup is a private chat between the user and their own bot, so JARVIS can message the user's phone ('tell me on Telegram when the backup finishes', 'send me that PDF on Telegram') and read what the user writes back ('any new Telegram messages?'). A bot sees only what is sent to it: it cannot read the user's own chats, and cannot start a chat with anyone who has not messaged it first. Messages it has read are kept locally for 30 days, since Telegram deletes them once read.",

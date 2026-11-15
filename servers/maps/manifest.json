@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "Maps (OpenStreetMap)",
   "description": "Places, addresses, what is nearby, and routes with distance and travel time by car, bike or on foot, from OpenStreetMap's public services (Nominatim for places, the FOSSGIS routing servers for routes), with no account and no API key. Finds a place or address, names the address at coordinates, lists places of a kind near a location nearest first with opening hours where mapped, and routes between two places with turn-by-turn steps on request. Use for 'how long does it take to drive to the airport', 'how far is Ankara from Istanbul', 'find a pharmacy near Moda', 'is there a cafe near the station' and 'where is the Eiffel Tower'. Read-only. Keeps the services' usage rules: one request a second, cached answers, attribution.",

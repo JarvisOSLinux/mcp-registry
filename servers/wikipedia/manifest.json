@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "Wikipedia",
   "description": "Look things up on Wikipedia, in any of its languages, with no account and no API key. Searches for articles, gives an article's lead (a one-line description and the opening paragraph) for 'who is' and 'what is' questions, reads a whole article or one section of it, and lists what happened on a day in history. A title with several meanings comes back with the likeliest articles to choose from. Use for 'who was Alan Turing', 'what is a black hole', 'tell me about the history of Istanbul', 'what happened on this day' and 'when was the Eiffel Tower built'. Read-only: it reads public encyclopedia text and returns it with the article's address and licence.",

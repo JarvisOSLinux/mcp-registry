@@ -2,9 +2,7 @@
   "version": "1.0.0",
   "scope": "user",
   "platforms": [
-    "linux",
-    "darwin",
-    "windows"
+    "linux"
   ],
   "name": "Discord (bot)",
   "description": "Discord through a bot the user makes in Discord's developer portal and adds to their servers: JARVIS lists the servers and channels the bot is in, reads a channel's or thread's recent messages, and posts to it. Use for 'what did people say in #general today?', 'catch me up on the announcements channel', 'post the release notes in #updates' and 'reply to that question in the help thread'. A bot sees only the servers it was added to and the channels its role can view; it cannot read the user's own DMs or other servers. Posts can mention people but never @everyone, @here or a role.",
