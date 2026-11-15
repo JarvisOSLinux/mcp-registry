@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-11-15T17:11:03Z",
+  "updated": "2026-11-15T17:42:16Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -22602,7 +22602,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "efa2205665ac73281491334f118ad8ada849f2cb239a61f265b0d844965ec575",
+        "manifestSha256": "b0aa0cb56db382c9894a72d1bedf86568f45560258001354fa65b67755d8328a",
         "setupScriptSha256": "16c2c896310838f2361d0c47d27bb3d0d84cbfe2e2d867cbbd81aeaf112c1a7e"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/io.github.korotovsky.slack-mcp-server/manifest.json",
