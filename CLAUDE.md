@@ -30,7 +30,7 @@ servers/                   Per-server directories (dir name from the entry's
 scripts/
   sync_registry.py         Recompute integrity hashes (SHA-256)
   sync_lib.py              Refresh the vendored servers/<wrapper>/_lib/ copies (--check for CI)
-  generate_embeddings.py   Generate embedding vectors via Ollama
+  generate_embeddings.py   Generate embedding vectors via Ollama (or llama-server's /v1/embeddings)
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   check_tool_drift.py      Compare each installed wrapper's upstream tools with
@@ -44,8 +44,8 @@ scripts/
                            report and leading-~ expansion (it runs no shell)
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
-  selftest_categories.py   Temp-dir self-test for the category vocabulary and
-                           fixture flag checks
+  selftest_categories.py   Temp-dir self-test for the category vocabulary,
+                           fixture flag and listing copy (title/tagline) checks
   selftest_wikipedia.py    Fake-Wikipedia self-test for the wikipedia server (language
                            codes kept out of host names, disambiguation, sections and
                            cuts, on this day); honours JOBS_SELFTEST_TREE
@@ -98,6 +98,7 @@ Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
 - `keywords`, `categories` (closed, validator-enforced vocabulary of capability terms; no `mcp`/`mcp-*` — see MCP-REGISTRY-GUIDE.md)
 - `fixture` (optional bool; a test fixture, dropped from consumer semantic search by dmcp but still installable and still indexed)
+- `title`, `tagline` (what a listing for people shows, e.g. jarvisoslinux.org/servers: a short name and one plain-English line; required on every entry that is neither a fixture nor revoked; set on the entry, never mirrored from the manifest, never embedded — `name`/`summary` are the model's text)
 - `platforms` (mirrored from the manifest; the OSes the registry vouches for — dmcp filters by host from this index alone)
 - `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)
 - `integrity` (manifestSha256, setupScriptSha256, setupScriptWindowsSha256)
@@ -247,7 +248,7 @@ that can prompt. Both are documented for third-party authors in
 
 ```bash
 python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
-python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
+python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama, or OLLAMA_URL at a llama-server /v1/embeddings; incremental via canonical-text hashes)
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs, per-tool threat_level, embedding drift (PR gate)
 python scripts/validate_registry.py --strict-embeddings  # ...failing on stale/missing embeddings instead of warning
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
@@ -257,7 +258,7 @@ python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, 
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection + leading-~ expansion in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
-python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
+python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag + title/tagline rules
 python scripts/selftest_wikipedia.py    # Offline self-test: wikipedia server (fake Wikipedia)
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
@@ -278,7 +279,8 @@ python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_li
    differences go in per-transport `platforms`, never in a second server)
 2. Optionally add `servers/<id>/setup.sh` (plus `setup.ps1` if vetted on Windows)
 3. Add an entry for the server to `registry.json` (id as the map key, plus
-   id/name/summary/version/scope/trustStatus and the raw-GitHub manifest URL)
+   id/name/summary/version/scope/trustStatus, `categories`, a `title` and
+   `tagline` for listings, and the raw-GitHub manifest URL)
 4. Run `python scripts/sync_registry.py` (fills integrity hashes, syncs
    name/summary/keywords/platforms from the manifest)
 5. Submit PR — `validate-pr.yml` gates it
@@ -314,4 +316,4 @@ Two stages, safest first:
 
 - Server IDs use reverse-domain notation: `com.github.<user>.mcp.<name>`
 - Integrity hashes are always recomputed via CI, never manually edited
-- Embeddings use `nomic-embed-text` model via Ollama
+- Embeddings use the `nomic-embed-text` model via Ollama, or llama-server's nomic-embed-text-v1.5 Q8_0 (docs/EMBEDDING-SPEC.md, "Generators")

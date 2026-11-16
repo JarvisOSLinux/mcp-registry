@@ -104,6 +104,8 @@ def fixture(doc, trust="community", manifest_url=MANIFEST_URL):
                             "id": SERVER_ID,
                             "name": "Demo Server",
                             "summary": "Fixture server for the trust-gate self-test",
+                            "title": "Demo",
+                            "tagline": "A server for this self-test.",
                             "version": "1.0.0",
                             "scope": "user",
                             "keywords": ["demo"],

@@ -104,7 +104,9 @@ The index is a single JSON file with this structure:
     "com.example.mcp.my-server": {
       "id": "com.example.mcp.my-server",
       "name": "My MCP Server",
-      "summary": "One-line description shown in the listing",
+      "summary": "What the server does, written for the model that searches the registry",
+      "title": "My Server",
+      "tagline": "One plain-English line a person reads in a listing.",
       "version": "1.0.0",
       "scope": "user",
       "homepage": "https://github.com/example/mcp-registry",
@@ -136,8 +138,10 @@ The index is a single JSON file with this structure:
 | Field       | Type   | Description                                              |
 |-------------|--------|----------------------------------------------------------|
 | `id`        | string | **Required.** Unique identifier (same as the servers object key). |
-| `name`      | string | Display name in the catalogue.                           |
-| `summary`   | string | Short description shown in listings.                     |
+| `name`      | string | The server's name, mirrored from the manifest; part of the embedding text. |
+| `summary`   | string | What the server does, mirrored from the manifest and written for the model that searches the registry; part of the embedding text. |
+| `title`     | string | **Required** on a listed entry. The name a person sees in a listing, at most 40 characters. See Listing below. |
+| `tagline`   | string | **Required** on a listed entry. One plain-English line a person reads in a listing, at most 120 characters. See Listing below. |
 | `version`   | string | Semantic version (for upgrade detection).                 |
 | `scope`     | string | **Required.** `"user"` or `"system"`. See Scope below.   |
 | `homepage`  | string | Optional. URL to the project homepage.                   |
@@ -182,6 +186,32 @@ that actually mean it — `fixture`, `trustStatus`, `platforms`.
 Adding a term means editing `ALLOWED_CATEGORIES` in the validator and this list
 together.
 
+### Listing
+
+`name` and `summary` are written for the model: they are the embedding text
+semantic search ranks on, so they are precise and dense ("Secure local
+filesystem server: read, write, search, diff, patch, and manage files"). A
+listing for people, such as [jarvisoslinux.org/servers](https://jarvisoslinux.org/servers),
+shows `title` and `tagline` instead:
+
+```json
+"title": "Files",
+"tagline": "Find, read, edit and organize your files."
+```
+
+- `title` is what the server is called in a list, at most 40 characters. Drop
+  "MCP" and the vendor prefix; keep what tells two servers apart
+  ("GitHub (token)").
+- `tagline` says what someone can do with it, in words a person who has never
+  heard of MCP understands, at most 120 characters, one sentence.
+
+Both are catalogue fields like `categories`: set on the index entry, never
+mirrored from the manifest (so changing one asks no installed server to
+update), and never part of the embedding text. Every entry a listing shows needs
+both; a fixture or a `deprecated`/`removed` entry is not shown, so for those
+they are optional. When present they must be one trimmed line within the
+length. `scripts/selftest_categories.py` covers the rules.
+
 ### Test fixtures
 
 Several entries exist to exercise this repo's gates and dmcp's test suite rather
@@ -207,7 +237,7 @@ Two rules the validator enforces:
 
 ### Manifest Format (Server Entry Schema)
 
-Each server folder contains a `manifest.json` with **install and run metadata only**. Display metadata (name, summary, keywords, icon, categories) lives in the index. The manifest has no `id`—the ID is the key in the index.
+Each server folder contains a `manifest.json` with **install and run metadata only**. Display metadata (name, summary, title, tagline, keywords, icon, categories) lives in the index. The manifest has no `id`—the ID is the key in the index.
 
 **Required fields:**
 

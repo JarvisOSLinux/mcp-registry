@@ -25,7 +25,7 @@
     {
       "name": "list_channels",
       "description": "List public channels in the Slack workspace.",
-      "threat_level": "safe"
+      "threat_level": "elevated"
     },
     {
       "name": "get_channel_history",

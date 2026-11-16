@@ -323,6 +323,10 @@ def tools_match_the_manifest():
         sorted(t["name"] for t in listed) == sorted(t["name"] for t in declared),
         "the server offers exactly the tools its manifest declares",
     )
+    check(
+        all(t["threat_level"] != "safe" for t in declared),
+        "no tool is safe: server, channel and message text come from people in those servers, and posting reaches them",
+    )
 
 
 def main() -> int:
