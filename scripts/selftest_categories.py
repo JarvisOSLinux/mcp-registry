@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest_categories.py — prove the category and fixture checks actually fire.
+"""selftest_categories.py — prove the category, fixture and listing checks actually fire.
 
 Categories are the one piece of entry metadata that never reaches the embedding
 text (EMBEDDING-SPEC.md), so nothing about a wrong one is loud: a typo does not
@@ -28,6 +28,11 @@ caught too.
      must never be the thing that lifts it.
   8. `fixture: false` and an absent flag behave identically, and a fixture is
      an ordinary entry to every other check.
+  9. A listed entry without `title` or `tagline` ERRORS; a fixture or a revoked
+     entry needs neither. Like categories, they never reach the embedding text,
+     so a missing one shows only as a listing with the model's text in it.
+ 10. A `title` or `tagline` that is empty, not a string, not one trimmed line,
+     or longer than a listing shows ERRORS, on a fixture too.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
@@ -99,7 +104,14 @@ OMIT = object()
 
 
 @contextlib.contextmanager
-def fixture(categories=("productivity",), *, trust="community", flag=OMIT):
+def fixture(
+    categories=("productivity",),
+    *,
+    trust="community",
+    flag=OMIT,
+    title="Demo",
+    tagline="A server for this self-test.",
+):
     """Build a one-server registry whose categories/fixture the case chooses.
 
     Everything else is coherent — a real manifest hash, a matching inline
@@ -121,6 +133,8 @@ def fixture(categories=("productivity",), *, trust="community", flag=OMIT):
             "id": SERVER_ID,
             "name": doc["name"],
             "summary": doc["summary"],
+            "title": "Demo",
+            "tagline": "A server for this self-test.",
             "version": "1.0.0",
             "scope": "user",
             "keywords": doc["keywords"],
@@ -139,6 +153,11 @@ def fixture(categories=("productivity",), *, trust="community", flag=OMIT):
             entry["categories"] = list(categories) if isinstance(categories, tuple) else categories
         if flag is not OMIT:
             entry["fixture"] = flag
+        for key, value in (("title", title), ("tagline", tagline)):
+            if value is OMIT:
+                entry.pop(key, None)
+            else:
+                entry[key] = value
 
         (root / "registry.json").write_text(
             json.dumps(
@@ -263,6 +282,54 @@ def an_explicit_false_flag_reads_as_absent():
     with fixture(OMIT, flag=True):
         code, out = validate()
         check(code != 0, "a fixture still has to declare categories")
+
+
+@case
+def a_listed_entry_needs_its_listing_copy():
+    for field in ("title", "tagline"):
+        with fixture(**{field: OMIT}):
+            code, out = validate()
+            check(code != 0, f"a listed entry without '{field}' fails the gate")
+            check(f"missing '{field}'" in out, f"the finding names the missing '{field}'")
+
+
+@case
+def a_fixture_or_a_revoked_entry_needs_no_listing_copy():
+    with fixture(flag=True, title=OMIT, tagline=OMIT):
+        code, out = validate()
+        check(code == 0, "a fixture passes without title and tagline")
+        check("missing 'title'" not in out, "it raises no listing finding")
+    for trust in ("deprecated", "removed"):
+        with fixture(trust=trust, title=OMIT, tagline=OMIT):
+            code, out = validate()
+            check("missing 'title'" not in out, f"a {trust} entry needs no title")
+            check("missing 'tagline'" not in out, f"a {trust} entry needs no tagline")
+
+
+@case
+def malformed_listing_copy_is_an_error():
+    cases = (
+        ("title", "", "must be a non-empty string"),
+        ("title", 5, "must be a non-empty string"),
+        ("tagline", "   ", "must be a non-empty string"),
+        ("title", " Demo", "must be one line"),
+        ("tagline", "First line.\nSecond line.", "must be one line"),
+        ("title", "x" * 41, "is 41 characters; keep it to 40"),
+        ("tagline", "x" * 121, "is 121 characters; keep it to 120"),
+    )
+    for field, value, finding in cases:
+        with fixture(**{field: value}):
+            code, out = validate()
+            check(code != 0, f"{field} = {value!r:.20} fails the gate")
+            check(finding in out, f"the finding says '{finding}'")
+    # Present on a fixture, it is still checked.
+    with fixture(flag=True, title=""):
+        code, out = validate()
+        check(code != 0, "a fixture's empty title still fails the gate")
+    # The caps are inclusive.
+    with fixture(title="x" * 40, tagline="x" * 120):
+        code, out = validate()
+        check(code == 0, "a 40-character title and a 120-character tagline pass")
 
 
 def main() -> int:

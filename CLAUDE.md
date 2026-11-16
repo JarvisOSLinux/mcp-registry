@@ -43,8 +43,8 @@ scripts/
   selftest_needs_input.py  Self-test of the shell servers' needs_input report
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
-  selftest_categories.py   Temp-dir self-test for the category vocabulary and
-                           fixture flag checks
+  selftest_categories.py   Temp-dir self-test for the category vocabulary,
+                           fixture flag and listing copy (title/tagline) checks
   selftest_wikipedia.py    Fake-Wikipedia self-test for the wikipedia server (language
                            codes kept out of host names, disambiguation, sections and
                            cuts, on this day); honours JOBS_SELFTEST_TREE
@@ -97,6 +97,7 @@ Main index. Each server entry contains:
 - `id`, `name`, `summary`, `version`, `scope`
 - `keywords`, `categories` (closed, validator-enforced vocabulary of capability terms; no `mcp`/`mcp-*` — see MCP-REGISTRY-GUIDE.md)
 - `fixture` (optional bool; a test fixture, dropped from consumer semantic search by dmcp but still installable and still indexed)
+- `title`, `tagline` (what a listing for people shows, e.g. jarvisoslinux.org/servers: a short name and one plain-English line; required on every entry that is neither a fixture nor revoked; set on the entry, never mirrored from the manifest, never embedded — `name`/`summary` are the model's text)
 - `platforms` (mirrored from the manifest; the OSes the registry vouches for — dmcp filters by host from this index alone)
 - `trustStatus` (`community` / `official`; `deprecated` / `removed` for revocation — see `docs/TRUST-MODEL.md`)
 - `integrity` (manifestSha256, setupScriptSha256, setupScriptWindowsSha256)
@@ -256,7 +257,7 @@ python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, 
 python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
-python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag rules
+python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag + title/tagline rules
 python scripts/selftest_wikipedia.py    # Offline self-test: wikipedia server (fake Wikipedia)
 python scripts/selftest_system_status.py  # Offline self-test: system-status parsing against synthetic machines
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
@@ -277,7 +278,8 @@ python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_li
    differences go in per-transport `platforms`, never in a second server)
 2. Optionally add `servers/<id>/setup.sh` (plus `setup.ps1` if vetted on Windows)
 3. Add an entry for the server to `registry.json` (id as the map key, plus
-   id/name/summary/version/scope/trustStatus and the raw-GitHub manifest URL)
+   id/name/summary/version/scope/trustStatus, `categories`, a `title` and
+   `tagline` for listings, and the raw-GitHub manifest URL)
 4. Run `python scripts/sync_registry.py` (fills integrity hashes, syncs
    name/summary/keywords/platforms from the manifest)
 5. Submit PR — `validate-pr.yml` gates it

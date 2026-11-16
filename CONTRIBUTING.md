@@ -254,6 +254,8 @@ as your directory name:
   "id": "com.github.alice.mcp.git-summary",
   "name": "Git Summary",
   "summary": "Summarise the commit history of a local repository",
+  "title": "Git Summary",
+  "tagline": "Sum up what changed in a Git repository, in plain words.",
   "version": "1.0.0",
   "scope": "user",
   "keywords": ["git", "history", "summary"],
@@ -270,6 +272,11 @@ as your directory name:
 There is no `mcp` category: every entry here is an MCP server, so the term
 divided nothing. The full vocabulary is in
 [MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md#categories).
+
+`title` and `tagline` are what a listing for people shows (jarvisoslinux.org/servers):
+a short name, and one plain-English line on what someone can do with your server.
+`name` and `summary` stay written for the model that searches the registry. See
+[MCP-REGISTRY-GUIDE.md](MCP-REGISTRY-GUIDE.md#listing).
 
 Leave `integrity` empty — the sync script computes it. Then run:
 
@@ -453,6 +460,8 @@ only fills in derived fields for entries that already exist:
   "id": "com.github.alice.mcp.git-summary",
   "name": "Git Summary",
   "summary": "Summarise the commit history of a local repository",
+  "title": "Git Summary",
+  "tagline": "Sum up what changed in a Git repository, in plain words.",
   "version": "1.0.0",
   "scope": "user",
   "keywords": ["git"],
