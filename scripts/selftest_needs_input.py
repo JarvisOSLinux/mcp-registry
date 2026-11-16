@@ -33,6 +33,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import pwd
 import subprocess
 import sys
 import tempfile
@@ -275,6 +276,27 @@ def tilde_tests():
             check(
                 "execute_script" in description,
                 "execute_command description points to execute_script",
+            )
+            check(
+                "root's, not the user's" in description,
+                "execute_command description says whose home ~ is as root",
+            )
+            # As root HOME is the invoking user's (dmcp's root half restores
+            # it), so ~ is root's own passwd home: `mkdir -p ~/.config/x` as
+            # root must not leave root's files in the user's home.
+            module = load_module(server_path, f"root_{tag}")
+            real_geteuid, real_env = os.geteuid, dict(os.environ)
+            os.geteuid, os.environ["HOME"] = (lambda: 0), home
+            try:
+                as_root = [module._expand_home(w) for w in ("~", "~/x", "a~b")]
+            finally:
+                os.geteuid = real_geteuid
+                os.environ.clear()
+                os.environ.update(real_env)
+            root_home = pwd.getpwuid(0).pw_dir.rstrip("/") or "/"
+            check(
+                as_root == [root_home, os.path.join(root_home, "x"), "a~b"],
+                "as root a leading ~ is root's home, not HOME",
             )
 
 

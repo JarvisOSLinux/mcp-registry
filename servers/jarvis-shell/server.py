@@ -16,6 +16,7 @@ calls.
 import codecs
 import json
 import os
+import pwd
 import re
 import select
 import shlex
@@ -52,8 +53,9 @@ TOOLS = [
             "Use for single commands: 'python3', 'git', 'ls', etc. It runs the "
             "program without a shell: globs (*), pipes (|), redirects (> or "
             "2>/dev/null), && and $VARS reach the program as literal text; only "
-            "a leading ~ is expanded to the home directory. Use execute_script "
-            "for anything that needs a shell. stdin is "
+            "a leading ~ is expanded, to the home of the user this server runs "
+            "as (root's, not the user's, in jarvis-shell-system). Use "
+            "execute_script for anything that needs a shell. stdin is "
             "closed, so an interactive command cannot be answered here; when the "
             "output ends in an unanswered prompt the result carries a "
             "'needs_input' object (prompted / prompt / hint) — surface it to the "
@@ -356,9 +358,20 @@ def _timeout_seconds(arguments: dict):
     return float(t) if t else None
 
 
+def _home() -> str:
+    """The home of the user this server runs as. As root (jarvis-shell-system)
+    HOME is still the invoking user's, which dmcp's root half restores from
+    SUDO_UID/PKEXEC_UID, and a ~ there would leave root's files in it."""
+    if os.geteuid() == 0:
+        return pwd.getpwuid(0).pw_dir
+    return os.path.expanduser("~")
+
+
 def _expand_home(word: str) -> str:
-    """Expand a leading ~ or ~/ the way a shell would; no shell runs here."""
-    return os.path.expanduser(word) if word == "~" or word.startswith("~/") else word
+    """Expand a leading ~ or ~/ to _home(); no shell runs here."""
+    if word == "~" or word.startswith("~/"):
+        return (_home().rstrip("/") + word[1:]) or "/"
+    return word
 
 
 def _call_execute_command(arguments: dict) -> dict:
