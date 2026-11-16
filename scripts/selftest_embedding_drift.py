@@ -34,6 +34,9 @@ validate entry point against it, and asserts on what it reports:
   8. The validator uses generate_embeddings' own canonical_text/canonical_hash
      objects, not a second definition that could drift from them.
   9. A run carrying warnings never prints a bare "passed" line.
+ 10. embed() speaks Ollama's /api/embeddings and an OpenAI-style
+     /v1/embeddings (llama-server), each in its own request and reply shape,
+     against a stub server on 127.0.0.1.
 
 Offline, stdlib only, writes nothing outside its temp directory.
 
@@ -314,6 +317,50 @@ def the_canonical_definition_is_shared_not_copied():
             )
         ),
         "a tool-description edit changes the canonical hash the gate compares",
+    )
+
+
+@case
+def embed_speaks_ollama_and_openai_style_endpoints():
+    import http.server
+    import threading
+
+    seen = {}
+
+    class Stub(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            seen[self.path] = body
+            if self.path == "/v1/embeddings":
+                reply = {"data": [{"embedding": VECTOR}]}
+            else:
+                reply = {"embedding": VECTOR}
+            data = json.dumps(reply).encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Stub)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        ollama = generate_embeddings.embed("text", MODEL, base + "/api/embeddings")
+        openai = generate_embeddings.embed("text", MODEL, base + "/v1/embeddings")
+    finally:
+        server.shutdown()
+    check(ollama == VECTOR, "an Ollama reply's embedding is the vector")
+    check(openai == VECTOR, "an OpenAI-style reply's data[0].embedding is the vector")
+    check(
+        seen.get("/api/embeddings") == {"model": MODEL, "prompt": "text"},
+        "Ollama is sent the text as prompt",
+    )
+    check(
+        seen.get("/v1/embeddings") == {"model": MODEL, "input": "text"},
+        "an OpenAI-style endpoint is sent the text as input",
     )
 
 

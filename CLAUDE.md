@@ -30,7 +30,7 @@ servers/                   Per-server directories (dir name from the entry's
 scripts/
   sync_registry.py         Recompute integrity hashes (SHA-256)
   sync_lib.py              Refresh the vendored servers/<wrapper>/_lib/ copies (--check for CI)
-  generate_embeddings.py   Generate embedding vectors via Ollama
+  generate_embeddings.py   Generate embedding vectors via Ollama (or llama-server's /v1/embeddings)
   validate_registry.py     PR-gate validation (schema, hashes, trust, orphans)
   remove_server.py         Hard-excise a server (entry + dir + embeddings)
   check_tool_drift.py      Compare each installed wrapper's upstream tools with
@@ -247,7 +247,7 @@ that can prompt. Both are documented for third-party authors in
 
 ```bash
 python scripts/sync_registry.py         # Update/prune integrity hashes + sync name/summary/keywords/platforms (--check for CI)
-python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama; incremental via canonical-text hashes)
+python scripts/generate_embeddings.py   # Generate embeddings (requires Ollama, or OLLAMA_URL at a llama-server /v1/embeddings; incremental via canonical-text hashes)
 python scripts/validate_registry.py     # Validate schema, hashes, trust tiers, orphan dirs, per-tool threat_level, embedding drift (PR gate)
 python scripts/validate_registry.py --strict-embeddings  # ...failing on stale/missing embeddings instead of warning
 python scripts/remove_server.py <id>    # Hard-excise a server (--force for live entries, --check for dry run)
@@ -315,4 +315,4 @@ Two stages, safest first:
 
 - Server IDs use reverse-domain notation: `com.github.<user>.mcp.<name>`
 - Integrity hashes are always recomputed via CI, never manually edited
-- Embeddings use `nomic-embed-text` model via Ollama
+- Embeddings use the `nomic-embed-text` model via Ollama, or llama-server's nomic-embed-text-v1.5 Q8_0 (docs/EMBEDDING-SPEC.md, "Generators")

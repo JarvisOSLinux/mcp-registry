@@ -215,6 +215,26 @@ writes both the per-manifest `{"v": ..., "hash": ...}` form and the inline
 `registry.json` `embeddings` objects (server + per-tool vectors), and updates
 `embedding_spec`.
 
+### Generators
+
+Two generators produce vectors the registry accepts, both `nomic-embed-text`
+at 768 dimensions:
+
+- Ollama's `nomic-embed-text` at `/api/embeddings` (the default, and what the
+  Generate Embeddings workflow runs). Its vectors are not normalised (norms
+  about 17 to 23).
+- llama.cpp's `llama-server` serving `nomic-embed-text-v1.5` Q8_0, at an
+  OpenAI-style `/v1/embeddings` (`OLLAMA_URL=http://127.0.0.1:<port>/v1/embeddings
+  python3 scripts/generate_embeddings.py`). Its vectors are unit-norm. This is
+  also what JARVIS embeds queries with.
+
+For the same canonical text the two agree at cosine 0.998 or more. The norms
+differ, which does no harm because dmcp ranks by full cosine
+(`vector_index.rs`), not by dot product. weather, telegram, wikipedia, maps,
+discord, news and currency were embedded with llama-server (2026-11-15, #135),
+and every other server with Ollama. `embedding_spec.provider` still names the
+workflow's generator, `ollama`.
+
 ### Drift, and what the PR gate does about it
 
 `hash` is what makes drift detectable. It records the canonical text the stored
@@ -329,5 +349,7 @@ is defined here first; the dmcp struct will gain `embeddings` when the semantic
 browse feature is implemented.
 
 ## Changelog — corrected claims
+
+*2026-11-15:* `generate_embeddings.py` also takes an OpenAI-style `/v1/embeddings` URL (llama-server), the generator behind seven servers' vectors in #135; see "Generators".
 
 *2026-07-22:* semantic search marked implemented (`dmcp sync-index` + `browse --vector`); per-manifest embeddings shape corrected to `{model: {v, hash}}`; registry inline `embeddings` (server + per-tool vectors) documented as the consumer path; model-mismatch behavior corrected (JARVIS adopts the registry's model); fallback chain corrected; inline script replaced by the real incremental `scripts/generate_embeddings.py`; `vetted` example fixed; load-time length validation claim removed.
