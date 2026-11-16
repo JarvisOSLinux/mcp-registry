@@ -105,6 +105,8 @@ def fixture(edit_manifest=None):
             "id": SERVER_ID,
             "name": doc["name"],
             "summary": doc["summary"],
+            "title": "Demo",
+            "tagline": "A server for this self-test.",
             "version": "1.0.0",
             "scope": "user",
             "keywords": doc["keywords"],
