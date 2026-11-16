@@ -160,6 +160,12 @@ MIN_SUGGESTED_REMIND_AFTER = 15
 
 REQUIRED_FIELDS = ("id", "name", "summary", "version", "scope", "trustStatus", "manifest")
 
+# What a listing for people shows (validate_listing), each with its length cap.
+LISTING_FIELDS = (("title", 40), ("tagline", 120))
+LISTING_WHAT = {"title": "name", "tagline": "one-line description"}
+# Revoked entries are not listed, so they need no listing copy.
+LISTING_EXEMPT_TRUST = {"deprecated", "removed"}
+
 # Manifest field naming a setup script, paired with the only filename that field
 # may resolve to in this registry. Both are executed on the user's machine, so
 # both must land on a committed file that sync_registry.py hashes.
@@ -915,6 +921,42 @@ def validate_withheld(where: str, manifest: dict, errors: list) -> None:
                 errors.append(f"{where}: {name!r} is both offered in 'tools' and in withheldTools")
 
 
+def validate_listing(where: str, entry: dict, errors: list) -> None:
+    """Check the entry's `title` and `tagline`, what a listing shows a person.
+
+    `name` and `summary` are written for the model that searches the registry
+    ("Secure local filesystem server: read, write, search, diff, patch, and
+    manage files"); a catalogue page for people (jarvisoslinux.org/servers)
+    shows `title` ("Files") and `tagline` ("Find, read, edit and organize your
+    files.") instead, and has nothing else to fall back on but the model's text.
+    Like `categories`, both are catalogue fields: set on the entry, never
+    mirrored from the manifest, never part of the embedding text. Every entry a
+    listing shows needs both; a fixture or a revoked entry is not shown, so for
+    those they are optional.
+    """
+    shown = entry.get("fixture") is not True and entry.get("trustStatus") not in LISTING_EXEMPT_TRUST
+    for field, limit in LISTING_FIELDS:
+        if field not in entry:
+            if shown:
+                errors.append(
+                    f"{where}: missing '{field}' — every entry a listing shows needs a "
+                    f"plain-English {LISTING_WHAT[field]} (MCP-REGISTRY-GUIDE.md, Listing)"
+                )
+            continue
+        value = entry[field]
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{where}: '{field}' must be a non-empty string")
+        elif value != value.strip() or any(ch < " " for ch in value):
+            errors.append(
+                f"{where}: '{field}' must be one line with no leading or trailing space"
+            )
+        elif len(value) > limit:
+            errors.append(
+                f"{where}: '{field}' is {len(value)} characters; keep it to {limit} so a "
+                f"listing can show it whole"
+            )
+
+
 def validate_static(registry: dict, errors: list, warnings: list, embeddings: list) -> None:
     if "servers" not in registry or not isinstance(registry["servers"], dict):
         errors.append("registry.json: missing or malformed 'servers' object")
@@ -947,6 +989,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_platforms(where, entry, errors)
         validate_categories(where, entry, errors)
         validate_fixture(where, entry, errors)
+        validate_listing(where, entry, errors)
 
         manifest_url = entry.get("manifest", "")
         validate_manifest_url(where, manifest_url, errors)
