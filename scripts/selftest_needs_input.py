@@ -33,8 +33,10 @@ import importlib.util
 import json
 import os
 import pathlib
+import pwd
 import subprocess
 import sys
+import tempfile
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 USER_SERVER = REPO / "servers" / "jarvis-shell" / "server.py"
@@ -135,7 +137,7 @@ def unit_tests():
 # Half 2: the real servers over JSON-RPC
 # ---------------------------------------------------------------------------
 
-def rpc(server_path, calls):
+def rpc(server_path, calls, env=None):
     """Spawn `python3 server.py`, send initialize + the calls, collect results."""
     requests = [{"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {}}]
     for i, (name, arguments) in enumerate(calls, start=1):
@@ -154,6 +156,7 @@ def rpc(server_path, calls):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        env=env,
     )
     stdin_blob = "".join(json.dumps(r) + "\n" for r in requests)
     out, _err = proc.communicate(stdin_blob, timeout=30)
@@ -230,6 +233,73 @@ def jsonrpc_tests():
                 check("needs_input" not in payload, f"{label}: needs_input is absent")
 
 
+def tilde_tests():
+    """execute_command has no shell, so it expands a leading ~ itself.
+
+    The model writes `find ~ -name x` the way it would in a terminal; without a
+    shell the "~" reached find as a literal directory name and failed. Only a
+    leading "~" or "~/" is expanded, and the description must say that globs,
+    pipes, redirects and $VARS are not interpreted.
+    """
+    with tempfile.TemporaryDirectory() as home:
+        tool = pathlib.Path(home, "hello.sh")
+        tool.write_text("#!/bin/sh\necho hello-from-home\n")
+        tool.chmod(0o755)
+        env = dict(os.environ, HOME=home)
+        args = ["%s\n", "~", "~/x", "a~b", "~nosuchuser/x", "2>/dev/null"]
+        calls = [
+            ("execute_command", {"command": "printf", "args": args}),
+            ("execute_command", {"command": "~/hello.sh"}),
+        ]
+        expected = [home, f"{home}/x", "a~b", "~nosuchuser/x", "2>/dev/null"]
+        servers = ((USER_SERVER, "jarvis-shell"), (SYSTEM_SERVER, "jarvis-shell-system"))
+        for server_path, tag in servers:
+            print(f"  tilde[{tag}]")
+            listed, ran = rpc(server_path, calls, env=env)
+            check(
+                listed["stdout"].splitlines() == expected,
+                "a leading ~ or ~/ in args is expanded; "
+                "other tildes and shell syntax stay literal",
+            )
+            check(
+                ran["stdout"].strip() == "hello-from-home",
+                "a leading ~/ in the command is expanded",
+            )
+            tools = load_module(server_path, f"desc_{tag}").TOOLS
+            description = next(
+                t["description"] for t in tools if t["name"] == "execute_command"
+            )
+            check(
+                "without a shell" in description,
+                "execute_command description says it runs without a shell",
+            )
+            check(
+                "execute_script" in description,
+                "execute_command description points to execute_script",
+            )
+            check(
+                "root's, not the user's" in description,
+                "execute_command description says whose home ~ is as root",
+            )
+            # As root HOME is the invoking user's (dmcp's root half restores
+            # it), so ~ is root's own passwd home: `mkdir -p ~/.config/x` as
+            # root must not leave root's files in the user's home.
+            module = load_module(server_path, f"root_{tag}")
+            real_geteuid, real_env = os.geteuid, dict(os.environ)
+            os.geteuid, os.environ["HOME"] = (lambda: 0), home
+            try:
+                as_root = [module._expand_home(w) for w in ("~", "~/x", "a~b")]
+            finally:
+                os.geteuid = real_geteuid
+                os.environ.clear()
+                os.environ.update(real_env)
+            root_home = pwd.getpwuid(0).pw_dir.rstrip("/") or "/"
+            check(
+                as_root == [root_home, os.path.join(root_home, "x"), "a~b"],
+                "as root a leading ~ is root's home, not HOME",
+            )
+
+
 # ---------------------------------------------------------------------------
 # Half 3: the two files keep the shared bodies byte-identical
 # ---------------------------------------------------------------------------
@@ -251,7 +321,11 @@ def identity_tests():
     print("  byte_identity")
     user_src = USER_SERVER.read_text()
     system_src = SYSTEM_SERVER.read_text()
-    for header in ("def _detect_unanswered_prompt(", "def _call_execute_command("):
+    for header in (
+        "def _detect_unanswered_prompt(",
+        "def _expand_home(",
+        "def _call_execute_command(",
+    ):
         u = extract_block(user_src, header)
         s = extract_block(system_src, header)
         check(u == s, f"{header[:-1]!r} body is byte-identical in both servers")
@@ -260,6 +334,7 @@ def identity_tests():
 def main():
     unit_tests()
     jsonrpc_tests()
+    tilde_tests()
     identity_tests()
     if FAILURES:
         print(f"\nFAIL: {len(FAILURES)} needs_input self-test assertion(s) failed.")

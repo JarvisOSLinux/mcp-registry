@@ -48,7 +48,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "3b42f6203ea6815364568f6d953e900fa7a844e1",
+    "rev": "569c68bfb55d6e2201e7a29c3aeb703cd2329141",
     "path": "servers/jarvis-shell-system"
   },
   "setupScript": "setup.sh",
