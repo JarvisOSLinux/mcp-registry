@@ -30,6 +30,10 @@ Usage:
   python3 scripts/generate_embeddings.py --force   # re-embed even if hash matches
 
 Requires Ollama running locally (or OLLAMA_URL env var pointing elsewhere).
+OLLAMA_URL may also be an OpenAI-style /v1/embeddings endpoint, such as
+llama.cpp's llama-server serving nomic-embed-text-v1.5 (Q8_0), which made the
+weather, telegram, wikipedia, maps, discord, news and currency vectors
+(docs/EMBEDDING-SPEC.md, "Generators").
 """
 import json
 import hashlib
@@ -74,13 +78,18 @@ def canonical_hash(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def embed(text: str, model: str) -> list[float]:
-    body = json.dumps({"model": model, "prompt": text}).encode()
+def embed(text: str, model: str, url: str | None = None) -> list[float]:
+    url = url or OLLAMA_URL
+    # Ollama's /api/embeddings takes "prompt"; an OpenAI-style /v1/embeddings
+    # (llama-server) takes "input" and answers in data[0].
+    openai = url.rstrip("/").endswith("/v1/embeddings")
+    body = json.dumps({"model": model, "input" if openai else "prompt": text}).encode()
     req = urllib.request.Request(
-        OLLAMA_URL, data=body, headers={"Content-Type": "application/json"}
+        url, data=body, headers={"Content-Type": "application/json"}
     )
     with urllib.request.urlopen(req, timeout=120) as r:
-        return json.loads(r.read())["embedding"]
+        reply = json.loads(r.read())
+    return reply["data"][0]["embedding"] if openai else reply["embedding"]
 
 
 def dir_from_url(url: str) -> str | None:
