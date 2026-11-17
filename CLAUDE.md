@@ -41,7 +41,8 @@ scripts/
                            (official-tier source pin, manifest hosting,
                            lifting a revocation, manifest-change review signal)
   selftest_needs_input.py  Self-test of the shell servers' execute_command: needs_input
-                           report and leading-~ expansion (it runs no shell)
+                           report, leading-~ expansion (it runs no shell) and the
+                           missing-cwd error
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
   selftest_categories.py   Temp-dir self-test for the category vocabulary,
@@ -255,7 +256,7 @@ python scripts/remove_server.py <id>    # Hard-excise a server (--force for live
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
 python scripts/selftest_embedding_drift.py  # Offline self-test: stale/missing embedding detection + severity
 python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, manifest hosting, revocation lifting
-python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection + leading-~ expansion in the shell servers
+python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection + leading-~ expansion + missing-cwd error in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag + title/tagline rules
