@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "scope": "system",
   "platforms": [
     "linux"
@@ -47,7 +47,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "569c68bfb55d6e2201e7a29c3aeb703cd2329141",
+    "rev": "2c3979809dc554b24da58a99156ab9eee63650c2",
     "path": "servers/jarvis-shell-system"
   },
   "setupScript": "setup.sh",
