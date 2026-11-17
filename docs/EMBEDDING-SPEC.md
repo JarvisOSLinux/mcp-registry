@@ -232,7 +232,8 @@ For the same canonical text the two agree at cosine 0.998 or more. The norms
 differ, which does no harm because dmcp ranks by full cosine
 (`vector_index.rs`), not by dot product. weather, telegram, wikipedia, maps,
 discord, news and currency were embedded with llama-server (2026-11-15, #135),
-and every other server with Ollama. `embedding_spec.provider` still names the
+as were jarvis-shell and jarvis-shell-system (2026-11-15), and every other
+server with Ollama. `embedding_spec.provider` still names the
 workflow's generator, `ollama`.
 
 ### Drift, and what the PR gate does about it
