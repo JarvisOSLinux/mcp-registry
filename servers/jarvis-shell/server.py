@@ -528,6 +528,8 @@ _JOB_SOCK = "in.sock"
 _JOB_STATUS = "status"
 _JOB_HOLDER_PID = "holder.pid"
 _JOB_CHILD_PID = "child.pid"
+_JOB_BIN = "bin"
+_JOB_DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 _JOB_FINISHED_TTL_SECS = 24 * 60 * 60
 # Shields a job dir a concurrent run_job created moments ago, before its holder
 # wrote holder.pid — without this the sweep would read "no pid, no status" as a
@@ -994,9 +996,10 @@ def _holder_main(job_dir: str, command: str, ready_fd: int) -> None:
         child_pid, master_fd = pty.fork()
         if child_pid == 0:
             env = os.environ.copy()
-            env.setdefault(
-                "PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-            )
+            env["PATH"] = env.get("PATH") or _JOB_DEFAULT_PATH
+            bin_dir = _job_file(job_dir, _JOB_BIN)
+            if os.path.isdir(bin_dir):
+                env["PATH"] = bin_dir + os.pathsep + env["PATH"]
             try:
                 os.execve("/bin/sh", ["/bin/sh", "-c", command], env)
             finally:
@@ -1028,11 +1031,17 @@ def _holder_main(job_dir: str, command: str, ready_fd: int) -> None:
 
 
 def _spawn_holder(job_dir: str, command: str) -> None:
-    """Detach a holder for the job via double fork + setsid.
+    """Start a holder for the job via double fork + setsid.
 
     Every tool call is a fresh, short-lived server process (one-shot dmcp
-    lifecycle), so the holder must not stay our child — only the filesystem
-    handle survives between calls. The pipe makes startup synchronous: by the
+    lifecycle), so the holder must outlive us — only the filesystem handle
+    survives between calls. It runs in a session of its own, and the first
+    fork stays as its parent until it ends instead of exiting at once: while
+    this call runs, the job's processes are descendants of the process that
+    started it, so a host can tell this job's `sudo` from anyone else's by
+    walking /proc (see _write_sudo_askpass). When this call ends first, the
+    first fork is reparented and the job carries on. The pipe makes startup
+    synchronous: by the
     time the ready byte arrives, holder.pid, in.sock and child.pid all exist.
     A holder that dies during setup closes the pipe instead, and the caller's
     wait loop reports that as crashed (or exited -1, when the holder got far
@@ -1046,18 +1055,23 @@ def _spawn_holder(job_dir: str, command: str) -> None:
         try:
             os.close(read_fd)
             os.setsid()
-            if os.fork() == 0:
-                devnull = os.open(os.devnull, os.O_RDWR)
-                os.dup2(devnull, 0)
-                os.dup2(devnull, 1)
-                os.dup2(devnull, 2)
-                if devnull > 2:
-                    os.close(devnull)
+            # Off the server's pipes before lingering: dmcp reads them to EOF.
+            devnull = os.open(os.devnull, os.O_RDWR)
+            os.dup2(devnull, 0)
+            os.dup2(devnull, 1)
+            os.dup2(devnull, 2)
+            if devnull > 2:
+                os.close(devnull)
+            holder = os.fork()
+            if holder == 0:
                 _holder_main(job_dir, command, write_fd)
+            # Only the holder may keep the ready pipe open, so its death
+            # still reads as EOF.
+            os.close(write_fd)
+            os.waitpid(holder, 0)
         finally:
             os._exit(0)
     os.close(write_fd)
-    os.waitpid(first, 0)
     ready, _, _ = select.select([read_fd], [], [], _JOB_HOLDER_READY_TIMEOUT_SECS)
     if not ready:
         # A dead holder closes the pipe (readable EOF); only a wedged-but-alive
@@ -1079,6 +1093,38 @@ def _spawn_holder(job_dir: str, command: str) -> None:
     except OSError:
         pass
     os.close(read_fd)
+
+
+def _write_sudo_askpass(job_dir: str) -> None:
+    """Give the job a `sudo` that asks through the host's askpass program.
+
+    sudo in a job reads its password from the job's terminal, where only the
+    caller can type, and the caller is a model that must never hold one. When
+    the host names an askpass program in SUDO_ASKPASS, the job's PATH starts
+    with a `sudo` that runs the real one with -A: sudo then runs that program
+    for the password, so the host asks the user and the password reaches sudo
+    alone. Without SUDO_ASKPASS, as root, or where the job dir cannot hold a
+    program, sudo asks on the terminal as before. sudo refuses -A with -S, so
+    a password piped into `sudo -S` fails here.
+    """
+    askpass = os.environ.get("SUDO_ASKPASS", "")
+    if os.geteuid() == 0 or not askpass or not os.access(askpass, os.X_OK):
+        return
+    real = shutil.which("sudo", path=os.environ.get("PATH") or _JOB_DEFAULT_PATH)
+    if real is None:
+        return
+    bin_dir = _job_file(job_dir, _JOB_BIN)
+    try:
+        os.mkdir(bin_dir, 0o700)
+        shim = os.path.join(bin_dir, "sudo")
+        _write_file(shim, f'#!/bin/sh\nexec {shlex.quote(real)} -A "$@"\n')
+        os.chmod(shim, 0o700)
+        usable = os.access(shim, os.X_OK)
+    except OSError:
+        usable = False
+    if not usable:
+        # A noexec runtime dir: a sudo that cannot run is worse than none.
+        shutil.rmtree(bin_dir, ignore_errors=True)
 
 
 class _LiveStream:
@@ -1275,6 +1321,7 @@ def _call_run_job(arguments: dict) -> dict:
                 _release_crashed_job(job_dir)
             shutil.rmtree(job_dir, ignore_errors=True)
         os.mkdir(job_dir, 0o700)
+        _write_sudo_askpass(job_dir)
         _spawn_holder(job_dir, command)
     except (OSError, RuntimeError) as exc:
         return _job_error(f"Could not start job '{job}': {exc}", job)

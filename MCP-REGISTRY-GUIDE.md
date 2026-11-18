@@ -461,10 +461,18 @@ Rules worth copying, each one earned:
 
 - **A PTY, not pipes.** Many programs only prompt when they believe a terminal is
   attached, and the prompt is the thing this pattern exists to surface.
-- **The holder must not be the server's child.** Detach it — double `fork` plus
-  `setsid` — or it dies with the tool call that started it. Put its own stdin,
-  stdout and stderr on `/dev/null`: it was forked from a process whose stdout is
-  the protocol wire.
+- **The holder must outlive the server.** Detach it — double `fork` plus
+  `setsid` — or it dies with the tool call that started it. Put stdin, stdout
+  and stderr on `/dev/null` in the first fork, before anything lingers: it was
+  forked from a process whose stdout is the protocol wire. Let the first fork
+  wait for the holder instead of exiting: the job then stays below the call
+  that started it for as long as that call runs, so a host can trace a process
+  in the job (a `sudo` asking for a password) back to the task it approved.
+- **Never let the caller type a password.** When the host names an askpass
+  program in `SUDO_ASKPASS`, give the job a `sudo` first on its `PATH` that runs
+  the real one with `-A`, so sudo asks the host, the host asks the person, and the
+  password goes to sudo alone. The jarvis-shell servers do this
+  (`_write_sudo_askpass`); without `SUDO_ASKPASS` sudo asks on the job's terminal.
 - **A job name is a path component, not a path.** Validate against a strict
   character set and reject `.` and `..` explicitly — those are navigation, not
   names. In Python, anchor with `\Z`: `$` also matches before a trailing newline,
