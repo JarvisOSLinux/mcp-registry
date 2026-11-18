@@ -52,6 +52,13 @@ command, real Unix sockets, real signals.
      program emits, whose final byte would otherwise land on the prompt line
      as text — and cursor motion stops at a right margin, so naming a column
      cannot turn a dozen bytes into hundreds of megabytes of padding.
+ 10. sudo in a job asks through the host's askpass program: with
+     SUDO_ASKPASS set, the job's `sudo` runs the real one with -A (a stand-in
+     sudo here, first on PATH; the real one never runs), and without it, or
+     with an askpass that cannot run, sudo is left alone. While run_job
+     runs, the job's processes descend from the server process that started
+     it, which is how a host's askpass relay tells this job's sudo from
+     anyone else's.
 
 Offline, stdlib only.
 
@@ -544,6 +551,7 @@ JOB_FUNCTION_HEADERS = [
     "def _holder_relay(",
     "def _holder_main(",
     "def _spawn_holder(",
+    "def _write_sudo_askpass(",
     "def _stream_job_output(",
     "def _job_name_error(",
     "def _job_response(",
@@ -1180,6 +1188,97 @@ def no_xdg_tests():
 
 
 # ---------------------------------------------------------------------------
+# 10: sudo in a job asks through the host's askpass program
+# ---------------------------------------------------------------------------
+
+def sudo_askpass_tests(env, root):
+    print("  sudo_askpass")
+    work = pathlib.Path(tempfile.mkdtemp(prefix="jarvis-shell-sudo-", dir=root))
+    fakebin = work / "fakebin"
+    fakebin.mkdir()
+    fake_sudo = fakebin / "sudo"
+    fake_sudo.write_text('#!/bin/sh\necho "fake sudo:" "$@"\n')
+    fake_sudo.chmod(0o700)
+    askpass = work / "askpass"
+    # Never meant to run; if a real sudo ever did, this ends it rather than
+    # hand it an empty password (a failed try for pam_faillock).
+    askpass.write_text("#!/bin/sh\nkill -KILL $PPID\n")
+    askpass.chmod(0o700)
+    not_runnable = work / "askpass-not-runnable"
+    not_runnable.write_text("#!/bin/sh\n")
+    not_runnable.chmod(0o600)
+
+    base = dict(env)
+    base["PATH"] = f"{fakebin}{os.pathsep}{env.get('PATH', '')}"
+    if shutil.which("sudo", path=base["PATH"]) != str(fake_sudo):
+        check(False, "the stand-in sudo is first on PATH (refusing to go near a real sudo)")
+        return
+
+    def sudo_line(job, askpass_value):
+        run_env = dict(base)
+        run_env.pop("SUDO_ASKPASS", None)
+        if askpass_value is not None:
+            run_env["SUDO_ASKPASS"] = askpass_value
+        srv = Server(run_env)
+        srv.initialize()
+        is_err, payload = srv.call(1, "run_job", {"command": "sudo echo hi", "job": job})
+        srv.close()
+        lines = [
+            line for line in payload.get("transcript", "").splitlines()
+            if line.startswith("fake sudo:")
+        ]
+        return (not is_err), (lines[0] if lines else "")
+
+    as_root = os.geteuid() == 0
+    ok, line = sudo_line("sudo-askpass", str(askpass))
+    check(ok, "a job calling sudo runs with SUDO_ASKPASS set")
+    if as_root:
+        check(line == "fake sudo: echo hi", "as root, sudo in a job is left alone")
+    else:
+        check(line == "fake sudo: -A echo hi", "with SUDO_ASKPASS, sudo in a job runs with -A")
+    ok, line = sudo_line("sudo-plain", None)
+    check(ok and line == "fake sudo: echo hi", "without SUDO_ASKPASS, sudo in a job is left alone")
+    ok, line = sudo_line("sudo-unrunnable", str(not_runnable))
+    check(
+        ok and line == "fake sudo: echo hi",
+        "an askpass that cannot run leaves sudo alone (it would fail every sudo)",
+    )
+    ok, line = sudo_line("sudo-missing", str(work / "no-such-askpass"))
+    check(ok and line == "fake sudo: echo hi", "a missing askpass leaves sudo alone")
+
+    if sys.platform != "linux":
+        return
+    print("  job_ancestry")
+    walk = (
+        "import os\n"
+        "pid, seen = os.getpid(), []\n"
+        "while pid > 1 and len(seen) < 64:\n"
+        "    stat = open(f'/proc/{pid}/stat').read()\n"
+        "    pid = int(stat.rpartition(')')[2].split()[1])\n"
+        "    seen.append(pid)\n"
+        "print('ANCESTORS', ' '.join(map(str, seen)))\n"
+    )
+    srv = Server(env)
+    srv.initialize()
+    is_err, payload = srv.call(
+        1,
+        "run_job",
+        {"command": f"{shlex.quote(sys.executable)} -c {shlex.quote(walk)}", "job": "ancestry"},
+    )
+    server_pid = srv.proc.pid
+    srv.close()
+    ancestors = []
+    for line in payload.get("transcript", "").splitlines():
+        if line.startswith("ANCESTORS "):
+            ancestors = [int(p) for p in line.split()[1:]]
+    check(not is_err and bool(ancestors), "the job printed its ancestry")
+    check(
+        server_pid in ancestors,
+        "while run_job runs, the job descends from the server process that started it",
+    )
+
+
+# ---------------------------------------------------------------------------
 
 def cleanup_jobs(root):
     """Best-effort teardown of any holder a failed test left running."""
@@ -1203,6 +1302,9 @@ def main():
     root = tempfile.mkdtemp(prefix="jarvis-shell-selftest-")
     env = os.environ.copy()
     env["XDG_RUNTIME_DIR"] = root
+    # A host's askpass (run from inside JARVIS, say) would change what sudo
+    # does in every job here; section 10 sets it where it means to.
+    env.pop("SUDO_ASKPASS", None)
     try:
         interactive_tests(env, root)
         exit_code_tests(env)
@@ -1217,6 +1319,7 @@ def main():
         sterilize_job_tests(env, root)
         live_stream_tests(env, root)
         no_xdg_tests()
+        sudo_askpass_tests(env, root)
     finally:
         cleanup_jobs(root)
         shutil.rmtree(root, ignore_errors=True)

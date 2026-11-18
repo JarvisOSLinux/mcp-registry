@@ -193,9 +193,14 @@ that can prompt. Both are documented for third-party authors in
   tool call is a fresh server process (one-shot dmcp lifecycle), so in-process
   state cannot survive to the call that answers a prompt: the job's handle lives
   on the **filesystem** (`$XDG_RUNTIME_DIR/jarvis-shell/<job>/`, uid-checked,
-  `/tmp` fallback) behind a detached PTY holder. `run_job` blocks and streams to
+  `/tmp` fallback) behind a detached PTY holder, whose first fork stays its
+  parent so the job remains below the call that started it while that call runs.
+  `run_job` blocks and streams to
   stderr (stdout is the wire), and carries `blocking: true` +
-  `suggestedRemindAfter: 30`. Output is sterilized at **read** time — `out.log`
+  `suggestedRemindAfter: 30`. With `SUDO_ASKPASS` set (JARVIS's password popup,
+  Project-JARVIS#310), a job's `sudo` is a stand-in first on its PATH that runs
+  the real one with `-A`, so the password is asked of the person, never typed by
+  the model through `send_input`. Output is sterilized at **read** time — `out.log`
   keeps every raw byte — and the transcript is capped at its tail. Gated by
   `scripts/selftest_jobs.py`, which also enforces that both servers' shared
   blocks stay byte-identical.
