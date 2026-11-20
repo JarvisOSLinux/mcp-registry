@@ -34,7 +34,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "23f9ef35ac63ec81055ecf50e2845f6d3e6c2558",
+    "rev": "d2114c9d1c99996399247da8afb4f7da3f7cda1a",
     "path": "servers/microsoft-365"
   },
   "setupScript": "setup.sh",
