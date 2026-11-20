@@ -300,6 +300,42 @@ def tilde_tests():
             )
 
 
+def cwd_tests():
+    """A missing cwd is named as such, not reported as "Command not found".
+
+    subprocess raises the same FileNotFoundError for a missing cwd as for a
+    missing program, so `ls` with cwd=/home/user came back as exit 127
+    "Command not found: ls" and the model could not tell what to fix. A
+    leading ~ in cwd is expanded like one in the command and args.
+    """
+    with tempfile.TemporaryDirectory() as home:
+        missing = os.path.join(home, "no-such-dir")
+        env = dict(os.environ, HOME=home)
+        calls = [
+            ("execute_command", {"command": "ls", "cwd": missing}),
+            ("execute_script", {"script": "ls", "cwd": missing}),
+            ("execute_command", {"command": "pwd", "cwd": "~"}),
+            ("execute_script", {"script": "pwd", "cwd": "~"}),
+        ]
+        servers = ((USER_SERVER, "jarvis-shell"), (SYSTEM_SERVER, "jarvis-shell-system"))
+        for server_path, tag in servers:
+            print(f"  cwd[{tag}]")
+            *missed, cmd_home, scr_home = rpc(server_path, calls, env=env)
+            for tool, payload in zip(("execute_command", "execute_script"), missed):
+                check(
+                    payload["success"] is False and payload["exit_code"] != 127,
+                    f"{tool}: a missing cwd fails without exit 127",
+                )
+                check(
+                    payload["stderr"] == f"Working directory not found: {missing}",
+                    f"{tool}: a missing cwd is named in the error",
+                )
+            check(
+                cmd_home["stdout"].strip() == home and scr_home["stdout"].strip() == home,
+                "a leading ~ in cwd is expanded for both tools",
+            )
+
+
 # ---------------------------------------------------------------------------
 # Half 3: the two files keep the shared bodies byte-identical
 # ---------------------------------------------------------------------------
@@ -325,6 +361,7 @@ def identity_tests():
         "def _detect_unanswered_prompt(",
         "def _expand_home(",
         "def _call_execute_command(",
+        "def _call_execute_script(",
     ):
         u = extract_block(user_src, header)
         s = extract_block(system_src, header)
@@ -335,6 +372,7 @@ def main():
     unit_tests()
     jsonrpc_tests()
     tilde_tests()
+    cwd_tests()
     identity_tests()
     if FAILURES:
         print(f"\nFAIL: {len(FAILURES)} needs_input self-test assertion(s) failed.")

@@ -359,7 +359,11 @@ def _expand_home(word: str) -> str:
 def _call_execute_command(arguments: dict) -> dict:
     command = _expand_home(arguments["command"])
     args = [_expand_home(str(a)) for a in arguments.get("args") or []]
-    cwd = arguments.get("cwd") or None
+    cwd = _expand_home(arguments.get("cwd") or "") or None
+    # Checked here: a missing cwd raises the same FileNotFoundError as a missing
+    # program, and would be reported as "Command not found".
+    if cwd and not os.path.isdir(cwd):
+        return _run_result(False, -1, "", f"Working directory not found: {cwd}")
     timeout = _timeout_seconds(arguments)
     extra_env = arguments.get("env") or {}
 
@@ -407,7 +411,9 @@ def _call_execute_command(arguments: dict) -> dict:
 
 def _call_execute_script(arguments: dict) -> dict:
     script = arguments["script"]
-    cwd = arguments.get("cwd") or None
+    cwd = _expand_home(arguments.get("cwd") or "") or None
+    if cwd and not os.path.isdir(cwd):
+        return _run_result(False, -1, "", f"Working directory not found: {cwd}")
     timeout = _timeout_seconds(arguments)
 
     env = os.environ.copy()
