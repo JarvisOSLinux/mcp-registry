@@ -36,6 +36,9 @@ Static checks (always run):
   - no orphan directory: every first-party servers/<dir>/ is referenced by an
     entry (catches a half-done removal that dropped the entry but left the dir)
   - a manifest's `login` names one of the server's tools
+  - no transport carries an `execution` block yet (dmcp 0.2.0 and older ignore
+    it and run the launch line on the host), and `requiredFeatures` is a list
+    of dmcp feature names dmcp knows
   - a tool's `suggestedRemindAfter` is a whole number of seconds, at least
     MIN_SUGGESTED_REMIND_AFTER
 
@@ -151,6 +154,24 @@ ALLOWED_CATEGORIES = {
 # A server that works in the user's account signs in through its own tool
 # (Project-JARVIS#229, design v3); `login` names it.
 LOGIN_KEYS = {"tool"}
+
+# Names a manifest may list in `requiredFeatures`: the features every dmcp that
+# reads the field implements (dmcp's src/features.rs, KNOWN). A dmcp refuses a
+# manifest listing a name it doesn't know, so any other name would make the
+# server uninstallable everywhere.
+KNOWN_DMCP_FEATURES = {"execution"}
+
+# Why a transport's `execution` block is refused for now. dmcp 0.2.0 and older
+# predate both `execution` and `requiredFeatures` and skip unknown fields, so
+# they would launch a server meant for a container directly on the host, with
+# no error. Nothing in a manifest reaches a released binary, so the registry
+# holds these servers back until those versions are out of use (dmcp#63). When
+# this is lifted, require `"execution"` in `requiredFeatures` alongside it.
+EXECUTION_HELD_BACK = (
+    "'execution' is not accepted in this registry yet: dmcp 0.2.0 and older "
+    "ignore it and would run this launch line on the host instead of where it "
+    "says (see dmcp#63)"
+)
 
 # dispatch repeats a blocking tool's reminder at this interval for as long as
 # the tool runs, and every reminder costs a model turn (10-30 s against a cloud
@@ -757,6 +778,28 @@ def validate_login(where: str, manifest: dict, errors: list) -> None:
         errors.append(f"{where}: login.tool {login.get('tool')!r} is not one of the server's tools")
 
 
+def validate_dmcp_features(where: str, manifest: dict, errors: list) -> None:
+    """Hold back `execution`, and check `requiredFeatures` names."""
+    for position, transport in enumerate(manifest.get("transports") or []):
+        if isinstance(transport, dict) and "execution" in transport:
+            errors.append(f"{where}: transports[{position}]: {EXECUTION_HELD_BACK}")
+
+    if "requiredFeatures" not in manifest:
+        return
+    required = manifest["requiredFeatures"]
+    # The same shape dmcp accepts; anything else it refuses on every host.
+    if not isinstance(required, list) or not all(isinstance(n, str) for n in required):
+        errors.append(f"{where}: 'requiredFeatures' must be an array of feature names")
+        return
+    unknown = [n for n in required if n not in KNOWN_DMCP_FEATURES]
+    if unknown:
+        errors.append(
+            f"{where}: requiredFeatures lists {unknown}, which dmcp does not "
+            f"know (known: {sorted(KNOWN_DMCP_FEATURES)}), so every dmcp would "
+            f"refuse to install this server"
+        )
+
+
 def validate_reminders(where: str, manifest: dict, errors: list) -> None:
     """A tool's suggested reminder interval is long enough to answer."""
     for tool in manifest.get("tools") or []:
@@ -1025,6 +1068,7 @@ def validate_static(registry: dict, errors: list, warnings: list, embeddings: li
         validate_transports(where, manifest, entry, errors, warnings)
         validate_windows_setup(where, dir_name, entry, manifest, errors, warnings)
         validate_login(where, manifest, errors)
+        validate_dmcp_features(where, manifest, errors)
         validate_reminders(where, manifest, errors)
         validate_withheld(where, manifest, errors)
         validate_properties(where, manifest, errors)

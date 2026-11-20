@@ -23,6 +23,7 @@ Display metadata (name, summary, keywords, icon, categories) lives in `registry.
 | `login` | object | No | Names the server's sign-in tool, for a server that works in the user's account. See [Login](#login). |
 | `withheldTools` | object | No | For a wrapper: the upstream tools it leaves out on purpose, by reason. See [Withheld Tools](#withheld-tools). |
 | `stateful` | boolean | No | `true` if the server holds state in-process across tool calls (browser, desktop control, REPL, DB connection). See [Stateful](#stateful). |
+| `requiredFeatures` | array | No | dmcp features the manifest cannot run without. See [Required Features](#required-features). |
 | `trust` | object | No | Human-readable review metadata. See [Trust Object](#trust-object). |
 | `name` | string | No | Display name. Synced into `registry.json` by `sync_registry.py`. |
 | `summary` | string | No | One-line description. Synced into `registry.json`. |
@@ -251,6 +252,34 @@ platform.
 Transport order is the stricter rule and is an error: a transport an earlier one
 already matches is dead on every host at every point in time, so no later PR can
 bring it to life.
+
+### Execution backends (not accepted yet)
+
+dmcp can run a stdio transport's launch line inside a container or behind a
+wrapper, through an `execution` block on the transport (see dmcp's README). This
+registry refuses that block for now. dmcp 0.2.0 and older don't know it, skip it
+like any field they don't know, and would run the launch line directly on the
+host, with no error. `scripts/validate_registry.py` lifts the hold once those
+versions are out of use; from then on, a manifest using `execution` lists it in
+`requiredFeatures`.
+
+---
+
+## Required Features
+
+```json
+"requiredFeatures": ["execution"]
+```
+
+The dmcp features the manifest cannot run without. dmcp skips fields it doesn't
+know, so without this list a manifest that needs a newer dmcp would run in an
+older one with the new part dropped. A dmcp that doesn't know a listed name
+refuses the manifest at install and before every launch. dmcp 0.2.0 and older
+predate the field itself.
+
+Omit it when the manifest needs nothing new. `scripts/validate_registry.py`
+accepts only names dmcp knows (today: `execution`), since any other name makes
+the server uninstallable everywhere.
 
 ---
 
@@ -751,6 +780,8 @@ A Python stdio server with one required API key:
 ```
 
 ## Changelog — corrected claims
+
+*2026-11-19:* `requiredFeatures` documented and validated (names dmcp knows only); a transport's `execution` block is refused for now, because dmcp 0.2.0 and older ignore it and run the launch line on the host (dmcp#63).
 
 *2026-10-18:* setting types (`type`, `values`, `choices`, `multiple`, `separator`, `min`, `max`), validated by `validate_properties`; unknown property fields and duplicate keys are now errors.
 
