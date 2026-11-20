@@ -161,7 +161,10 @@ withholds what the forbidden tier covers or that bypasses the gate (`graph-batch
 container deletes, webhook subscriptions) via `proxy.run_proxy(hidden_tools=…)`.
 The upstream installs with `npm ci` from the committed `package-lock.json`
 (`--ignore-scripts`, optional packages omitted). Defaults to the mail and calendar
-presets (`MS365_PRESET`). Gated by `scripts/selftest_microsoft_365.py`.
+presets (`MS365_PRESET`). A recurring event's `recurrence.range.startDate`, which
+Graph requires to equal the event's start date and models leave out, is filled
+from `start.dateTime` before the call reaches the upstream (`fill_recurrence_start`,
+through `proxy.run_proxy(rewrite=…)`). Gated by `scripts/selftest_microsoft_365.py`.
 
 ### servers/notion/ — a hosted server, signed in by its wrapper
 

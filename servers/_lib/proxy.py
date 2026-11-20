@@ -28,11 +28,17 @@ def run_proxy(
     guard: Optional[Callable[[str, dict], Optional[str]]] = None,
     hidden_tools: Iterable[str] = (),
     allowed_tools: Optional[Iterable[str]] = None,
+    rewrite: Optional[Callable[[str, dict], dict]] = None,
 ) -> int:
     """Run until the client hangs up or the upstream exits. Returns an exit code.
 
     `guard(name, args)` may return an error text to refuse a forwarded call
     before it reaches the upstream (for example "not signed in").
+
+    `rewrite(name, args)` may return the arguments a forwarded call is sent
+    with instead, for a value the upstream's API requires and can only have one
+    right answer. It must not change its input; if it raises, the call goes
+    through as it came.
 
     `hidden_tools` are upstream tools the wrapper withholds: they are dropped
     from every tools/list page and a call to one is refused here, so the client
@@ -150,6 +156,14 @@ def run_proxy(
             if refusal:
                 reply_tool(msg["id"], refusal, True)
                 continue
+            if rewrite:
+                try:
+                    fixed = rewrite(name, args)
+                except Exception as err:  # a rewrite bug must not stop the call
+                    print(f"rewriting {name!r} failed: {err!r}", file=sys.stderr, flush=True)
+                    fixed = args
+                if fixed != args:
+                    line = json.dumps(dict(msg, params=dict(params, arguments=fixed)), separators=(",", ":"))
         try:
             child.stdin.write(line if line.endswith("\n") else line + "\n")
             child.stdin.flush()
