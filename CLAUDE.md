@@ -41,7 +41,8 @@ scripts/
                            (official-tier source pin, manifest hosting,
                            lifting a revocation, manifest-change review signal)
   selftest_needs_input.py  Self-test of the shell servers' execute_command: needs_input
-                           report and leading-~ expansion (it runs no shell)
+                           report, leading-~ expansion (it runs no shell) and the
+                           missing-cwd error
   selftest_jobs.py         End-to-end self-test of the jarvis-shell job model
   selftest_threat_level.py Temp-dir self-test for the tool threat_level check
   selftest_categories.py   Temp-dir self-test for the category vocabulary,
@@ -160,7 +161,10 @@ withholds what the forbidden tier covers or that bypasses the gate (`graph-batch
 container deletes, webhook subscriptions) via `proxy.run_proxy(hidden_tools=…)`.
 The upstream installs with `npm ci` from the committed `package-lock.json`
 (`--ignore-scripts`, optional packages omitted). Defaults to the mail and calendar
-presets (`MS365_PRESET`). Gated by `scripts/selftest_microsoft_365.py`.
+presets (`MS365_PRESET`). A recurring event's `recurrence.range.startDate`, which
+Graph requires to equal the event's start date and models leave out, is filled
+from `start.dateTime` before the call reaches the upstream (`fill_recurrence_start`,
+through `proxy.run_proxy(rewrite=…)`). Gated by `scripts/selftest_microsoft_365.py`.
 
 ### servers/notion/ — a hosted server, signed in by its wrapper
 
@@ -193,9 +197,14 @@ that can prompt. Both are documented for third-party authors in
   tool call is a fresh server process (one-shot dmcp lifecycle), so in-process
   state cannot survive to the call that answers a prompt: the job's handle lives
   on the **filesystem** (`$XDG_RUNTIME_DIR/jarvis-shell/<job>/`, uid-checked,
-  `/tmp` fallback) behind a detached PTY holder. `run_job` blocks and streams to
+  `/tmp` fallback) behind a detached PTY holder, whose first fork stays its
+  parent so the job remains below the call that started it while that call runs.
+  `run_job` blocks and streams to
   stderr (stdout is the wire), and carries `blocking: true` +
-  `suggestedRemindAfter: 30`. Output is sterilized at **read** time — `out.log`
+  `suggestedRemindAfter: 30`. With `SUDO_ASKPASS` set (JARVIS's password popup,
+  Project-JARVIS#310), a job's `sudo` is a stand-in first on its PATH that runs
+  the real one with `-A`, so the password is asked of the person, never typed by
+  the model through `send_input`. Output is sterilized at **read** time — `out.log`
   keeps every raw byte — and the transcript is capped at its tail. Gated by
   `scripts/selftest_jobs.py`, which also enforces that both servers' shared
   blocks stay byte-identical.
@@ -255,7 +264,7 @@ python scripts/remove_server.py <id>    # Hard-excise a server (--force for live
 python scripts/selftest_platform_format.py  # Offline self-test: per-transport platforms + setup.ps1 hashing
 python scripts/selftest_embedding_drift.py  # Offline self-test: stale/missing embedding detection + severity
 python scripts/selftest_trust_gate.py   # Offline self-test: official-tier pin, manifest hosting, revocation lifting
-python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection + leading-~ expansion in the shell servers
+python scripts/selftest_needs_input.py  # Offline self-test: unanswered-prompt detection + leading-~ expansion + missing-cwd error in the shell servers
 python scripts/selftest_jobs.py         # Offline self-test: jarvis-shell interactive job model (PTY jobs, real JSON-RPC)
 python scripts/selftest_threat_level.py # Offline self-test: per-tool threat_level enforcement (missing/invalid/exempt)
 python scripts/selftest_categories.py   # Offline self-test: closed category vocabulary + fixture flag + title/tagline rules

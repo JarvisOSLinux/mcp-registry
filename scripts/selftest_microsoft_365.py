@@ -16,7 +16,9 @@ silently if it breaks. This self-test runs the real wrapper code against stand-i
      declined or expired sign-in instead of hanging.
   3. The proxy withholds the forbidden-class tools on every tools/list page,
      refuses calls to them before the upstream sees them, and replaces the
-     upstream's own `login` with the wrapper's.
+     upstream's own `login` with the wrapper's. A recurring calendar event
+     reaches the upstream with recurrence.range.startDate filled from its
+     start, and a rewrite that raises lets the call through unchanged.
   4. browser.open_link keeps the browser off the MCP wire: an opener that writes
      to stdout does not reach the caller's stdout, and with no display or with
      JARVIS_SIGNIN_NO_BROWSER nothing is started.
@@ -226,6 +228,8 @@ FAKE_MCP = textwrap.dedent(
             print(json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": result}), flush=True)
         elif msg.get("method") == "tools/call":
             log.write(msg["params"]["name"] + "\\n"); log.flush()
+            with open(os.environ["FAKE_CALLS"] + ".args", "a") as args_log:
+                args_log.write(json.dumps(msg["params"].get("arguments") or {}) + "\\n")
             print(json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": {"content": [{"type": "text", "text": "upstream"}]}}), flush=True)
     """
 )
@@ -238,9 +242,23 @@ PROXY_MAIN = textwrap.dedent(
     from _lib import proxy
     sys.exit(proxy.run_proxy(upstream_argv=[sys.executable, {fake!r}], upstream_env=dict(__import__("os").environ),
                              upstream_cwd=None, local_tools=[server.LOGIN_TOOL], handlers={{"login": lambda a: "local"}},
-                             hidden_tools=server.HIDDEN_TOOLS, allowed_tools=server.REVIEWED_TOOLS))
+                             hidden_tools=server.HIDDEN_TOOLS, allowed_tools=server.REVIEWED_TOOLS,
+                             rewrite={rewrite}))
     """
 )
+
+RECURRING = {
+    "calendarId": "cal-1",
+    "body": {
+        "subject": "CPT_S - Big Data",
+        "start": {"dateTime": "2026-11-20T14:00:00", "timeZone": "Pacific Standard Time"},
+        "end": {"dateTime": "2026-11-20T15:00:00", "timeZone": "Pacific Standard Time"},
+        "recurrence": {
+            "pattern": {"type": "weekly", "interval": 1, "daysOfWeek": ["monday", "wednesday", "friday"]},
+            "range": {"type": "endDate", "endDate": "2026-12-04"},
+        },
+    },
+}
 
 
 def case_proxy():
@@ -248,7 +266,7 @@ def case_proxy():
         fake = tmp / "fake_mcp.py"
         fake.write_text(FAKE_MCP)
         main = tmp / "proxy_main.py"
-        main.write_text(PROXY_MAIN.format(wrapper=str(WRAPPER), fake=str(fake)))
+        main.write_text(PROXY_MAIN.format(wrapper=str(WRAPPER), fake=str(fake), rewrite="server.fill_recurrence_start"))
         calls = tmp / "calls.log"
         calls.touch()
         child = subprocess.Popen([sys.executable, str(main)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
@@ -270,13 +288,75 @@ def case_proxy():
         local = ask({"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "login", "arguments": {}}})["result"]
         passed = ask({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "send-mail", "arguments": {}}})["result"]
         unreviewed = ask({"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "unreviewed-tool", "arguments": {}}})["result"]
+        ask({"jsonrpc": "2.0", "id": 7, "method": "tools/call",
+             "params": {"name": "create-specific-calendar-event", "arguments": RECURRING}})
         child.kill()
         child.wait()
         check(refused.get("isError") is True, "a call to a withheld tool is refused")
         check(local["content"][0]["text"] == "local", "login is answered by the wrapper")
         check(passed["content"][0]["text"] == "upstream", "other calls reach the upstream")
         check(unreviewed.get("isError") is True, "a call to an undeclared tool is refused")
-        check(calls.read_text().split() == ["send-mail"], "neither a withheld or undeclared tool nor login reached the upstream")
+        check(calls.read_text().split() == ["send-mail", "create-specific-calendar-event"],
+              "neither a withheld or undeclared tool nor login reached the upstream")
+        sent = [json.loads(line) for line in (tmp / "calls.log.args").read_text().splitlines()]
+        check(sent[-1]["body"]["recurrence"]["range"].get("startDate") == "2026-11-20",
+              "a recurring event reaches the upstream with its first date filled in")
+        check(sent[0] == {}, "other calls reach the upstream as they came")
+
+
+def case_recurrence_start():
+    fill = server.fill_recurrence_start
+    filled = fill("create-specific-calendar-event", RECURRING)
+    check(filled["body"]["recurrence"]["range"] == {"type": "endDate", "endDate": "2026-12-04", "startDate": "2026-11-20"},
+          "a missing startDate is the date of start.dateTime")
+    check("startDate" not in RECURRING["body"]["recurrence"]["range"], "the caller's arguments are not changed")
+    for tool in sorted(server.RECURRING_EVENT_TOOLS):
+        check(fill(tool, RECURRING) == filled, f"{tool} gets it")
+    given = json.loads(json.dumps(RECURRING))
+    given["body"]["recurrence"]["range"]["startDate"] = "2026-11-23"
+    check(fill("create-calendar-event", given) == given, "a startDate already given is kept")
+    null = json.loads(json.dumps(RECURRING))
+    null["body"]["recurrence"]["range"]["startDate"] = None
+    check(fill("create-calendar-event", null)["body"]["recurrence"]["range"]["startDate"] == "2026-11-20",
+          "a null startDate is filled too")
+    no_start = json.loads(json.dumps(RECURRING))
+    del no_start["body"]["start"]
+    check(fill("update-calendar-event", no_start) == no_start, "an update that does not move the start is left alone")
+    single = json.loads(json.dumps(RECURRING))
+    del single["body"]["recurrence"]
+    check(fill("create-calendar-event", single) == single, "a single event is left alone")
+    odd = json.loads(json.dumps(RECURRING))
+    odd["body"]["start"]["dateTime"] = "tomorrow at 2"
+    check(fill("create-calendar-event", odd) == odd, "a start that is not a date is left for the upstream to refuse")
+    check(fill("send-mail", RECURRING) == RECURRING, "other tools are left alone")
+
+    seen: dict = {}
+    saved = (server.proxy.run_proxy, server.UPSTREAM_ENTRY)
+    server.proxy.run_proxy = lambda **kwargs: seen.update(kwargs) or 0
+    server.UPSTREAM_ENTRY = Path(__file__)
+    try:
+        server.main()
+    finally:
+        server.proxy.run_proxy, server.UPSTREAM_ENTRY = saved
+    check(seen.get("rewrite") is fill, "the wrapper hands the fill to the proxy")
+
+    with sandbox() as tmp:
+        fake = tmp / "fake_mcp.py"
+        fake.write_text(FAKE_MCP)
+        main = tmp / "proxy_main.py"
+        main.write_text(PROXY_MAIN.format(wrapper=str(WRAPPER), fake=str(fake), rewrite="lambda name, args: 1 / 0"))
+        calls = tmp / "calls.log"
+        calls.touch()
+        child = subprocess.Popen([sys.executable, str(main)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, text=True, env=dict(os.environ, FAKE_CALLS=str(calls)))
+        child.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                      "params": {"name": "send-mail", "arguments": {"to": "x"}}}) + "\n")
+        child.stdin.flush()
+        answer = json.loads(child.stdout.readline())["result"]
+        child.kill()
+        child.wait()
+        check(answer["content"][0]["text"] == "upstream", "a rewrite that raises still lets the call through")
+        check(json.loads((tmp / "calls.log.args").read_text()) == {"to": "x"}, "and unchanged")
 
 
 OPENER = "#!/bin/sh\necho 'Opening in existing browser session.'\necho \"$1\" >> \"$FAKE_OPENED\"\n"
@@ -339,7 +419,8 @@ def case_manifest_and_vendoring():
 
 def main() -> int:
     global running
-    for fn in (case_cache_store, case_login, case_account_name, case_arguments, case_proxy, case_browser, case_manifest_and_vendoring):
+    for fn in (case_cache_store, case_login, case_account_name, case_arguments, case_proxy, case_recurrence_start,
+               case_browser, case_manifest_and_vendoring):
         running = fn.__name__
         print(f"  {running}")
         fn()

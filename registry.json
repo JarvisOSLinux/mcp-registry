@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-11-17T07:25:28Z",
+  "updated": "2026-11-20T15:12:57Z",
   "signing": {
     "keyringUrl": null,
     "signatures": []
@@ -4835,7 +4835,7 @@
       "summary": "Run commands as the logged-in user on the computer JARVIS runs on, no root or password needed: quick system update checks that list available package updates (checkupdates, pacman -Qu, apt list --upgradable, dnf check-update, yay -Qua for the AUR), reading logs and service status, and running programs and scripts. Interactive commands run as named PTY jobs answerable mid-run via send_input; files, URLs and apps open in the desktop session. AUR helpers (yay, paru) run here, never as root: makepkg refuses root. No sudo: applying updates, installing packages and other privileged commands go to jarvis-shell-system-mcp.",
       "title": "Shell",
       "tagline": "Run commands as you, no password needed.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "scope": "user",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
       "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
@@ -4872,7 +4872,7 @@
       "trustStatus": "official",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell/manifest.json",
       "integrity": {
-        "manifestSha256": "8a6e12b68f03311b12f79de5fb6e9b62bd2192cc5193252a14419c727646eb9e",
+        "manifestSha256": "431fb1bb72f114817177be25563cfc28fca7798f1b6054db464020001df04749",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -5657,7 +5657,7 @@
       "summary": "Run commands as root on the computer JARVIS runs on: applying system updates and upgrades (pacman -Syu, apt upgrade, dnf upgrade), installing and removing packages, starting, stopping and restarting systemd services, and other administrator work. Each call asks for the administrator password unless one given moments ago still covers it (polkit's short grace window, or sudo's own timestamp rules when JARVIS's sudo popup is on). Only checking whether updates exist needs no root (jarvis-shell-mcp), and AUR helpers run there too: makepkg refuses root. Installed to /usr/share/mcp; interactive commands (a package manager's [Y/n]) run as named PTY jobs answerable mid-run via send_input",
       "title": "Shell as root",
       "tagline": "Run commands as root after your password: updates, installs, services.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "scope": "system",
       "homepage": "https://github.com/JarvisOSLinux/mcp-registry",
       "icon": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/logo/Logo.png",
@@ -5696,7 +5696,7 @@
       "trustStatus": "official",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/jarvis-shell-system/manifest.json",
       "integrity": {
-        "manifestSha256": "ee45a4992dd38186607f6e7bd7d2adb663e3a96babbb494c9979c2ba9a702c8c",
+        "manifestSha256": "e5050b92c93961319ed094ab9b13fd9d957ce5a183ec791ff86a977512283dd6",
         "setupScriptSha256": "a270a38cdb72cf3a161e0023b598db77bc9b7f0d2390316ed9ea55268ee1261d"
       },
       "embeddings": {
@@ -32423,7 +32423,7 @@
       ],
       "trustStatus": "community",
       "integrity": {
-        "manifestSha256": "f5f32b3551b403ee6de5eb6acc24f6a1f32f4f2332db7e27703e2b012f70ba32",
+        "manifestSha256": "0883967a3b199310daec11b32576b15048c3f365a07d19fa634ffdc9f7077bca",
         "setupScriptSha256": "83621e459dbe0cca7c01879a80264043d659269155572ae4c9cfc1abd4c91407"
       },
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/microsoft-365/manifest.json",

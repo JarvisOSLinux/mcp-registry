@@ -4,7 +4,7 @@
 The upstream server (@softeria/ms-365-mcp-server, installed into ./upstream by
 setup.sh at a pinned version) already signs in by itself, so this wrapper reuses
 its sign-in rather than writing one (Project-JARVIS#229, design v3). It changes
-three things, and forwards everything else unchanged:
+four things, and forwards everything else unchanged:
 
 - `login`: the upstream's own `login` tool returns the device code at once and
   finishes the sign-in in the background of the same process. dmcp starts a
@@ -19,6 +19,9 @@ three things, and forwards everything else unchanged:
 - Withheld tools: tools in the forbidden classes of the threat model (mass
   deletion, an arbitrary Graph passthrough) and webhook subscriptions are hidden
   and refused. See HIDDEN_TOOLS.
+- A recurring event's first date: Graph requires recurrence.range.startDate
+  and says it must be the event's start date, which the call already carries.
+  See fill_recurrence_start.
 
 The upstream's `verify-login`, `logout` and account tools work as they are: they
 read the same cache.
@@ -238,6 +241,43 @@ def tool_login(args: dict) -> str:
     raise proxy.ToolError("the sign-in did not complete (declined, or the code expired)")
 
 
+# The calendar tools whose body may carry a recurrence.
+RECURRING_EVENT_TOOLS = frozenset(
+    {
+        "create-calendar-event",
+        "create-specific-calendar-event",
+        "update-calendar-event",
+        "update-specific-calendar-event",
+    }
+)
+_DATE_START = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+
+def fill_recurrence_start(name: str, args: dict) -> dict:
+    """`args` with recurrence.range.startDate taken from start.dateTime when missing.
+
+    Graph documents startDate as required and "the same value as the start
+    property of the recurring event", but the upstream's schema lets it be left
+    out, and models leave it out: Graph then reads 0001-01-01 and answers "The
+    recurrence start date is too early" (Project-JARVIS session 43940ebc, three
+    weekly classes, twelve failed calls). A date already given is left alone.
+    """
+    if name not in RECURRING_EVENT_TOOLS:
+        return args
+    body = args.get("body")
+    if not isinstance(body, dict):
+        return args
+    recurrence, start = body.get("recurrence"), body.get("start")
+    if not isinstance(recurrence, dict) or not isinstance(start, dict):
+        return args
+    span, when = recurrence.get("range"), start.get("dateTime")
+    if not isinstance(span, dict) or span.get("startDate") or not isinstance(when, str):
+        return args
+    if not _DATE_START.match(when):
+        return args
+    return dict(args, body=dict(body, recurrence=dict(recurrence, range=dict(span, startDate=when[:10]))))
+
+
 def main() -> int:
     if not UPSTREAM_ENTRY.is_file():
         log(f"microsoft-365: upstream server not installed ({UPSTREAM_ENTRY}); run this server's setup again")
@@ -265,6 +305,7 @@ def main() -> int:
         handlers={"login": tool_login},
         hidden_tools=HIDDEN_TOOLS,
         allowed_tools=REVIEWED_TOOLS,
+        rewrite=fill_recurrence_start,
     )
 
 
