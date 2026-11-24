@@ -26728,7 +26728,7 @@
       "trustStatus": "community",
       "manifest": "https://raw.githubusercontent.com/JarvisOSLinux/mcp-registry/main/servers/steam/manifest.json",
       "integrity": {
-        "manifestSha256": "9d60326565be234347ddcdae94207e37041fe2ac8100fca4951fe76d10ccb563",
+        "manifestSha256": "1db90dc79bc01c9143f751943d9df630dd217b3edcf10364caaddc8861acd183",
         "setupScriptSha256": "0a6696f654c79bcc53ae60fb34f9d1a1adc8b2adbf26aaa2a71917804d54ed50",
         "setupScriptWindowsSha256": "5b4a90b98091c2c4740d462670fd37405ad98797125fc7a6d3643e5eaf92a555"
       },
