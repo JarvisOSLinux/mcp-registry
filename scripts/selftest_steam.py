@@ -478,6 +478,21 @@ def store_text_is_plain_and_linux_is_judged():
 
 
 @case
+def choices_are_read_as_a_model_spells_them():
+    with Sandbox() as box:
+        # The first live test: "games in trend" came as kind "top sellers" and was refused.
+        for spelled in ("top sellers", "Top-Sellers", "trending"):
+            failed, result, text = box.call("store_highlights", {"kind": spelled})
+            check(not failed and result["kind"] == "top_sellers", f"kind {spelled!r} is top_sellers")
+        _, result, _ = box.call("store_highlights", {"kind": "sales"})
+        check(result["kind"] == "specials", "kind 'sales' is specials")
+        failed, _, _ = box.call("installed_games", {"sort": "Last played"})
+        check(not failed, "sort 'Last played' is last_played")
+        failed, _, text = box.call("store_highlights", {"kind": "cheapest"})
+        check(failed and "specials, top_sellers, new_releases, coming_soon" in text, "anything else is refused with the choices")
+
+
+@case
 def steam_links_are_handed_off_detached():
     with Sandbox() as box:
         module = importlib.util.module_from_spec(importlib.util.spec_from_file_location("steam_launch", SERVER))

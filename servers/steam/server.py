@@ -813,12 +813,35 @@ def tool_linux_compatibility(args: dict) -> dict:
 
 
 HIGHLIGHT_KINDS = ("specials", "top_sellers", "new_releases", "coming_soon")
+# What a model may say instead: "games in trend" became "top sellers" in the
+# first live test.
+HIGHLIGHT_ALIASES = {
+    "sales": "specials",
+    "sale": "specials",
+    "deals": "specials",
+    "on_sale": "specials",
+    "trending": "top_sellers",
+    "popular": "top_sellers",
+    "bestsellers": "top_sellers",
+    "new": "new_releases",
+    "upcoming": "coming_soon",
+}
+
+
+def _choice(args: dict, key: str, choices, default: str, aliases: dict | None = None) -> str:
+    """A choice as a model may spell it: "Top sellers" and "top-sellers" are top_sellers."""
+    raw = str(args.get(key) or "").strip()
+    if not raw:
+        return default
+    value = re.sub(r"[\s-]+", "_", raw.casefold())
+    value = (aliases or {}).get(value, value)
+    if value not in choices:
+        raise SteamError(f"{key} is one of {', '.join(choices)}.")
+    return value
 
 
 def tool_store_highlights(args: dict) -> dict:
-    kind = str(args.get("kind") or "specials")
-    if kind not in HIGHLIGHT_KINDS:
-        raise SteamError(f"kind is one of {', '.join(HIGHLIGHT_KINDS)}.")
+    kind = _choice(args, "kind", HIGHLIGHT_KINDS, "specials", HIGHLIGHT_ALIASES)
     limit = _int_arg(args, "limit", 15, 1, 40)
     reply = _get(STORE_URL, "/api/featuredcategories", {"cc": _country(), "l": "english"}, ttl=600)
     seen = set()
@@ -873,9 +896,7 @@ WORKSHOP_SORTS = {"popular": 0, "recent": 1, "trending": 3}
 def tool_search_workshop(args: dict) -> dict:
     appid, matched, how = _game_args(args)
     query = str(args.get("query") or "").strip()
-    sort = str(args.get("sort") or "popular")
-    if sort not in WORKSHOP_SORTS:
-        raise SteamError("sort is popular, recent or trending.")
+    sort = _choice(args, "sort", WORKSHOP_SORTS, "popular")
     limit = _int_arg(args, "limit", 10, 1, 30)
     params = {
         "appid": appid,
@@ -922,9 +943,7 @@ LIBRARY_SORTS = ("playtime", "recent", "name", "never_played")
 
 
 def tool_my_library(args: dict) -> dict:
-    sort = str(args.get("sort") or "playtime")
-    if sort not in LIBRARY_SORTS:
-        raise SteamError(f"sort is one of {', '.join(LIBRARY_SORTS)}.")
+    sort = _choice(args, "sort", LIBRARY_SORTS, "playtime")
     limit = _int_arg(args, "limit", 25, 1, 200)
     games = _owned_games(_my_steam_id(), ttl=300)
     if games is None:
@@ -1160,9 +1179,7 @@ INSTALLED_SORTS = ("size", "last_played", "name")
 
 
 def tool_installed_games(args: dict) -> dict:
-    sort = str(args.get("sort") or "size")
-    if sort not in INSTALLED_SORTS:
-        raise SteamError(f"sort is one of {', '.join(INSTALLED_SORTS)}.")
+    sort = _choice(args, "sort", INSTALLED_SORTS, "size")
     include_tools = bool(args.get("include_tools"))
     root, apps, libraries = _installed()
     if root is None:
@@ -1319,9 +1336,7 @@ def tool_open_steam_page(args: dict) -> dict:
             raise SteamError("workshop_item is a Workshop item's number, as search_workshop shows it.")
         note = _open_in_steam(f"steam://url/CommunityFilePage/{item}")
         return {"opened": f"Workshop item {item}", "notes": [note] if note else []}
-    page = str(args.get("page") or "store")
-    if page not in PAGES:
-        raise SteamError(f"page is one of {', '.join(PAGES)}.")
+    page = _choice(args, "page", PAGES, "store")
     appid, matched, how = _game_args(args)
     note = _open_in_steam(PAGES[page].format(appid=appid))
     return {"opened": f"{page} page", "appid": appid, "game": matched or None, "notes": [note] if note else []}
