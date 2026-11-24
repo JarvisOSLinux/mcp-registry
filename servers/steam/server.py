@@ -1349,13 +1349,44 @@ def tool_uninstall_game(args: dict) -> dict:
     note = _open_in_steam(f"steam://uninstall/{appid}")
     if note:
         notes.append(note)
+    name = local["name"]
+    # Steam does not always ask: Yakup's live test cancelled a download in
+    # progress and removed it within a second, while this said "nothing is
+    # removed until you confirm". So say what Steam did, from its own files.
+    if _gone_within(appid, UNINSTALL_WATCH_SECONDS):
+        if local["status"] in DOWNLOAD_STATES:
+            message = f"Steam cancelled the download of {name} and removed what it had fetched, without asking."
+        else:
+            message = f"Steam uninstalled {name} without asking."
+        return {"appid": appid, "name": name, "uninstalled": True, "frees_gb": local["size_gb"],
+                "message": message, "notes": notes}
     return {
         "appid": appid,
-        "name": local["name"],
+        "name": name,
+        "uninstalled": False,
         "frees_gb": local["size_gb"],
-        "message": f"Steam is asking to confirm uninstalling {local['name']}; nothing is removed until you confirm there.",
+        "message": (
+            f"{name} is still installed: Steam is showing its own question before uninstalling it. "
+            "If no Steam window asks, nothing happened; ask again to check."
+        ),
         "notes": notes,
     }
+
+
+UNINSTALL_WATCH_SECONDS = 6.0
+DOWNLOAD_STATES = ("downloading", "download queued", "download paused")
+
+
+def _gone_within(appid: int, seconds: float) -> bool:
+    """Whether Steam removes the app's install record within `seconds`."""
+    deadline = time.monotonic() + seconds
+    while True:
+        _, apps, _ = _installed()
+        if not any(a["appid"] == appid and a["status"] != "not installed" for a in apps):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.5)
 
 
 PAGES = {
@@ -1534,7 +1565,7 @@ TOOLS = [
     },
     {
         "name": "uninstall_game",
-        "description": "Uninstall a game from this computer through Steam, which asks to confirm. Warns when the game's saves aren't in Steam Cloud.",
+        "description": "Uninstall a game from this computer through Steam, or cancel its download. Steam usually asks to confirm an installed game, but cancels a download at once; the result says which happened. Warns when the game's saves aren't in Steam Cloud.",
         "inputSchema": {"type": "object", "properties": {"game": _GAME}, "required": ["game"]},
     },
     {

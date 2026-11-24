@@ -404,8 +404,11 @@ def installing_never_buys():
 @case
 def uninstalling_warns_about_saves():
     with Sandbox() as box:
+        box.module.UNINSTALL_WATCH_SECONDS = 0.2
         _, result, _ = box.call("uninstall_game", {"game": "Saveless"})
         check(box.launched == ["steam://uninstall/500"], "uninstall opens Steam's own confirmation")
+        check(result["uninstalled"] is False and "still installed" in result["message"],
+              "while Steam's question is open, the game is reported as still installed")
         check(any("Steam Cloud" in n for n in result["notes"]), "a game without Steam Cloud gets a saves warning")
         box.launched.clear()
         _, result, _ = box.call("uninstall_game", {"game": "detroit"})
@@ -504,6 +507,29 @@ def choices_are_read_as_a_model_spells_them():
         check(not failed, "sort 'Last played' is last_played")
         failed, _, text = box.call("store_highlights", {"kind": "cheapest"})
         check(failed and "specials, top_sellers, new_releases, coming_soon" in text, "anything else is refused with the choices")
+
+
+@case
+def an_uninstall_reports_what_steam_did():
+    # The live test: steam://uninstall on a game mid-download cancelled and
+    # removed it at once, while the tool said Steam was asking to confirm.
+    with Sandbox() as box:
+        box.module.UNINSTALL_WATCH_SECONDS = 2
+
+        def steam_removes(url):
+            box.launched.append(url)
+            for found in box.tmp.rglob(f"appmanifest_{url.rsplit('/', 1)[1]}.acf"):
+                found.unlink()
+
+        box.module._launch = steam_removes
+        _, result, _ = box.call("uninstall_game", {"game": "Deep Rock"})
+        check(result["uninstalled"] is True and "cancelled the download" in result["message"],
+              "a download Steam cancels is reported as cancelled")
+        check("still installed" not in result["message"] and "until you confirm" not in result["message"],
+              "and not as waiting for a question")
+        _, result, _ = box.call("uninstall_game", {"game": "Saveless"})
+        check(result["uninstalled"] is True and "uninstalled Saveless Game without asking" in result["message"],
+              "an installed game Steam removes at once is reported as removed")
 
 
 @case
