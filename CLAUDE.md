@@ -81,6 +81,10 @@ scripts/
   selftest_telegram.py     Fake-Telegram self-test for the telegram server (messages saved
                            before Telegram deletes them, token scrubbed from errors, chats
                            named or numbered, splitting, files); honours JOBS_SELFTEST_TREE
+  selftest_steam.py        Fake-Steam self-test for the steam server (never buys, key only to
+                           api.steampowered.com and scrubbed, redirects pinned, every library
+                           folder read, login name never read out, steam:// links detached);
+                           honours JOBS_SELFTEST_TREE
 docs/
   EMBEDDING-SPEC.md        Embedding format spec
   REGISTRY-AUTOMATION.md   CI/CD automation strategy
@@ -279,6 +283,7 @@ python scripts/selftest_news.py         # Offline self-test: news server (fake o
 python scripts/selftest_notion.py       # Offline self-test: Notion wrapper (fake hosted server)
 python scripts/selftest_currency.py     # Offline self-test: currency server (fake Frankfurter)
 python scripts/selftest_telegram.py     # Offline self-test: telegram server (fake Telegram)
+python scripts/selftest_steam.py        # Offline self-test: steam server (fake Steam and Steam folder)
 python scripts/sync_lib.py              # Refresh vendored servers/<wrapper>/_lib copies (--check to verify)
 ```
 
