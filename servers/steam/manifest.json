@@ -64,7 +64,7 @@
   "source": {
     "type": "git",
     "url": "https://github.com/JarvisOSLinux/mcp-registry.git",
-    "rev": "b2b5a5af1c1aefe8ae34078efe80ee250a2587c1",
+    "rev": "7a4dc2883224858685966e834eed375135c3d3c3",
     "path": "servers/steam"
   },
   "setupScript": "setup.sh",
