@@ -63,6 +63,10 @@ scripts/
                            across servers, no @everyone/@here/role pings, splitting, the
                            Message Content intent, token kept to its header); honours
                            JOBS_SELFTEST_TREE
+  selftest_notifications.py  Self-test for the notifications server against a stand-in busctl
+                           (one-time codes blanked before storing, JARVIS's own and excluded
+                           apps never logged, owner-only log, last-check window, the
+                           collector's exits, setup's user service); honours JOBS_SELFTEST_TREE
   selftest_signin_lib.py   Loopback self-test for the shared sign-in helper and the
                            GitHub wrapper (host pinning, device flow, token store,
                            stdio proxy, vendored-copy drift)
@@ -277,6 +281,7 @@ python scripts/selftest_system_status.py  # Offline self-test: system-status par
 python scripts/selftest_tool_declarations.py  # Offline self-test: `login` names a tool; reminder interval floor
 python scripts/selftest_maps.py         # Offline self-test: maps server (fake OpenStreetMap services)
 python scripts/selftest_discord.py      # Offline self-test: discord server (fake Discord)
+python scripts/selftest_notifications.py  # Offline self-test: notifications server (stand-in busctl, temp state)
 python scripts/selftest_signin_lib.py   # Offline self-test: sign-in helper + GitHub wrapper (loopback provider)
 python scripts/selftest_microsoft_365.py  # Offline self-test: Microsoft 365 wrapper (stand-in upstream)
 python scripts/selftest_news.py         # Offline self-test: news server (fake outlets and GDELT)
