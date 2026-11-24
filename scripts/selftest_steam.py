@@ -248,6 +248,11 @@ class Sandbox:
         module._steam_running = lambda: True
         self.launched = []
         module._launch = self.launched.append
+        module.INSTALL_START_WAIT = 0.3
+        module.INSTALL_POLL = 0.05
+        module.INSTALL_REPORT_EVERY = 0.0
+        module.UNINSTALL_WATCH_SECONDS = 0.2
+        self.root = root
         self.module = module
         return self
 
@@ -270,11 +275,15 @@ def tools_match_the_manifest():
         listed = box.module._handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]
     declared = {t["name"]: t["threat_level"] for t in json.loads(MANIFEST.read_text())["tools"]}
     check(sorted(t["name"] for t in listed) == sorted(declared), "the server offers exactly the tools its manifest declares")
-    check(declared.get("uninstall_game") == "dangerous", "uninstalling is dangerous: saves can go with the game")
+    # Yakup's decision (2026-11-23): Steam does these through its own client and windows.
     check(
-        all(declared.get(t) == "elevated" for t in ("friends", "games_in_common", "install_game", "play_game")),
-        "other people's activity and acting on this computer ask first",
+        all(declared.get(t) == "safe" for t in ("install_game", "play_game", "uninstall_game")),
+        "installing, starting and uninstalling through Steam don't ask first",
     )
+    check(all(declared.get(t) == "elevated" for t in ("friends", "games_in_common")), "other people's activity asks first")
+    tools = {t["name"]: t for t in json.loads(MANIFEST.read_text())["tools"]}
+    check(tools["install_game"].get("blocking") is True and tools["install_game"].get("suggestedRemindAfter"),
+          "install_game is blocking, so reminders carry its progress")
     check(not any("buy" in t or "purchase" in t for t in declared), "no tool buys anything")
 
 
@@ -389,6 +398,8 @@ def installing_never_buys():
         check("can't buy" in result["message"], "and the reply says JARVIS can't buy it")
         _, result, _ = box.call("install_game", {"game": "Hades"})
         check(box.launched == ["steam://install/200"], "an owned game opens Steam's install window")
+        check(result["outcome"] == "not started" and result["installed"] is False,
+              "nothing pressed in Steam's window: it says nothing started")
         box.launched.clear()
         box.call("install_game", {"game": 400})
         check(box.launched == ["steam://install/400"], "a free game can be installed without owning it")
@@ -404,7 +415,6 @@ def installing_never_buys():
 @case
 def uninstalling_warns_about_saves():
     with Sandbox() as box:
-        box.module.UNINSTALL_WATCH_SECONDS = 0.2
         _, result, _ = box.call("uninstall_game", {"game": "Saveless"})
         check(box.launched == ["steam://uninstall/500"], "uninstall opens Steam's own confirmation")
         check(result["uninstalled"] is False and "still installed" in result["message"],
@@ -530,6 +540,57 @@ def an_uninstall_reports_what_steam_did():
         _, result, _ = box.call("uninstall_game", {"game": "Saveless"})
         check(result["uninstalled"] is True and "uninstalled Saveless Game without asking" in result["message"],
               "an installed game Steam removes at once is reported as removed")
+
+
+def _steam_downloads(box, appid, name, steps):
+    """Stand in for Steam after steam://install: write the app's record through
+    `steps` of (state flags, bytes downloaded), or remove it on None."""
+    import threading
+
+    path = box.root / "steamapps" / f"appmanifest_{appid}.acf"
+
+    def run():
+        for step in steps:
+            time.sleep(0.15)
+            if step is None:
+                path.unlink(missing_ok=True)
+            else:
+                flags, done = step
+                path.write_text(vdf_app(appid, name, flags, done, 2_000_000_000, done))
+
+    def launch(url):
+        box.launched.append(url)
+        threading.Thread(target=run, daemon=True).start()
+
+    box.module._launch = launch
+
+
+@case
+def an_install_is_followed_to_its_end():
+    import contextlib
+
+    downloading = 1026 | 1048576
+    with Sandbox() as box:
+        _steam_downloads(box, 200, "Hades", [(downloading, 500_000_000), (downloading, 1_500_000_000), (4, 2_000_000_000)])
+        said = io.StringIO()
+        with contextlib.redirect_stderr(said):
+            _, result, _ = box.call("install_game", {"game": "Hades"})
+        check(result["outcome"] == "installed" and result["installed"] is True, "a finished download is reported as installed")
+        check("Steam started the download" in said.getvalue() and "%" in said.getvalue(),
+              "progress goes to stderr, where reminders carry it")
+    with Sandbox() as box:
+        # R.E.P.O. in the live test: cancelled while it downloaded.
+        _steam_downloads(box, 200, "Hades", [(downloading, 500_000_000), None])
+        with contextlib.redirect_stderr(io.StringIO()):
+            _, result, _ = box.call("install_game", {"game": "Hades"})
+        check(result["outcome"] == "cancelled", "a download removed midway is reported as cancelled")
+    with Sandbox() as box:
+        box.module.INSTALL_STALL = 0.4
+        _steam_downloads(box, 200, "Hades", [(downloading, 500_000_000)])
+        with contextlib.redirect_stderr(io.StringIO()):
+            _, result, _ = box.call("install_game", {"game": "Hades"})
+        check(result["outcome"] == "stalled" and result["progress_percent"] == 25.0,
+              "a download that stops moving ends the call with its progress")
 
 
 @case

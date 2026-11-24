@@ -137,18 +137,20 @@
     },
     {
       "name": "install_game",
-      "description": "Install an owned or free game: checks ownership and disk space, then opens Steam's install window",
-      "threat_level": "elevated"
+      "description": "Install an owned or free game: checks ownership and disk space, opens Steam's install window, then follows the download until it is installed or cancelled, with progress in each reminder",
+      "threat_level": "safe",
+      "blocking": true,
+      "suggestedRemindAfter": 120
     },
     {
       "name": "play_game",
       "description": "Start an installed game through Steam",
-      "threat_level": "elevated"
+      "threat_level": "safe"
     },
     {
       "name": "uninstall_game",
       "description": "Uninstall a game through Steam, or cancel its download; says whether Steam removed it or is asking to confirm, and warns when saves aren't in Steam Cloud",
-      "threat_level": "dangerous"
+      "threat_level": "safe"
     },
     {
       "name": "open_steam_page",
@@ -203,7 +205,7 @@
       "processes: install, play, uninstall and open_steam_page hand a steam:// link to xdg-open (or steam), detached, with no output on the MCP wire"
     ],
     "notes": "First-party server maintained in this repository. Store, news, wishlist and Linux data need no account; the library, achievements, friends and Workshop use the user's own Steam Web API key, which returns only what the profile shows publicly, so private profiles are explained, never worked around. The store endpoints (storesearch, appdetails, featuredcategories) are undocumented but public and rate-limited to roughly 200 requests in 5 minutes, so responses are cached. ProtonDB's summaries are its public community data, credited in every result.",
-    "securityNotes": "Reads are safe: the Web API only returns what the user's profile already shows publicly, and nothing changes. friends and games_in_common are elevated: they read other people's activity, and friends' names are chosen by them (third-party text, a prompt-injection surface, marked as data in every result). install_game, play_game and uninstall_game are elevated or dangerous because they act on this computer; each opens Steam's own window, where installing and uninstalling are confirmed again. uninstall_game is dangerous: a game without Steam Cloud can take its saves with it, and the result warns when that is the case. No tool can buy anything: install_game refuses a game the user doesn't own unless it is free. Game descriptions, news and Workshop text are written by publishers and mod authors and are marked as data."
+    "securityNotes": "Reads are safe: the Web API only returns what the user's profile already shows publicly, and nothing changes. friends and games_in_common are elevated: they read other people's activity, and friends' names are chosen by them (third-party text, a prompt-injection surface, marked as data in every result). install_game, play_game and uninstall_game are safe by the maintainer's decision (2026-11-23): Steam does the work through its own client and windows, where the user presses Install, and the result says what Steam did. uninstall_game can remove a download in progress without Steam asking, and a game without Steam Cloud can take its saves with it; the result warns when that is the case. No tool can buy anything: install_game refuses a game the user doesn't own unless it is free. Game descriptions, news and Workshop text are written by publishers and mod authors and are marked as data."
   },
   "embeddings": {
     "nomic-embed-text": {

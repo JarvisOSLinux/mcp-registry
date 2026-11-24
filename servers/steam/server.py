@@ -1305,18 +1305,74 @@ def tool_install_game(args: dict) -> dict:
     note = _open_in_steam(f"steam://install/{appid}")
     if note:
         notes.append(note)
-    return {
+    result = {
         "appid": appid,
         "name": name,
         "found_by": how,
         "storage_needed_gb": storage,
         "libraries": libraries,
-        "message": (
-            f"Steam's install window for {name} is open: pick the drive and press Install. "
-            "Ask how far along it is to follow the download."
-        ),
         "notes": notes,
     }
+    result.update(_follow_install(appid, name))
+    return result
+
+
+# How install_game follows a download once Steam's window is open. It stays
+# running (blocking: true in the manifest), so each reminder carries the
+# progress and the caller can act on it: Yakup's "install it and cancel it
+# after a minute" became a reminder and uninstall_game, and R.E.P.O. finished
+# in under a minute, which only a call that watches can tell.
+INSTALL_START_WAIT = 300.0
+INSTALL_STALL = 600.0
+INSTALL_POLL = 2.0
+INSTALL_REPORT_EVERY = 10.0
+
+
+def _progress(line: str) -> None:
+    """A progress line for the caller's reminders; stdout is the MCP wire."""
+    print(line, file=sys.stderr, flush=True)
+
+
+def _follow_install(appid: int, name: str) -> dict:
+    opened = time.monotonic()
+    began = None
+    last_bytes, last_change, last_report = -1, opened, 0.0
+    _progress(f"{name}: Steam's install window is open; waiting for Install to be pressed.")
+    while True:
+        _, apps, _ = _installed()
+        local = next((a for a in apps if a["appid"] == appid and a["status"] != "not installed"), None)
+        now = time.monotonic()
+        if local is None:
+            if began is not None:
+                return {"installed": False, "outcome": "cancelled",
+                        "message": f"The download of {name} was cancelled and Steam removed it."}
+            if now - opened >= INSTALL_START_WAIT:
+                return {"installed": False, "outcome": "not started",
+                        "message": (f"Steam's install window for {name} is open, but nothing started within "
+                                    f"{round(INSTALL_START_WAIT / 60)} minutes. Press Install there; downloads "
+                                    "shows the progress after that.")}
+        else:
+            if began is None:
+                began = now
+                _progress(f"{name}: Steam started the download.")
+            if local["status"] == "installed":
+                took = round(now - began)
+                return {"installed": True, "outcome": "installed", "took_seconds": took,
+                        "message": f"{name} is installed ({local['size_gb']} GB), {took} s after the download started."}
+            done, total = local["_downloaded"], local["_to_download"]
+            percent = round(done * 100 / total, 1) if total else None
+            if done != last_bytes:
+                last_bytes, last_change = done, now
+            elif now - last_change >= INSTALL_STALL:
+                return {"installed": False, "outcome": "stalled", "progress_percent": percent,
+                        "message": (f"{name} has not moved for {round(INSTALL_STALL / 60)} minutes "
+                                    f"({local['status']}" + (f", {percent}%" if percent is not None else "")
+                                    + "). downloads shows it later; Steam keeps going on its own.")}
+            if now - last_report >= INSTALL_REPORT_EVERY:
+                last_report = now
+                size = f", {_gb(done)} of {_gb(total)} GB" if total else ""
+                _progress(f"{name}: {local['status']}" + (f" {percent}%" if percent is not None else "") + size)
+        time.sleep(INSTALL_POLL)
 
 
 def tool_play_game(args: dict) -> dict:
@@ -1553,8 +1609,10 @@ TOOLS = [
         "name": "install_game",
         "description": (
             "Install a game the user owns (or a free one): checks ownership and free disk space, "
-            "then opens Steam's install window, where the user picks the drive and presses "
-            "Install. Never buys anything: a game the user doesn't own is refused."
+            "opens Steam's install window, where the user picks the drive and presses Install, then "
+            "follows the download and returns when it is installed, cancelled, or has not started "
+            "within 5 minutes. Progress comes with each reminder; to cancel, call uninstall_game while "
+            "it runs. Never buys anything: a game the user doesn't own is refused."
         ),
         "inputSchema": {"type": "object", "properties": {"game": _GAME}, "required": ["game"]},
     },
