@@ -122,6 +122,7 @@ class FakeSteam:
             BOB: None,  # private game details
         }
         self.fail = {}
+        self.my_visibility = 3
 
     def __call__(self, request, timeout=None):
         url = request.full_url
@@ -153,6 +154,7 @@ class FakeSteam:
             return FakeResponse({"friendslist": {"friends": [{"steamid": ALICE}, {"steamid": BOB}]}})
         if path == "/ISteamUser/GetPlayerSummaries/v2/":
             players = [
+                {"steamid": ME, "personaname": "Me", "personastate": 1, "communityvisibilitystate": self.my_visibility},
                 {"steamid": ALICE, "personaname": "Alice <3", "personastate": 6, "gameextrainfo": "Deep Rock Galactic", "gameid": "300"},
                 {"steamid": BOB, "personaname": "Bob", "personastate": 0, "lastlogoff": NOW - 3600},
             ]
@@ -423,9 +425,21 @@ def private_profiles_are_explained():
         box.fake.owned[ME] = None
         error, _, text = box.call("my_library")
         check(error and "Privacy Settings" in text, "hidden game details point at the privacy setting")
+    with Sandbox() as box:
         box.fake.fail["/ISteamUser/GetFriendList/v1/"] = (401, {})
         error, _, text = box.call("friends")
-        check(error and "private" in text, "a private friends list is explained")
+        # The first live test: a working key, a hidden list, and "the key is wrong".
+        check(error and "isn't public" in text and "Friends List to Public" in text,
+              "a hidden friends list is named as the cause")
+        check("STEAM_API_KEY" not in text and "revoked" not in text, "and the working key is not blamed")
+        error, _, text = box.call("games_in_common", {"friends": ["alice"]})
+        check(error and "isn't public" in text, "games_in_common says the same")
+        box.fake.my_visibility = 1
+        error, _, text = box.call("friends")
+        check(error and "My Profile and Friends List to Public" in text, "a private profile is named as the cause")
+        box.fake.fail["/ISteamUser/GetPlayerSummaries/v2/"] = (401, {})
+        error, _, text = box.call("friends")
+        check(error and "STEAM_API_KEY" in text, "a key Steam refuses everywhere is still blamed on the key")
     with Sandbox(key="") as box:
         error, _, text = box.call("my_library")
         check(error and "steamcommunity.com/dev/apikey" in text, "no key says where to get one")

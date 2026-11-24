@@ -228,7 +228,9 @@ def _get(base: str, path: str, params: dict | None = None, *, with_key: bool = F
             payload = json.loads(exc.read() or b"null")
         except Exception:
             payload = None
-        raise SteamError(_scrub(_explain_http(exc.code, host, payload))) from None
+        error = SteamError(_scrub(_explain_http(exc.code, host, payload)))
+        error.code = exc.code
+        raise error from None
     except urllib.error.URLError as exc:
         raise SteamError(_scrub(f"Could not reach {host} ({exc.reason}). This needs outbound HTTPS.")) from None
     except (TimeoutError, socket.timeout):
@@ -1059,10 +1061,44 @@ def tool_my_wishlist(args: dict) -> dict:
     }
 
 
+# Steam answers 401 for a friends list that isn't public, with a working key.
+# Yakup's first test: his library loaded, then friends said "the key is wrong or
+# revoked", and the model passed that on.
+FRIENDS_HIDDEN = (
+    "Steam won't show this friends list to the Web API because it isn't public (the key itself works: "
+    "the Web API only sees what the profile shows to everyone). To let JARVIS see friends, the user sets "
+    "Friends List to Public in Steam > profile > Edit Profile > Privacy Settings. That shows the list to "
+    "anyone, so it is the user's choice; don't retry until they've changed it."
+)
+PROFILE_HIDDEN = (
+    "Steam won't show this profile to the Web API because it is private (the key itself works). To let "
+    "JARVIS see friends, the user sets My Profile and Friends List to Public in Steam > profile > Edit "
+    "Profile > Privacy Settings. That shows them to anyone, so it is the user's choice; don't retry until "
+    "they've changed it."
+)
+
+
+def _friends_refused(steamid: str, refusal: SteamError) -> SteamError:
+    """Why GetFriendList said 401: a hidden list, unless the key itself is refused."""
+    try:
+        reply = _get(API_URL, "/ISteamUser/GetPlayerSummaries/v2/", {"steamids": steamid}, with_key=True)
+    except SteamError:
+        return refusal
+    players = (reply.get("response") or {}).get("players") or []
+    if not players:
+        return refusal
+    return SteamError(FRIENDS_HIDDEN if players[0].get("communityvisibilitystate") == 3 else PROFILE_HIDDEN)
+
+
 def _friend_summaries(steamid: str) -> list[dict]:
-    reply = _get(
-        API_URL, "/ISteamUser/GetFriendList/v1/", {"steamid": steamid, "relationship": "friend"}, with_key=True
-    )
+    try:
+        reply = _get(
+            API_URL, "/ISteamUser/GetFriendList/v1/", {"steamid": steamid, "relationship": "friend"}, with_key=True
+        )
+    except SteamError as exc:
+        if getattr(exc, "code", None) != 401:
+            raise
+        raise _friends_refused(steamid, exc) from None
     ids = [f.get("steamid") for f in (reply.get("friendslist") or {}).get("friends") or [] if f.get("steamid")]
     summaries = []
     for start in range(0, len(ids), 100):
