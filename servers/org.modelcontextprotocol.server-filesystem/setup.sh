@@ -21,8 +21,12 @@ fi
 echo "OK: Node.js $(node -v) and npm $(npm -v) detected."
 
 echo "Installing dependencies (npm ci) and building (npm run build)."
+# npm >= 12 skips dependency install scripts not covered by allowScripts and
+# still exits 0; re2's install script is what fetches/builds re2.node.
+echo "allow-scripts=re2" > .npmrc
 npm ci
 npm run build
+node -e "require('re2')"
 
 echo "OK: built dist/index.js"
 
