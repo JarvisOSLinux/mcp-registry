@@ -228,7 +228,9 @@ def _get(base: str, path: str, params: dict | None = None, *, with_key: bool = F
             payload = json.loads(exc.read() or b"null")
         except Exception:
             payload = None
-        raise SteamError(_scrub(_explain_http(exc.code, host, payload))) from None
+        error = SteamError(_scrub(_explain_http(exc.code, host, payload)))
+        error.code = exc.code
+        raise error from None
     except urllib.error.URLError as exc:
         raise SteamError(_scrub(f"Could not reach {host} ({exc.reason}). This needs outbound HTTPS.")) from None
     except (TimeoutError, socket.timeout):
@@ -1059,10 +1061,44 @@ def tool_my_wishlist(args: dict) -> dict:
     }
 
 
+# Steam answers 401 for a friends list that isn't public, with a working key.
+# Yakup's first test: his library loaded, then friends said "the key is wrong or
+# revoked", and the model passed that on.
+FRIENDS_HIDDEN = (
+    "Steam won't show this friends list to the Web API because it isn't public (the key itself works: "
+    "the Web API only sees what the profile shows to everyone). To let JARVIS see friends, the user sets "
+    "Friends List to Public in Steam > profile > Edit Profile > Privacy Settings. That shows the list to "
+    "anyone, so it is the user's choice; don't retry until they've changed it."
+)
+PROFILE_HIDDEN = (
+    "Steam won't show this profile to the Web API because it is private (the key itself works). To let "
+    "JARVIS see friends, the user sets My Profile and Friends List to Public in Steam > profile > Edit "
+    "Profile > Privacy Settings. That shows them to anyone, so it is the user's choice; don't retry until "
+    "they've changed it."
+)
+
+
+def _friends_refused(steamid: str, refusal: SteamError) -> SteamError:
+    """Why GetFriendList said 401: a hidden list, unless the key itself is refused."""
+    try:
+        reply = _get(API_URL, "/ISteamUser/GetPlayerSummaries/v2/", {"steamids": steamid}, with_key=True)
+    except SteamError:
+        return refusal
+    players = (reply.get("response") or {}).get("players") or []
+    if not players:
+        return refusal
+    return SteamError(FRIENDS_HIDDEN if players[0].get("communityvisibilitystate") == 3 else PROFILE_HIDDEN)
+
+
 def _friend_summaries(steamid: str) -> list[dict]:
-    reply = _get(
-        API_URL, "/ISteamUser/GetFriendList/v1/", {"steamid": steamid, "relationship": "friend"}, with_key=True
-    )
+    try:
+        reply = _get(
+            API_URL, "/ISteamUser/GetFriendList/v1/", {"steamid": steamid, "relationship": "friend"}, with_key=True
+        )
+    except SteamError as exc:
+        if getattr(exc, "code", None) != 401:
+            raise
+        raise _friends_refused(steamid, exc) from None
     ids = [f.get("steamid") for f in (reply.get("friendslist") or {}).get("friends") or [] if f.get("steamid")]
     summaries = []
     for start in range(0, len(ids), 100):
@@ -1269,18 +1305,74 @@ def tool_install_game(args: dict) -> dict:
     note = _open_in_steam(f"steam://install/{appid}")
     if note:
         notes.append(note)
-    return {
+    result = {
         "appid": appid,
         "name": name,
         "found_by": how,
         "storage_needed_gb": storage,
         "libraries": libraries,
-        "message": (
-            f"Steam's install window for {name} is open: pick the drive and press Install. "
-            "Ask how far along it is to follow the download."
-        ),
         "notes": notes,
     }
+    result.update(_follow_install(appid, name))
+    return result
+
+
+# How install_game follows a download once Steam's window is open. It stays
+# running (blocking: true in the manifest), so each reminder carries the
+# progress and the caller can act on it: Yakup's "install it and cancel it
+# after a minute" became a reminder and uninstall_game, and R.E.P.O. finished
+# in under a minute, which only a call that watches can tell.
+INSTALL_START_WAIT = 300.0
+INSTALL_STALL = 600.0
+INSTALL_POLL = 2.0
+INSTALL_REPORT_EVERY = 10.0
+
+
+def _progress(line: str) -> None:
+    """A progress line for the caller's reminders; stdout is the MCP wire."""
+    print(line, file=sys.stderr, flush=True)
+
+
+def _follow_install(appid: int, name: str) -> dict:
+    opened = time.monotonic()
+    began = None
+    last_bytes, last_change, last_report = -1, opened, 0.0
+    _progress(f"{name}: Steam's install window is open; waiting for Install to be pressed.")
+    while True:
+        _, apps, _ = _installed()
+        local = next((a for a in apps if a["appid"] == appid and a["status"] != "not installed"), None)
+        now = time.monotonic()
+        if local is None:
+            if began is not None:
+                return {"installed": False, "outcome": "cancelled",
+                        "message": f"The download of {name} was cancelled and Steam removed it."}
+            if now - opened >= INSTALL_START_WAIT:
+                return {"installed": False, "outcome": "not started",
+                        "message": (f"Steam's install window for {name} is open, but nothing started within "
+                                    f"{round(INSTALL_START_WAIT / 60)} minutes. Press Install there; downloads "
+                                    "shows the progress after that.")}
+        else:
+            if began is None:
+                began = now
+                _progress(f"{name}: Steam started the download.")
+            if local["status"] == "installed":
+                took = round(now - began)
+                return {"installed": True, "outcome": "installed", "took_seconds": took,
+                        "message": f"{name} is installed ({local['size_gb']} GB), {took} s after the download started."}
+            done, total = local["_downloaded"], local["_to_download"]
+            percent = round(done * 100 / total, 1) if total else None
+            if done != last_bytes:
+                last_bytes, last_change = done, now
+            elif now - last_change >= INSTALL_STALL:
+                return {"installed": False, "outcome": "stalled", "progress_percent": percent,
+                        "message": (f"{name} has not moved for {round(INSTALL_STALL / 60)} minutes "
+                                    f"({local['status']}" + (f", {percent}%" if percent is not None else "")
+                                    + "). downloads shows it later; Steam keeps going on its own.")}
+            if now - last_report >= INSTALL_REPORT_EVERY:
+                last_report = now
+                size = f", {_gb(done)} of {_gb(total)} GB" if total else ""
+                _progress(f"{name}: {local['status']}" + (f" {percent}%" if percent is not None else "") + size)
+        time.sleep(INSTALL_POLL)
 
 
 def tool_play_game(args: dict) -> dict:
@@ -1313,13 +1405,44 @@ def tool_uninstall_game(args: dict) -> dict:
     note = _open_in_steam(f"steam://uninstall/{appid}")
     if note:
         notes.append(note)
+    name = local["name"]
+    # Steam does not always ask: Yakup's live test cancelled a download in
+    # progress and removed it within a second, while this said "nothing is
+    # removed until you confirm". So say what Steam did, from its own files.
+    if _gone_within(appid, UNINSTALL_WATCH_SECONDS):
+        if local["status"] in DOWNLOAD_STATES:
+            message = f"Steam cancelled the download of {name} and removed what it had fetched, without asking."
+        else:
+            message = f"Steam uninstalled {name} without asking."
+        return {"appid": appid, "name": name, "uninstalled": True, "frees_gb": local["size_gb"],
+                "message": message, "notes": notes}
     return {
         "appid": appid,
-        "name": local["name"],
+        "name": name,
+        "uninstalled": False,
         "frees_gb": local["size_gb"],
-        "message": f"Steam is asking to confirm uninstalling {local['name']}; nothing is removed until you confirm there.",
+        "message": (
+            f"{name} is still installed: Steam is showing its own question before uninstalling it. "
+            "If no Steam window asks, nothing happened; ask again to check."
+        ),
         "notes": notes,
     }
+
+
+UNINSTALL_WATCH_SECONDS = 6.0
+DOWNLOAD_STATES = ("downloading", "download queued", "download paused")
+
+
+def _gone_within(appid: int, seconds: float) -> bool:
+    """Whether Steam removes the app's install record within `seconds`."""
+    deadline = time.monotonic() + seconds
+    while True:
+        _, apps, _ = _installed()
+        if not any(a["appid"] == appid and a["status"] != "not installed" for a in apps):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.5)
 
 
 PAGES = {
@@ -1486,8 +1609,10 @@ TOOLS = [
         "name": "install_game",
         "description": (
             "Install a game the user owns (or a free one): checks ownership and free disk space, "
-            "then opens Steam's install window, where the user picks the drive and presses "
-            "Install. Never buys anything: a game the user doesn't own is refused."
+            "opens Steam's install window, where the user picks the drive and presses Install, then "
+            "follows the download and returns when it is installed, cancelled, or has not started "
+            "within 5 minutes. Progress comes with each reminder; to cancel, call uninstall_game while "
+            "it runs. Never buys anything: a game the user doesn't own is refused."
         ),
         "inputSchema": {"type": "object", "properties": {"game": _GAME}, "required": ["game"]},
     },
@@ -1498,7 +1623,7 @@ TOOLS = [
     },
     {
         "name": "uninstall_game",
-        "description": "Uninstall a game from this computer through Steam, which asks to confirm. Warns when the game's saves aren't in Steam Cloud.",
+        "description": "Uninstall a game from this computer through Steam, or cancel its download. Steam usually asks to confirm an installed game, but cancels a download at once; the result says which happened. Warns when the game's saves aren't in Steam Cloud.",
         "inputSchema": {"type": "object", "properties": {"game": _GAME}, "required": ["game"]},
     },
     {
